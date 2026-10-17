@@ -30,7 +30,8 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 ### Templates, paper builder, preview, and PDF
 
 - [ ] **Partial** - Template configuration and rendering helpers exist in [shared/src/template.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/shared/src/template.ts>), [server/src/routes/templates.ts](<D:/0🔒  🔒/6 semester/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/templates.ts>), and [server/src/render/paperHtml.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/render/paperHtml.ts>), but no seed or template editor UI exists.
-- [ ] **Partial** - Paper CRUD, ordering, versions, marks validation, finalize, duplicate, and download endpoints exist in [server/src/routes/papers.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/papers.ts>) and [server/src/lib/papers.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/lib/papers.ts>); paper builder/live preview UI is missing.
+- [x] **Done** - Paper CRUD, ordering, versions, marks validation, finalise, duplicate, and downloads are wired to the HOA-only builder in [client/src/PaperBuilder.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/PaperBuilder.tsx>) and [server/src/routes/papers.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/papers.ts>).
+- [x] **Done** - Builder uses the existing server renderer for live HTML preview, supports approved-question selection, sections, drag/drop and move controls, marks overrides, save/reopen, paper/key download, and optional watermark.
 - [ ] **Partial** - Playwright PDF generation and separate answer-key endpoint exist in [server/src/render/pdf.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/render/pdf.ts>); sample comparison and validation are missing, and browser installation was not reached.
 
 ### Administration and import
@@ -82,3 +83,10 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 - [x] **Done** - Teacher submit and HOA approve/reject actions are wired to the existing server permissions.
 - [x] **Done** - Headless browser smoke test created a new table question as `teacher_far`, saved it, and submitted it successfully.
 - [ ] **Partial** - The current editor initializes options/parts when editing but does not yet hydrate previously saved MCQ option rows and long-question parts into editable controls; preview remains complete. This is a small edit-UX limitation to address if time remains.
+
+## Milestone 5 result
+
+- [x] **Done** - HOA-only paper builder is linked from the role-aware sidebar and protected by the existing server RBAC.
+- [x] **Done** - Headless browser smoke test selected an approved question, showed the marks total, rendered the exact server HTML preview in an iframe, and saved a draft.
+- [x] **Done** - Client typecheck/build and server typecheck pass.
+- [ ] **Partial** - The builder intentionally keeps rule-based auto-generation and version-history browsing out of the thin demo UI; the existing server endpoints remain available but are not represented by fake controls.

@@ -13,6 +13,8 @@ button, input { font: inherit; }
 .page-btn:disabled { cursor: not-allowed; opacity: .45; }
 .action { border-radius: .5rem; padding: .5rem; color: #64748b; }
 .action:hover { background: #f1f5f9; }
+.tool { display: inline-flex; align-items: center; gap: .4rem; border-radius: .6rem; background: #183153; color: white; padding: .55rem .75rem; font-size: .8rem; font-weight: 700; }
+.tool:hover { background: #23466f; }
 .rich-editor .ProseMirror { min-height: 10rem; outline: none; }
 .rich-editor table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
 .rich-editor th, .rich-editor td { border: 1px solid #cbd5e1; min-width: 5rem; padding: .4rem; vertical-align: top; }

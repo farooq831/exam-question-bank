@@ -10,6 +10,17 @@ export function setCsrfToken(token: string) {
   csrfToken = token;
 }
 
+export async function apiText(path: string, options: RequestInit = {}) {
+  const method = (options.method ?? 'GET').toUpperCase();
+  const headers = new Headers(options.headers);
+  if (options.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && csrfToken) headers.set('x-csrf-token', csrfToken);
+  const response = await fetch(`/api${path}`, { ...options, headers, credentials: 'include' });
+  const text = await response.text();
+  if (!response.ok) throw new ApiError(response.status, text || `Request failed (${response.status})`);
+  return text;
+}
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
   const headers = new Headers(options.headers);

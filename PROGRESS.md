@@ -19,8 +19,8 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 ### Foundation and security
 
 - [ ] **Partial** - Login, session auth, HttpOnly cookies, CSRF, helmet, rate limiting, lockout, zod validation, sanitized HTML. Evidence: [server/src/app.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/app.ts>), [server/src/middleware/auth.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/middleware/auth.ts>), [server/src/routes/auth.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/auth.ts>), and [server/src/lib/sanitize.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/lib/sanitize.ts>) contain the server mechanisms; there is no client to exercise them and no server tests.
-- [ ] **Missing** - Login UI, logout UI, change-password UI, and role dashboards. The [client/src/](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/>) directory contains no application source files.
-- [ ] **Partial** - Server dashboard endpoint exists in [server/src/routes/dashboard.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/dashboard.ts>); no dashboard UI.
+- [x] **Done** - Login, logout, change-password UI, session cookies, CSRF token handling, protected routing, role-aware shell, and toast/confirm components are implemented in [client/src](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src>) and backed by [server/src/routes/auth.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/auth.ts>).
+- [x] **Done** - Server dashboard endpoint and a thin authenticated dashboard UI exist in [server/src/routes/dashboard.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/dashboard.ts>) and [client/src/App.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/App.tsx>).
 
 ### Question bank
 
@@ -67,3 +67,10 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 - [x] **Done** - PDF text inspection confirms generated paper PDFs contain no URL, `about:blank`, `file://`, Chrome, or browser date text. PDF metadata is set to `SKANS Question Bank`.
 - [x] **Done** - Existing renderer embeds Tinos/Arimo/Carlito fonts, preserves table header rows, prevents short tables from splitting, and emits `Page X of Y` through CSS margin boxes.
 - [ ] **Partial** - Automated raster PNG rendering and pixel-level comparison against reference page 1 were not added because no PDF raster utility is available in the current environment; page counts and extracted page text were compared instead. This remains a visual QA limitation, not a hidden UI feature.
+
+## Milestone 3 result
+
+- [x] **Done** - Vite, TypeScript, Tailwind, router, API client with cookie credentials and CSRF headers, auth context, protected routes, responsive sidebar, toast, and confirmation components are in [client/](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client>).
+- [x] **Done** - Headless browser smoke test successfully loaded the login page, signed in as `teacher_far`, and displayed the teacher dashboard.
+- [x] **Done** - Client typecheck and production build pass.
+- [ ] **Out of scope for this milestone** - Question bank, paper builder, admin navigation, and CSV UI are not linked yet; no fake buttons are exposed.

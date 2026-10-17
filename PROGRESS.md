@@ -36,7 +36,7 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 
 ### Administration and import
 
-- [ ] **Partial** - User CRUD/reset/unlock, subject CRUD, template CRUD, and audit-log endpoints exist in [server/src/routes/users.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/users.ts>), [server/src/routes/subjects.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/subjects.ts>), [server/src/routes/templates.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/templates.ts>), and [server/src/routes/audit.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/audit.ts>). Admin UI is missing.
+- [ ] **Partial** - User/subject/template CRUD, password reset/unlock, and audit-log endpoints exist in the server routes; the thin admin UI in [client/src/Admin.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/Admin.tsx>) provides user visibility, audit visibility, and password reset. Full user/subject/template edit forms remain out of scope for the tomorrow demo.
 - [ ] **Partial** - CSV sample/download and validation/import endpoint exist in [server/src/routes/import.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/import.ts>); import UI/report display is missing.
 
 ### Seed data and documentation
@@ -90,3 +90,9 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 - [x] **Done** - Headless browser smoke test selected an approved question, showed the marks total, rendered the exact server HTML preview in an iframe, and saved a draft.
 - [x] **Done** - Client typecheck/build and server typecheck pass.
 - [ ] **Partial** - The builder intentionally keeps rule-based auto-generation and version-history browsing out of the thin demo UI; the existing server endpoints remain available but are not represented by fake controls.
+
+## Milestone 6 result
+
+- [x] **Done** - Dashboards now show server-backed role-scoped question counts and HOA/teacher review indicators.
+- [ ] **Partial** - ADMIN navigation provides user list, subject count, audit log, and password reset. Full CRUD forms for users, subjects, and template JSON editing are intentionally out of scope and not exposed as fake buttons.
+- [x] **Done** - Browser smoke test loaded the ADMIN dashboard and administration page with seeded account/audit data.

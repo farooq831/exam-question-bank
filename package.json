@@ -1,0 +1,33 @@
+{
+  "name": "skans-question-bank",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SKANS School of Accountancy - Question Bank & Exam Paper Generator (prototype)",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup-env.mjs && npm install && npm run db:setup -w server && npm run browsers -w server",
+    "dev": "concurrently -k -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client && npm run build -w server",
+    "start": "npm run start -w server",
+    "test": "npm run test -w shared && npm run test -w server",
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client",
+    "db:reset": "npm run db:reset -w server",
+    "reset-admin": "npm run reset-admin -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "@prisma/client": true,
+    "@prisma/engines": true,
+    "esbuild": true,
+    "prisma": true
+  }
+}

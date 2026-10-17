@@ -1,0 +1,190 @@
+// SKANS Question Bank - data model.
+//
+// Portability notes (SQLite -> PostgreSQL):
+//  * Enumerations (role, status, type ...) are stored as String and validated with zod in
+//    @skans/shared, so the schema works unchanged on both providers.
+//  * JSON payloads (question content, template config, paper header, snapshots) are stored as
+//    String columns containing JSON. On PostgreSQL they can be switched to `Json` (jsonb) later.
+//  * To migrate: change `provider` below to "postgresql", set DATABASE_URL, run
+//    `npx prisma migrate dev --name init` and re-seed or copy data with a script.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int           @id @default(autoincrement())
+  username           String        @unique
+  fullName           String
+  email              String?
+  passwordHash       String
+  role               String // ADMIN | HOA | TEACHER
+  isActive           Boolean       @default(true)
+  mustChangePassword Boolean       @default(false)
+  failedLogins       Int           @default(0)
+  lockedUntil        DateTime?
+  lastLoginAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  subjects           UserSubject[]
+
+  questionsCreated  Question[] @relation("QuestionCreatedBy")
+  questionsUpdated  Question[] @relation("QuestionUpdatedBy")
+  questionsReviewed Question[] @relation("QuestionReviewedBy")
+  papersCreated     Paper[]    @relation("PaperCreatedBy")
+  papersUpdated     Paper[]    @relation("PaperUpdatedBy")
+  paperVersions     PaperVersion[]
+  auditLogs         AuditLog[]
+}
+
+model Subject {
+  id         Int            @id @default(autoincrement())
+  code       String         @unique // e.g. FAR, AUD, TAX
+  name       String // e.g. Financial Accounting and Reporting
+  level      String         @default("") // e.g. CAF, PRC
+  isActive   Boolean        @default(true)
+  templateId Int?
+  template   PaperTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  users      UserSubject[]
+  questions  Question[]
+  papers     Paper[]
+}
+
+model UserSubject {
+  userId    Int
+  subjectId Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([userId, subjectId])
+}
+
+model PaperTemplate {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  name        String
+  description String    @default("")
+  config      String // JSON, validated by templateConfigSchema in @skans/shared
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  subjects    Subject[]
+  papers      Paper[]
+}
+
+model Question {
+  id            Int       @id @default(autoincrement())
+  subjectId     Int
+  subject       Subject   @relation(fields: [subjectId], references: [id])
+  topic         String    @default("")
+  type          String // MCQ | MCQ_GROUP | TRUE_FALSE | SHORT | LONG | CASE_STUDY
+  marks         Float
+  difficulty    String    @default("MEDIUM") // EASY | MEDIUM | HARD
+  source        String    @default("")
+  body          String // sanitized HTML
+  content       String    @default("{}") // JSON: options / group items / sub-parts
+  answer        String    @default("") // sanitized HTML
+  advice        String    @default("") // sanitized HTML (examiner advice)
+  comments      String    @default("") // internal comments (plain text)
+  searchText    String    @default("") // plain-text index for keyword search
+  status        String    @default("DRAFT") // DRAFT | SUBMITTED | APPROVED | REJECTED
+  reviewComment String    @default("")
+  reviewedById  Int?
+  reviewedBy    User?     @relation("QuestionReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt    DateTime?
+  createdById   Int
+  createdBy     User      @relation("QuestionCreatedBy", fields: [createdById], references: [id])
+  updatedById   Int?
+  updatedBy     User?     @relation("QuestionUpdatedBy", fields: [updatedById], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  paperItems    PaperItem[]
+
+  @@index([subjectId, status])
+  @@index([deletedAt])
+}
+
+model Paper {
+  id             Int            @id @default(autoincrement())
+  title          String
+  subjectId      Int
+  subject        Subject        @relation(fields: [subjectId], references: [id])
+  templateId     Int
+  template       PaperTemplate  @relation(fields: [templateId], references: [id])
+  status         String         @default("DRAFT") // DRAFT | FINAL
+  header         String         @default("{}") // JSON: date, session, batch, teacher, durations, marks...
+  sections       String         @default("[]") // JSON: ordered section names used by this paper
+  currentVersion Int            @default(0)
+  createdById    Int
+  createdBy      User           @relation("PaperCreatedBy", fields: [createdById], references: [id])
+  updatedById    Int?
+  updatedBy      User?          @relation("PaperUpdatedBy", fields: [updatedById], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+  items          PaperItem[]
+  versions       PaperVersion[]
+
+  @@index([subjectId])
+}
+
+model PaperItem {
+  id            Int      @id @default(autoincrement())
+  paperId       Int
+  paper         Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  questionId    Int
+  question      Question @relation(fields: [questionId], references: [id])
+  section       String   @default("")
+  position      Int
+  marksOverride Float?
+  newPage       Boolean  @default(false)
+
+  @@index([paperId])
+  @@index([questionId])
+}
+
+model PaperVersion {
+  id          Int      @id @default(autoincrement())
+  paperId     Int
+  paper       Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  version     Int
+  note        String   @default("")
+  snapshot    String // JSON: full paper incl. question content at time of save
+  createdById Int
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([paperId, version])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  username   String   @default("")
+  action     String // e.g. LOGIN, QUESTION_CREATE, QUESTION_APPROVE, PAPER_PDF_DOWNLOAD
+  entityType String   @default("")
+  entityId   String   @default("")
+  details    String   @default("") // JSON or text
+  ip         String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Session {
+  sid       String   @id
+  data      String
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}

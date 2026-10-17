@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 72" width="240" height="72">
+  <!-- Placeholder SKANS logo. Replace this file (or add skans-logo.png) with the official artwork. -->
+  <g transform="translate(4,6)">
+    <path d="M30 0 L58 9 V30 C58 47 46 56 30 62 C14 56 2 47 2 30 V9 Z" fill="#2E3192"/>
+    <path d="M30 6 L52 13 V30 C52 43 43 50 30 55 C17 50 8 43 8 30 V13 Z" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+    <text x="30" y="40" text-anchor="middle" font-family="Times New Roman, Times, serif" font-size="30" font-weight="700" fill="#ffffff">S</text>
+    <rect x="12" y="56" width="36" height="6" rx="1" fill="#A3161A"/>
+  </g>
+  <text x="72" y="40" font-family="Times New Roman, Times, serif" font-size="38" font-weight="700" fill="#2E3192" letter-spacing="1">SKANS</text>
+  <line x1="72" y1="47" x2="210" y2="47" stroke="#2E3192" stroke-width="1.2"/>
+  <text x="74" y="61" font-family="Times New Roman, Times, serif" font-size="13" font-style="italic" fill="#2E3192">School of Accountancy</text>
+</svg>

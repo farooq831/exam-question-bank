@@ -107,3 +107,8 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 
 - [x] **Done** - ADMIN no longer sees the question-bank navigation because the server intentionally denies ADMIN question content access; ADMIN is directed to dashboard/administration instead.
 - [x] **Done** - Client API retries one failed mutating request after refreshing the CSRF token when a stale tab/server restart produces the standard security-token error. RBAC responses are not retried or weakened.
+
+## ADMIN workspace follow-up
+
+- [x] **Done** - ADMIN now has working tabs for user CRUD, subject CRUD, paper-template editing, password reset/unlock, and filtered audit-log viewing. These controls call the existing server endpoints and remain hidden from non-ADMIN users.
+- [x] **Done** - Template JSON editing preserves in-progress text and relies on the server's shared template schema for final validation.

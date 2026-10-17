@@ -96,3 +96,9 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 - [x] **Done** - Dashboards now show server-backed role-scoped question counts and HOA/teacher review indicators.
 - [ ] **Partial** - ADMIN navigation provides user list, subject count, audit log, and password reset. Full CRUD forms for users, subjects, and template JSON editing are intentionally out of scope and not exposed as fake buttons.
 - [x] **Done** - Browser smoke test loaded the ADMIN dashboard and administration page with seeded account/audit data.
+
+## Milestone 7 result
+
+- [x] **Done** - Focused server tests cover unauthenticated access, teacher paper RBAC, teacher subject isolation, marks-total validation, template rendering, and real PDF generation. Evidence: [server/tests/workflow.test.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/tests/workflow.test.ts>).
+- [x] **Done** - Full `npm test`, `npm run typecheck`, `npm run build`, and `npm run setup` validation completed; the RBAC regression found during testing was fixed in [server/src/routes/questions.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/questions.ts>).
+- [x] **Done** - [README.md](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/README.md>) now includes setup, demo flow/accounts, structure, template extension, deployment, and scope notes.

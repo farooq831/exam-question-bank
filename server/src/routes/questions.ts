@@ -26,6 +26,7 @@ router.get(
   ah(async (req, res) => {
     const f = parse(questionQuerySchema, req.query);
     const user = req.user!;
+    if (f.subjectId) assertSubject(user, f.subjectId);
     const and: Prisma.QuestionWhereInput[] = [questionVisibility(user)];
     and.push(f.deleted === '1' ? { deletedAt: { not: null } } : { deletedAt: null });
     if (f.subjectId) and.push({ subjectId: f.subjectId });

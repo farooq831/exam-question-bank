@@ -1,0 +1,65 @@
+import request from 'supertest';
+import { describe, expect, it, beforeAll, afterAll } from 'vitest';
+import { createApp } from '../src/app';
+import { prisma } from '../src/db';
+import { buildSnapshot, paperInclude, parseTemplateConfig, snapshotToRenderInput } from '../src/lib/papers';
+import { renderPaperHtml } from '../src/render/paperHtml';
+import { closeBrowser, htmlToPdf } from '../src/render/pdf';
+import { checkPaperMarks } from '@skans/shared';
+
+const app = createApp();
+
+async function loggedIn(username: string) {
+  const agent = request.agent(app);
+  const csrf = await agent.get('/api/auth/csrf');
+  await agent.post('/api/auth/login').set('x-csrf-token', csrf.body.csrfToken).send({ username, password: 'SkansDemo2026' }).expect(200);
+  return agent;
+}
+
+describe('auth and RBAC workflow', () => {
+  it('requires authentication and prevents teachers from generating papers', async () => {
+    await request(app).get('/api/papers').expect(401);
+    const teacher = await loggedIn('teacher_far');
+    await teacher.get('/api/papers').expect(403);
+  });
+
+  it('limits a teacher to assigned subjects', async () => {
+    const teacher = await loggedIn('teacher_far');
+    const tax = await prisma.subject.findUniqueOrThrow({ where: { code: 'TAX' } });
+    await teacher.get(`/api/questions?subjectId=${tax.id}`).expect(403);
+    const far = await prisma.subject.findUniqueOrThrow({ where: { code: 'FAR' } });
+    const response = await teacher.get(`/api/questions?subjectId=${far.id}`).expect(200);
+    expect(response.body.items.length).toBeGreaterThan(0);
+  });
+});
+
+describe('marks, template rendering, and PDF generation', () => {
+  let paperId = 0;
+  beforeAll(async () => {
+    const paper = await prisma.paper.findFirstOrThrow({ where: { title: 'FAR Spring 2026 Examination' } });
+    paperId = paper.id;
+  });
+
+  it('reports mismatched and matching paper totals', () => {
+    expect(checkPaperMarks([4, 5], 20).status).toBe('under');
+    expect(checkPaperMarks([4, 5], 9).status).toBe('match');
+  });
+
+  it('renders a seeded table paper and produces a clean PDF', async () => {
+    const paper = await prisma.paper.findUniqueOrThrow({ where: { id: paperId }, include: paperInclude });
+    const snapshot = buildSnapshot(paper, parseTemplateConfig(paper.template.config));
+    const html = renderPaperHtml(snapshotToRenderInput(snapshot, 'paper', null));
+    expect(html).toContain('table');
+    expect(html).toContain('counter(page)');
+    expect(html).toContain('counter(pages)');
+    expect(html).not.toContain('http://');
+    const result = await htmlToPdf(html, 'workflow-test');
+    expect(result.pdf.length).toBeGreaterThan(10_000);
+    expect(result.pageCount).toBeGreaterThan(0);
+  });
+
+  afterAll(async () => {
+    await closeBrowser();
+    await prisma.$disconnect();
+  });
+});

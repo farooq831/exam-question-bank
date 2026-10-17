@@ -59,3 +59,11 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 - **Runtime:** Done. `GET http://localhost:4000/api/health` returned HTTP 200 with `{"ok":true}`.
 - **Validation:** Server build/typecheck and shared tests pass. Server tests remain out of scope until Milestone 7.
 - **Still intentionally unavailable:** Client UI and all browser demo flow features; they are not exposed by the current milestone.
+
+## Milestone 2 result
+
+- [x] **Done** - `npm run pdf:samples -w server` generates FAR and TAX paper PDFs plus separate answer keys in `output/` using the existing HTML renderer and Playwright.
+- [x] **Done** - TAX output is one page like [samples/TAX BATCH 1.pdf](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/samples/TAX BATCH 1.pdf>); FAR output is two pages because the seeded demo contains fewer questions than [samples/FAR-Spring-2026.pdf](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/samples/FAR-Spring-2026.pdf>).
+- [x] **Done** - PDF text inspection confirms generated paper PDFs contain no URL, `about:blank`, `file://`, Chrome, or browser date text. PDF metadata is set to `SKANS Question Bank`.
+- [x] **Done** - Existing renderer embeds Tinos/Arimo/Carlito fonts, preserves table header rows, prevents short tables from splitting, and emits `Page X of Y` through CSS margin boxes.
+- [ ] **Partial** - Automated raster PNG rendering and pixel-level comparison against reference page 1 were not added because no PDF raster utility is available in the current environment; page counts and extracted page text were compared instead. This remains a visual QA limitation, not a hidden UI feature.

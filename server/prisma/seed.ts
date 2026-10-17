@@ -86,7 +86,7 @@ const questions: SeedQuestion[] = [
       partLabelStyle: 'roman',
     },
     answer: p('A complete answer reconciles the trial balance and clearly states assumptions.'),
-    status: 'SUBMITTED',
+    status: 'APPROVED',
     by: 'teacher_far',
   },
   {
@@ -288,7 +288,7 @@ async function main() {
     const farSubject = subjectRows.get('FAR')!;
     const taxSubject = subjectRows.get('TAX')!;
     const farItems = ['far-group', 'far-alpha', 'far-fair-value', 'far-short'].map((key, position) => ({ questionId: questionRows.get(key)!.id, section: position < 2 ? 'SECTION A' : 'SECTION B', position, marksOverride: null, newPage: false }));
-    const taxItems = ['tax-q1', 'tax-q2', 'tax-q3', 'tax-q4'].map((key, position) => ({ questionId: questionRows.get(key)!.id, section: '', position, marksOverride: null, newPage: position > 0 }));
+    const taxItems = ['tax-q1', 'tax-q2', 'tax-q3', 'tax-q4'].map((key, position) => ({ questionId: questionRows.get(key)!.id, section: '', position, marksOverride: null, newPage: false }));
     const farPaper = await tx.paper.create({
       data: {
         title: 'FAR Spring 2026 Examination',
@@ -302,7 +302,6 @@ async function main() {
         items: { create: farItems },
       },
     });
-    await tx.paperVersion.create({ data: { paperId: farPaper.id, version: 1, note: 'Seed sample paper', snapshot: '{}', createdById: userRows.get('hoa_far')!.id } });
     const taxPaper = await tx.paper.create({
       data: {
         title: 'Tax Batch 1 Internal Test',
@@ -316,7 +315,6 @@ async function main() {
         items: { create: taxItems },
       },
     });
-    await tx.paperVersion.create({ data: { paperId: taxPaper.id, version: 1, note: 'Seed sample paper', snapshot: '{}', createdById: userRows.get('hoa_far')!.id } });
   });
 
   console.log(`Seeded ${subjects.length} subjects, 41 questions, two templates and two sample papers.`);

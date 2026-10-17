@@ -5,3 +5,17 @@
 :root { font-family: 'Segoe UI', ui-sans-serif, system-ui, sans-serif; }
 body { margin: 0; }
 button, input { font: inherit; }
+.field { display: block; color: #475569; font-size: .875rem; font-weight: 600; }
+.field input, .field select, .field textarea { display: block; width: 100%; margin-top: .5rem; border: 1px solid #e2e8f0; border-radius: .6rem; padding: .65rem .75rem; font-weight: 400; outline: none; }
+.field input:focus, .field select:focus, .field textarea:focus { box-shadow: 0 0 0 4px rgba(24,49,83,.1); border-color: #183153; }
+.filter, .page-btn { border: 1px solid #e2e8f0; border-radius: .6rem; background: white; padding: .65rem .75rem; font-size: .875rem; }
+.page-btn { font-weight: 600; color: #475569; }
+.page-btn:disabled { cursor: not-allowed; opacity: .45; }
+.action { border-radius: .5rem; padding: .5rem; color: #64748b; }
+.action:hover { background: #f1f5f9; }
+.rich-editor .ProseMirror { min-height: 10rem; outline: none; }
+.rich-editor table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
+.rich-editor th, .rich-editor td { border: 1px solid #cbd5e1; min-width: 5rem; padding: .4rem; vertical-align: top; }
+.rich-editor th { background: #f1f5f9; font-weight: 700; }
+.prose table { width: 100%; border-collapse: collapse; }
+.prose th, .prose td { border: 1px solid #cbd5e1; padding: .4rem; }

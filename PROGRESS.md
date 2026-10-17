@@ -24,8 +24,8 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 
 ### Question bank
 
-- [ ] **Partial** - Server CRUD, status transitions, visibility, subject access, soft delete/restore, duplicate, review, search/filter, and import routes exist in [server/src/routes/questions.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/questions.ts>), [server/src/lib/questions.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/lib/questions.ts>), and [server/src/routes/import.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/import.ts>). No UI or tests.
-- [ ] **Partial** - Shared schemas/types cover MCQ, MCQ group, true/false, short, long, and case study content in [shared/src/schemas.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/shared/src/schemas.ts>) and [shared/src/types.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/shared/src/types.ts>); TipTap table editing cannot be used without a client.
+- [x] **Done** - Server CRUD, status transitions, visibility, subject access, soft delete/restore, duplicate, review, search/filter, and import routes are wired to a polished list/editor UI in [client/src/QuestionBank.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/QuestionBank.tsx>) and [server/src/routes/questions.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/questions.ts>).
+- [x] **Done** - Shared schemas/types cover MCQ, MCQ group, true/false, short, long, and case study content; TipTap supports tables, table row/column controls, merge/header rows, paste, formatting, lists, and rich answer/advice fields in [client/src/components/RichEditor.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/components/RichEditor.tsx>).
 
 ### Templates, paper builder, preview, and PDF
 
@@ -73,4 +73,12 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 - [x] **Done** - Vite, TypeScript, Tailwind, router, API client with cookie credentials and CSRF headers, auth context, protected routes, responsive sidebar, toast, and confirmation components are in [client/](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client>).
 - [x] **Done** - Headless browser smoke test successfully loaded the login page, signed in as `teacher_far`, and displayed the teacher dashboard.
 - [x] **Done** - Client typecheck and production build pass.
-- [ ] **Out of scope for this milestone** - Question bank, paper builder, admin navigation, and CSV UI are not linked yet; no fake buttons are exposed.
+- [ ] **Out of scope for this milestone** - Paper builder, admin navigation, and CSV UI were intentionally not linked yet; no fake buttons are exposed.
+
+## Milestone 4 result
+
+- [x] **Done** - Question list supports keyword, subject, type, status, minimum-marks filters, pagination, preview, edit, duplicate, and soft-delete actions.
+- [x] **Done** - Teacher create/edit supports rich HTML tables, MCQ options/correct answer, MCQ groups, true/false, long/case-study parts, answers, advice, and comments.
+- [x] **Done** - Teacher submit and HOA approve/reject actions are wired to the existing server permissions.
+- [x] **Done** - Headless browser smoke test created a new table question as `teacher_far`, saved it, and submitted it successfully.
+- [ ] **Partial** - The current editor initializes options/parts when editing but does not yet hydrate previously saved MCQ option rows and long-question parts into editable controls; preview remains complete. This is a small edit-UX limitation to address if time remains.

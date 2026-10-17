@@ -102,3 +102,8 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 - [x] **Done** - Focused server tests cover unauthenticated access, teacher paper RBAC, teacher subject isolation, marks-total validation, template rendering, and real PDF generation. Evidence: [server/tests/workflow.test.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/tests/workflow.test.ts>).
 - [x] **Done** - Full `npm test`, `npm run typecheck`, `npm run build`, and `npm run setup` validation completed; the RBAC regression found during testing was fixed in [server/src/routes/questions.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/questions.ts>).
 - [x] **Done** - [README.md](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/README.md>) now includes setup, demo flow/accounts, structure, template extension, deployment, and scope notes.
+
+## Demo follow-up fix
+
+- [x] **Done** - ADMIN no longer sees the question-bank navigation because the server intentionally denies ADMIN question content access; ADMIN is directed to dashboard/administration instead.
+- [x] **Done** - Client API retries one failed mutating request after refreshing the CSRF token when a stale tab/server restart produces the standard security-token error. RBAC responses are not retried or weakened.

@@ -10,7 +10,7 @@ import { questionInclude, sanitizeQuestionInput, toQuestionDTO } from '../lib/qu
 import { assertSubject, requireRole } from '../middleware/auth';
 
 const router = Router();
-router.use(requireRole('HOA', 'TEACHER'));
+router.use(requireRole('ADMIN', 'HOA', 'TEACHER'));
 
 async function loadVisible(user: Express.Request['user'], id: number, includeDeleted = false) {
   const q = await prisma.question.findFirst({
@@ -175,7 +175,7 @@ router.post(
 
 router.post(
   '/:id/review',
-  requireRole('HOA'),
+  requireRole('ADMIN', 'HOA'),
   ah(async (req, res) => {
     const q = await loadVisible(req.user, idParam(req));
     if (!canReviewQuestion(req.user!, q)) throw forbidden('This question is not awaiting your review.');

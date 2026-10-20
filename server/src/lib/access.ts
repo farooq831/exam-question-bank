@@ -5,9 +5,10 @@ import type { SessionUser } from '@skans/shared';
  * Row-level visibility of questions (enforced in every query):
  *  - HOA: questions of assigned subjects, except other users' private drafts.
  *  - TEACHER: own questions of assigned subjects + APPROVED questions of assigned subjects.
- *  - ADMIN: no access to question content (system administration only).
+ *  - ADMIN: all question content for school-wide administration and review.
  */
 export function questionVisibility(user: SessionUser): Prisma.QuestionWhereInput {
+  if (user.role === 'ADMIN') return {};
   if (user.role === 'HOA') {
     return {
       subjectId: { in: user.subjectIds },
@@ -33,11 +34,13 @@ export function canEditQuestion(user: SessionUser, q: Q): boolean {
 }
 
 export function canReviewQuestion(user: SessionUser, q: Q): boolean {
+  if (user.role === 'ADMIN') return !q.deletedAt && (q.status === 'SUBMITTED' || q.status === 'REJECTED' || q.status === 'DRAFT');
   if (user.role !== 'HOA' || !user.subjectIds.includes(q.subjectId) || q.deletedAt) return false;
   return q.status === 'SUBMITTED' || (q.status === 'DRAFT' && q.createdById === user.id) || q.status === 'REJECTED';
 }
 
 export function canDeleteQuestion(user: SessionUser, q: Q): boolean {
+  if (user.role === 'ADMIN') return true;
   if (!user.subjectIds.includes(q.subjectId)) return false;
   if (user.role === 'HOA') return true;
   return user.role === 'TEACHER' && q.createdById === user.id && q.status !== 'APPROVED';

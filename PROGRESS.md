@@ -36,7 +36,7 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 
 ### Administration and import
 
-- [ ] **Partial** - User/subject/template CRUD, password reset/unlock, and audit-log endpoints exist in the server routes; the thin admin UI in [client/src/Admin.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/Admin.tsx>) provides user visibility, audit visibility, and password reset. Full user/subject/template edit forms remain out of scope for the tomorrow demo.
+- [x] **Done** - User/subject/template CRUD, password reset/unlock, and filtered audit-log administration are available in [client/src/Admin.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/Admin.tsx>).
 - [ ] **Partial** - CSV sample/download and validation/import endpoint exist in [server/src/routes/import.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/import.ts>); import UI/report display is missing.
 
 ### Seed data and documentation
@@ -94,7 +94,7 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 ## Milestone 6 result
 
 - [x] **Done** - Dashboards now show server-backed role-scoped question counts and HOA/teacher review indicators.
-- [ ] **Partial** - ADMIN navigation provides user list, subject count, audit log, and password reset. Full CRUD forms for users, subjects, and template JSON editing are intentionally out of scope and not exposed as fake buttons.
+- [x] **Done** - ADMIN navigation provides user CRUD, subject CRUD, template editing, password reset/unlock, filtered audit log, question review, and paper builder/PDF access.
 - [x] **Done** - Browser smoke test loaded the ADMIN dashboard and administration page with seeded account/audit data.
 
 ## Milestone 7 result
@@ -105,10 +105,16 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 
 ## Demo follow-up fix
 
-- [x] **Done** - ADMIN no longer sees the question-bank navigation because the server intentionally denies ADMIN question content access; ADMIN is directed to dashboard/administration instead.
+- [x] **Done** - ADMIN can now access the school-wide question bank for review and can open the paper builder/PDF downloads.
 - [x] **Done** - Client API retries one failed mutating request after refreshing the CSRF token when a stale tab/server restart produces the standard security-token error. RBAC responses are not retried or weakened.
 
 ## ADMIN workspace follow-up
 
 - [x] **Done** - ADMIN now has working tabs for user CRUD, subject CRUD, paper-template editing, password reset/unlock, and filtered audit-log viewing. These controls call the existing server endpoints and remain hidden from non-ADMIN users.
 - [x] **Done** - Template JSON editing preserves in-progress text and relies on the server's shared template schema for final validation.
+
+## ADMIN review and PDF follow-up
+
+- [x] **Done** - ADMIN can approve/reject submitted, draft, and rejected questions with the same review comment validation used by HOA.
+- [x] **Done** - ADMIN can select approved questions, build papers using ICAP or SKANS templates, preview them, save them, and download the paper and answer-key PDFs.
+- [x] **Done** - Added regression coverage proving ADMIN question review and paper-generation access.

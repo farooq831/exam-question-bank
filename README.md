@@ -49,6 +49,10 @@ server.
    set maximum marks to the live total.
 5. Save, preview, finalise, and download the paper and answer key PDFs. Enable the watermark
    checkbox when a username/timestamp watermark is wanted.
+6. For the administrator demo, sign in as `admin`. Use **Question bank** to review all subjects,
+   approve or reject questions with a comment, then use **Paper builder** to select approved
+   questions, preview the ICAP/SKANS layout, save the paper, and download both PDFs. Use
+   **Administration** for user, subject, template, and audit-log management.
 
 ## Adding a paper template
 
@@ -78,6 +82,5 @@ generation. Do not create a second client-only paper renderer.
 ## Scope notes
 
 The server CSV import endpoint is retained, but its UI is intentionally hidden for the prototype.
-Full admin CRUD forms, visual PNG diff tooling, rule-based paper auto-generation controls, and
-version-history browsing are also out of scope for the tomorrow demo and are recorded in
-`PROGRESS.md`.
+Visual PNG diff tooling, rule-based paper auto-generation controls, and version-history browsing
+are out of scope for the demo and are recorded in `PROGRESS.md`.

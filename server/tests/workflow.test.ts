@@ -31,6 +31,19 @@ describe('auth and RBAC workflow', () => {
     const response = await teacher.get(`/api/questions?subjectId=${far.id}`).expect(200);
     expect(response.body.items.length).toBeGreaterThan(0);
   });
+
+  it('allows administrators to review questions and access paper generation', async () => {
+    const admin = await loggedIn('admin');
+    const csrf = (await admin.get('/api/auth/csrf')).body.csrfToken;
+    const submitted = await admin.get('/api/questions?status=SUBMITTED&pageSize=1').expect(200);
+    expect(submitted.body.items.length).toBeGreaterThan(0);
+    await admin
+      .post(`/api/questions/${submitted.body.items[0].id}/review`)
+      .set('x-csrf-token', csrf)
+      .send({ decision: 'APPROVE', comment: 'Approved for the administrator demo.' })
+      .expect(200);
+    await admin.get('/api/papers').expect(200);
+  });
 });
 
 describe('marks, template rendering, and PDF generation', () => {

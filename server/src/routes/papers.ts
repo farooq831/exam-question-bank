@@ -33,8 +33,8 @@ import { renderPaperHtml } from '../render/paperHtml';
 import { htmlToPdf } from '../render/pdf';
 
 const router = Router();
-// Only Heads of Academics build, generate and download papers.
-router.use(requireRole('HOA'));
+// Heads of Academics and administrators build, generate and download papers.
+router.use(requireRole('ADMIN', 'HOA'));
 
 async function loadPaper(req: Request, id: number): Promise<PaperRow> {
   const p = await prisma.paper.findFirst({ where: { id, deletedAt: null }, include: paperInclude });
@@ -96,7 +96,7 @@ router.get(
     );
     const where: Prisma.PaperWhereInput = {
       deletedAt: null,
-      subjectId: q.subjectId ? q.subjectId : { in: req.user!.subjectIds },
+      subjectId: q.subjectId ? q.subjectId : req.user!.role === 'ADMIN' ? undefined : { in: req.user!.subjectIds },
       ...(q.status ? { status: q.status } : {}),
       ...(q.q ? { title: { contains: q.q } } : {}),
     };

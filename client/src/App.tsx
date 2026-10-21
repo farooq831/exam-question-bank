@@ -34,7 +34,7 @@ function Login() {
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-navy via-[#27406b] to-[#0f1c2f] px-4 py-10">
       <div className="grid w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl md:grid-cols-[1.05fr_.95fr]">
         <section className="hidden bg-navy p-10 text-white md:block">
-          <img src="/branding/skans-logo-dark.jpg" alt="SKANS School System" className="w-56 rounded-lg" />
+          <img src="/branding/skans-logo-dark.png" alt="SKANS School of Accountancy" className="w-56 rounded-lg" />
           <p className="mt-3 text-xs uppercase tracking-[.28em] text-blue-100">Question Bank</p>
           <div className="mt-28">
             <p className="text-sm font-semibold uppercase tracking-[.2em] text-gold">Academic operations</p>
@@ -43,7 +43,7 @@ function Login() {
           </div>
         </section>
         <form onSubmit={submit} className="p-8 sm:p-12">
-          <div className="md:hidden"><img src="/branding/skans-logo.jpg" alt="SKANS School System" className="w-44" /><p className="mt-1 text-xs uppercase tracking-[.25em] text-slate-500">Question Bank</p></div>
+          <div className="md:hidden"><img src="/branding/skans-logo.png" alt="SKANS School of Accountancy" className="w-44" /><p className="mt-1 text-xs uppercase tracking-[.25em] text-slate-500">Question Bank</p></div>
           <h2 className="mt-10 text-2xl font-semibold text-ink md:mt-16">Sign in</h2>
           <p className="mt-2 text-sm text-slate-500">Use your school account to continue.</p>
           <label className="mt-8 block text-sm font-medium text-slate-700">Username<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none ring-navy/20 focus:ring-4" required /></label>
@@ -137,7 +137,7 @@ function Shell() {
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-navy text-white transition-all duration-200 ${narrow ? 'lg:w-20' : 'lg:w-64'} ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} aria-label="Main navigation">
         <div className={`flex items-center gap-3 p-5 ${narrow ? 'lg:justify-center lg:px-0' : ''}`}>
           <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-gold font-black ${narrow ? 'hidden lg:grid' : 'hidden'}`}>S</div>
-          <div className={narrow ? 'lg:hidden' : ''}><img src="/branding/skans-logo-dark.jpg" alt="SKANS School System" className="w-40 rounded-md" /><p className="mt-1.5 text-[10px] uppercase tracking-[.2em] text-blue-100">Question Bank</p></div>
+          <div className={narrow ? 'lg:hidden' : ''}><img src="/branding/skans-logo-dark.png" alt="SKANS School of Accountancy" className="w-40 rounded-md" /><p className="mt-1.5 text-[10px] uppercase tracking-[.2em] text-blue-100">Question Bank</p></div>
           <button className="ml-auto rounded-lg p-2 text-blue-100 hover:bg-white/10 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu"><X size={20} /></button>
         </div>
         <nav className="mt-4 flex-1 space-y-1 overflow-y-auto px-3">

@@ -540,13 +540,13 @@ h1,h2{margin:0;font-weight:700;}
 .empty{color:#666;font-style:italic;text-align:center;margin-top:20mm;}
 
 /* CAF examination header: title block left, SKANS logo top right (as on the reference paper) */
-.caf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:6mm;margin:2mm 0 4mm;}
+.caf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:3mm;margin:2mm 0 4mm;}
 .caf-head .inst{font-size:13pt;font-weight:700;margin-bottom:3.5mm;}
 .caf-head .subj{font-size:17pt;margin-bottom:3.5mm;}
 .caf-head .key-tag{font-size:13pt;color:#000;}
 .caf-head .meta{font-size:11pt;line-height:1.15;}
-.caf-logo{flex:0 0 44mm;text-align:right;}
-.caf-logo img{width:44mm;height:auto;}
+.caf-logo{flex:0 0 46mm;text-align:right;}
+.caf-logo img{width:46mm;height:auto;}
 
 /* SKANS header */
 .skans-head{margin-bottom:2mm;}

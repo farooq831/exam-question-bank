@@ -223,10 +223,10 @@ describe('template rendering', () => {
         .expect(200)
     ).text;
     for (const text of ['Batch No:</span> 7', 'Teacher Name:</span> Ms Test', 'Test:</span> 3', 'Maximum Marks:</span> 5', '11/02/2026']) expect(html).toContain(text);
-    expect(html).toContain('<img src="data:image/jpeg;base64,');
+    expect(html).toContain('<img src="data:image/png;base64,');
     const caf = (await admin.post('/api/papers/preview?format=html', { ...paperBody([{ questionId: q.id }], 5), mode: 'paper' }).expect(200)).text;
     // SKANS logo at the top right of the CAF header; no examining-body branding anywhere.
-    expect(caf).toMatch(/<div class="caf-logo"><img src="data:image\/jpeg;base64,[^"]+" alt="SKANS"><\/div>/);
+    expect(caf).toMatch(/<div class="caf-logo"><img src="data:image\/png;base64,[^"]+" alt="SKANS"><\/div>/);
     expect(caf).not.toMatch(/ICAP/);
   });
 });

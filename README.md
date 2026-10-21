@@ -1,6 +1,6 @@
 # SKANS Question Bank & Examination Paper Management System
 
-Internal question bank and examination-paper system of **SKANS School System** (CAF level).
+Internal question bank and examination-paper system of **SKANS School of Accountancy** (CAF level).
 Teachers write questions; administrators review them; approved questions are assembled into
 papers that are printed to PDF together with a separate answer key.
 
@@ -197,8 +197,8 @@ sample page by page before calling the format final.
 
 `client/public/branding/` (or the folder in `BRANDING_DIR`) holds the SKANS logo:
 
-- `skans-logo.jpg`: printed on papers (white background). Top right on the CAF format, top left on internal tests.
-- `skans-logo-dark.jpg`: shown in the app (sidebar and sign-in page).
+- `skans-logo.png`: full-colour SKANS School of Accountancy logo, printed on papers (top right on the CAF format, top left on internal tests) and used on light backgrounds in the app.
+- `skans-logo-dark.png`: white-lettering version for the app's navy sidebar and sign-in panel.
 
 To replace the artwork, overwrite these files (a `.png`/`.svg` named `skans-logo` is also accepted
 for printing). Changes are picked up immediately. See `client/public/branding/README.md`.

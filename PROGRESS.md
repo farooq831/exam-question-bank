@@ -384,3 +384,12 @@ Validation: shared 10/10, server 37/37, full typecheck passes. Sample PDFs were 
   - Browser check on an isolated instance: bootstrap admin forced password change; navigation shows no HOA; empty bank; question with sub-questions (i), (ii) and part (ii)(a) saved.
   - Sample PDFs show the SKANS logo top right (CAF) and top left (internal test).
   - The user's dev server signs in as the new `admin`.
+
+## Follow-up — college logo and sign-in access (21 October 2026)
+
+- [x] Replaced the SKANS School System logo (uploaded by mistake) with the **SKANS School of Accountancy** college logo:
+  - `skans-logo.png` (full colour) on papers, top right on the CAF format and top left on internal tests.
+  - `skans-logo-dark.png` (white lettering) in the app's navy sidebar and sign-in panel.
+  - CAF logo width set to 46 mm so the header title stays on one line.
+- [x] Sign-in: the demo accounts (`teacher_far`, password `SkansDemo2026`) no longer exist since demo data was removed. In the local `dev.db`, the `admin` password was set with `npm run reset-admin`, and a `teacher` account (FAR, FAR1, FAR2, TAX) was created through the admin API. That account must change its password at first sign-in.
+- Tests: shared 11/11, server 40/40.

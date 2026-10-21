@@ -296,8 +296,10 @@ export function renderPaperHtml(input: RenderInput): string {
     return i >= 0 ? `(${String.fromCharCode(97 + i)})` : '–';
   };
 
-  const renderMcqItem = (label: string, stem: string, options: McqOption[], layout: string, marks: number) => {
-    const trailing = cfg.marks.showMcqItemMarks && marks > 0 ? marksSpan(marks) : '';
+  // Item marks are printed when the template asks for them, or when the MCQs of one question do not
+  // all carry one mark (otherwise the paper would hide how many marks each item is worth).
+  const renderMcqItem = (label: string, stem: string, options: McqOption[], layout: string, marks: number, forceMarks = false) => {
+    const trailing = (cfg.marks.showMcqItemMarks || forceMarks) && marks > 0 ? marksSpan(marks) : '';
     return `<div class="item"><span class="lbl">${label}</span><div class="item-body">${richHtml(stem)}${renderOptions(options, layout, trailing)}</div></div>`;
   };
 
@@ -331,8 +333,9 @@ export function renderPaperHtml(input: RenderInput): string {
         return withMarks(richHtml(q.body), `<span class="tf-hint">(True / False)</span> ${marksSpan(item.marks)}`);
       case 'MCQ_GROUP': {
         const c = q.content as McqGroupContent;
+        const mixed = (c.items ?? []).some((it) => it.marks !== 1);
         const items = (c.items ?? [])
-          .map((it, i) => renderMcqItem(partLabel(i + 1, 'roman'), it.stem, it.options, it.layout, it.marks))
+          .map((it, i) => renderMcqItem(partLabel(i + 1, 'roman'), it.stem, it.options, it.layout, it.marks, mixed))
           .join('');
         return `${richHtml(q.body)}<div class="items">${items}</div>`;
       }
@@ -404,8 +407,8 @@ export function renderPaperHtml(input: RenderInput): string {
   let first = true;
   const headingFor = (num: number) => escapeHtml(fillTokens(cfg.questions.headingPattern, { ...tokens, n: num }));
 
-  const wrapQuestion = (num: number, inner: string, newPage: boolean) => {
-    const breakCls = !first && (newPage || cfg.questions.startOnNewPage) ? ' page-break' : '';
+  const wrapQuestion = (num: number, inner: string, newPage: boolean, keepTogether = false) => {
+    const breakCls = (!first && (newPage || cfg.questions.startOnNewPage) ? ' page-break' : '') + (keepTogether ? ' keep' : '');
     first = false;
     if (cfg.questions.style === 'hanging') {
       return `<section class="q hanging${breakCls}"><span class="q-num">${headingFor(num)}</span><div class="q-content">${inner}</div></section>`;
@@ -416,7 +419,9 @@ export function renderPaperHtml(input: RenderInput): string {
   const renderBlock = (block: Block): string => {
     n += 1;
     if (block.kind === 'single') {
-      return wrapQuestion(n, isKey ? keyBody(block.item) : questionBody(block.item), block.item.newPage);
+      // Short questions are kept on one page; long ones may flow across pages.
+      const short = ['SHORT', 'MCQ', 'TRUE_FALSE'].includes(block.item.question.type);
+      return wrapQuestion(n, isKey ? keyBody(block.item) : questionBody(block.item), block.item.newPage, short);
     }
     if (block.kind === 'mcqset') {
       if (isKey) {
@@ -439,10 +444,11 @@ export function renderPaperHtml(input: RenderInput): string {
           false,
         );
       }
+      const mixed = block.items.some((it) => it.marks !== 1);
       const items = block.items
         .map((it, i) => {
           const c = it.question.content as { options: McqOption[]; layout?: string };
-          return renderMcqItem(partLabel(i + 1, 'roman'), it.question.body, c.options ?? [], c.layout ?? 'auto', it.marks);
+          return renderMcqItem(partLabel(i + 1, 'roman'), it.question.body, c.options ?? [], c.layout ?? 'auto', it.marks, mixed);
         })
         .join('');
       return wrapQuestion(n, `${cfg.mcq.groupIntro ? `<p>${inlineMd(cfg.mcq.groupIntro)}</p>` : ''}<div class="items">${items}</div>`, false);
@@ -570,6 +576,7 @@ h1,h2{margin:0;font-weight:700;}
 .section-div{border-top:2.4pt solid #000;border-bottom:.75pt solid #000;text-align:center;font-weight:700;font-size:10.5pt;padding:1.2mm 0;margin:4mm 0 2mm;break-after:avoid;page-break-after:avoid;}
 .section-div + .q{margin-top:3mm;}
 .page-break{break-before:page;page-break-before:always;}
+.q.keep{break-inside:avoid;page-break-inside:avoid;}
 .q-head{font-size:11pt;margin:0 0 3.5mm;break-after:avoid;page-break-after:avoid;}
 .q.hanging{position:relative;padding-left:9mm;}
 .q.hanging .q-num{position:absolute;left:0;top:0;font-weight:700;font-size:11.5pt;line-height:1.25;}
@@ -600,6 +607,8 @@ h1,h2{margin:0;font-weight:700;}
 .marks-right{float:right;margin-left:4mm;}
 .marks-inline{margin-left:1.2mm;}
 .marks-line{text-align:right;margin:0;clear:both;}
+/* On its own line (after a table or option grid) the marks must not float, or they drift into the next block. */
+.marks-line > .marks-right{float:none;margin-left:0;}
 .layout-skans .marks-line{text-align:left;}
 .marks-total{text-align:right;font-weight:700;margin-top:2mm;}
 

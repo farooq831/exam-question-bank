@@ -231,3 +231,37 @@ New regression tests (server: 35 tests in 4 files, all passing):
   6. Version history opens.
   7. No horizontal overflow at 768 px.
 - Not added (no fake controls): rule-based auto-generation UI. The `/papers/auto-generate` endpoint remains available for a later iteration.
+
+## Milestone 5 — Professional PDF output
+
+- [x] **Done.** Branding:
+  - Removed both placeholder logos: a home-made crest labelled "ICAP", and an unofficial SKANS mark.
+  - Papers now print a logo only when an authorised file is present (`client/public/branding/README.md` explains names, format and the written-authorisation rule). Without one, the SKANS header prints the institute name as text and the CAF header prints no logo.
+- [x] **Done.** The template display name is "CAF Examination Paper", with a description stating that fonts, margins, logo and wording are provisional. The seed renames only the untouched prototype default ("ICAP Exam Style"). Internal keys (`ICAP_EXAM`, `layout: 'ICAP'`) are unchanged so stored configurations keep working. The login page no longer advertises "ICAP-style" papers.
+- [x] **Done.** "Page X of Y" running header fixed on the CAF format (done in M2, now covered by tests).
+- [x] **Done.** Marks after a table or option grid no longer float into the next part. This fixed "(03 marks) (08 marks)" printing on one line and "(10 marks)" printing beside "THE END".
+- [x] **Done.** Short single questions (short, MCQ, true/false) are kept on one page. Long questions may flow across pages. Short tables and individual MCQ items never split.
+- [x] **Done.** When the MCQs of one printed question do not all carry one mark, each item shows its marks, so a 5-mark MCQ is no longer printed without marks.
+- [x] **Done.** Automated PDF validation (`server/tests/papers.test.ts`):
+  - page count matches `X-Page-Count`
+  - title, date and watermark text present
+  - no URL, `about:blank`, `file://`, `localhost` or browser date stamp
+  - answers and private notes absent from the paper
+  - answers and advice present in the key, private notes absent
+  - "Page X of Y" on every page after page 1
+  - long-table header row repeated on every page the table spans
+  - SKANS header fields printed
+  - no logo without an authorised file
+
+Comparison with the reference documents in `samples/` (visual comparison of rendered pages; no pixel-diff tool is installed):
+
+| Aspect | SKANS Internal Test vs `TAX BATCH 1.pdf` | CAF Examination Paper vs `FAR-Spring-2026.pdf` |
+|---|---|---|
+| Header layout | Same structure: logo/name, two-column Batch/Teacher/Test and Time/Max/Reading/Date block, ruled title band, underlined "Instruction:" with (i)–(iv) | Same structure: level line, subject title, date / marks / duration lines, boxed instructions, section bars, "QUESTION n" headings, "(THE END)" |
+| Running header | The reference has none; its browser URL/date header is exactly what we suppress. The current template prints a footer, which is configurable | Matches "Session ┃ Subject … Page X of Y", skipped on page 1 |
+| Fonts | Arial-metric (Arimo) body with Times-metric (Tinos) headings, embedded | Times-metric (Tinos) body, Calibri-metric (Carlito) running header, embedded |
+| Logo | Text fallback until an authorised file is supplied | None until an authorised file is supplied |
+
+**Not claimed:** an exact match. Exact fonts, sizes, margins and spacing must be set from the approved school specification when it is supplied. These values are data in the template configuration, not code. Template text, such as the CAF MCQ intro "Each MCQ carries ONE mark", should also be confirmed by the school.
+
+Validation: shared 10/10, server 37/37, full typecheck passes. Sample PDFs were regenerated from a freshly seeded temporary database (`output/`, git-ignored).

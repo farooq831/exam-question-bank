@@ -262,6 +262,10 @@ async function ensureReferenceData(tx: Tx, passwordHash: string) {
     tx.paperTemplate.upsert({ where: { code: t.code }, update: {}, create: { ...t, config: JSON.stringify(config) } });
   const caf = await ensureTemplate(CAF_TEMPLATE, ICAP_TEMPLATE_CONFIG);
   const skans = await ensureTemplate(SKANS_TEMPLATE, SKANS_TEMPLATE_CONFIG);
+  // One-off rename of the prototype's default name; a name the administrator changed is left alone.
+  if (caf.name === 'ICAP Exam Style') {
+    await tx.paperTemplate.update({ where: { id: caf.id }, data: { name: CAF_TEMPLATE.name, description: CAF_TEMPLATE.description } });
+  }
 
   const subjectRows = new Map<string, { id: number }>();
   for (const subject of subjects) {

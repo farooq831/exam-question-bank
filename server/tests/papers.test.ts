@@ -178,6 +178,36 @@ describe('preview and PDF output', () => {
   });
 });
 
+describe('template rendering', () => {
+  it('repeats table header rows when a long table continues on the next page', async () => {
+    const rows = Array.from({ length: 70 }, (_, i) => `<tr><td><p>Ledger line ${i + 1}</p></td><td><p>${(i + 1) * 1000}</p></td></tr>`).join('');
+    const q = await approvedQuestion({ body: `<p>Long ledger.</p><table><tbody><tr><th><p>HDRCOLA</p></th><th><p>HDRCOLB</p></th></tr>${rows}</tbody></table>`, marks: 5 });
+    const p = (await hoa.post('/api/papers', paperBody([{ questionId: q.id }], 5)).expect(201)).body;
+    const res = await hoa.get(`/api/papers/${p.id}/pdf`).buffer(true).parse(binaryParser).expect(200);
+    const pages = await pdfText(res.body as Buffer);
+    expect(pages.length).toBeGreaterThan(1);
+    const withTable = pages.filter((t) => t.includes('Ledger line'));
+    expect(withTable.length).toBeGreaterThan(1);
+    for (const t of withTable) expect(t).toContain('HDRCOLA');
+  });
+
+  it('prints the SKANS internal-test header fields and no logo without an authorised file', async () => {
+    const skans = (await prisma.paperTemplate.findUniqueOrThrow({ where: { code: 'SKANS_INTERNAL' } })).id;
+    const q = await approvedQuestion();
+    const html = (
+      await hoa
+        .post('/api/papers/preview?format=html', { ...paperBody([{ questionId: q.id }], 5), templateId: skans, mode: 'paper' })
+        .expect(200)
+    ).text;
+    for (const text of ['Batch No:</span> 7', 'Teacher Name:</span> Ms Test', 'Test:</span> 3', 'Maximum Marks:</span> 5', '11/02/2026']) expect(html).toContain(text);
+    expect(html).not.toContain('<img');
+    expect(html).toContain('SKANS School of Accountancy');
+    const caf = (await hoa.post('/api/papers/preview?format=html', { ...paperBody([{ questionId: q.id }], 5), mode: 'paper' }).expect(200)).text;
+    expect(caf).not.toContain('<img');
+    expect(caf).not.toMatch(/>ICAP</);
+  });
+});
+
 afterAll(async () => {
   await closeBrowser();
   await prisma.$disconnect();

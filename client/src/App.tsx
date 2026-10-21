@@ -41,7 +41,7 @@ function Login() {
           <div className="mt-28">
             <p className="text-sm font-semibold uppercase tracking-[.2em] text-gold">Academic operations</p>
             <h1 className="mt-4 text-4xl font-semibold leading-tight">Build better papers, together.</h1>
-            <p className="mt-5 max-w-sm leading-7 text-blue-100">A focused workspace for trusted questions, academic review, and polished ICAP-style examinations.</p>
+            <p className="mt-5 max-w-sm leading-7 text-blue-100">A focused workspace for trusted questions, academic review, and professional CAF examination papers.</p>
           </div>
         </section>
         <form onSubmit={submit} className="p-8 sm:p-12">

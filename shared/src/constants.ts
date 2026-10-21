@@ -85,7 +85,11 @@ export const AUDIT_ACTIONS = [
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
-/** The ICAP CA papers the school teaches (seeded as subjects). */
+/**
+ * Chartered Accountancy papers known to the system. The school teaches CAF only; PRC entries are
+ * kept for reference and are not seeded. `layout` picks the default format: 'ICAP' is the internal
+ * key of the "CAF Examination Paper" format, 'SKANS' of the "SKANS Internal Test" format.
+ */
 export const CA_PAPERS: { code: string; name: string; level: string; layout: 'ICAP' | 'SKANS' }[] = [
   { code: 'FAR', name: 'Financial Accounting and Reporting', level: 'CAF', layout: 'ICAP' },
   { code: 'FAR1', name: 'Financial Accounting and Reporting I', level: 'CAF', layout: 'ICAP' },

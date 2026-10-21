@@ -346,3 +346,13 @@ Validation: shared 10/10, server 37/37, full typecheck passes. Sample PDFs were 
 3. Optional interfaces for CSV import and rule-based auto-generation (the server endpoints exist).
 4. Planned major-version dependency upgrades (TipTap 3, React Router 7, Prisma 7) to clear the remaining advisories.
 5. Before go-live: deactivate the demo accounts, set real passwords, and schedule `npm run db:backup`.
+
+## Follow-up — permanent deletion from the recycle bin
+
+- [x] **Done.** "Delete permanently" in the Question bank recycle bin, with a red confirmation dialog warning that the action cannot be undone. The endpoint is `DELETE /api/questions/:id/permanent`.
+- Rules, all server-enforced:
+  - Only ADMIN, or HOA within assigned subjects; teachers can still only recycle and restore.
+  - The question must already be in the recycle bin.
+  - Refused (409) if the question is used in any paper, so papers and their versions never lose content. The button is disabled with an explanation in that case.
+  - Each deletion is recorded as `QUESTION_PURGE` in the audit log, with subject, topic, type and author.
+- Tests: 2 new server tests cover recycle-bin-first, teacher denied, HOA allowed, removal from the database, the audit record, and refusal when used in a paper. Totals: shared 10/10, server 40/40, typecheck clean.

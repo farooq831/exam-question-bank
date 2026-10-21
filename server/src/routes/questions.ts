@@ -3,9 +3,9 @@ import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { questionInputSchema, questionQuerySchema, reviewSchema, type Paged, type QuestionDTO } from '@skans/shared';
 import { prisma } from '../db';
-import { canDeleteQuestion, canEditQuestion, canReviewQuestion, questionVisibility } from '../lib/access';
+import { canDeleteQuestion, canEditQuestion, canPurgeQuestion, canReviewQuestion, questionVisibility } from '../lib/access';
 import { audit } from '../lib/audit';
-import { ah, badRequest, forbidden, idParam, notFound, parse } from '../lib/http';
+import { ah, badRequest, conflict, forbidden, idParam, notFound, parse } from '../lib/http';
 import { questionInclude, sanitizeQuestionInput, toQuestionDTO } from '../lib/questions';
 import { assertSubject, requireRole } from '../middleware/auth';
 
@@ -103,6 +103,7 @@ router.get(
         review: canReviewQuestion(req.user!, q),
         delete: !q.deletedAt && canDeleteQuestion(req.user!, q),
         restore: !!q.deletedAt && canDeleteQuestion(req.user!, q),
+        purge: canPurgeQuestion(req.user!, q) && used === 0,
         submit:
           !q.deletedAt && q.createdById === req.user!.id && (q.status === 'DRAFT' || q.status === 'REJECTED'),
       },
@@ -246,6 +247,21 @@ router.post(
     if (!canDeleteQuestion(req.user!, q)) throw forbidden('You cannot restore this question.');
     await prisma.question.update({ where: { id: q.id }, data: { deletedAt: null, updatedById: req.user!.id } });
     await audit(req, 'QUESTION_RESTORE', 'Question', q.id);
+    res.json({ ok: true });
+  }),
+);
+
+/** Permanently removes a question that is already in the recycle bin and not used by any paper. */
+router.delete(
+  '/:id/permanent',
+  ah(async (req, res) => {
+    const q = await loadVisible(req.user, idParam(req), true);
+    if (!q.deletedAt) throw badRequest('Move the question to the recycle bin before deleting it permanently.');
+    if (!canPurgeQuestion(req.user!, q)) throw forbidden('Only an administrator or the Head of Academics can delete questions permanently.');
+    const used = await prisma.paperItem.count({ where: { questionId: q.id } });
+    if (used > 0) throw conflict(`This question is used in ${used} paper(s) and cannot be deleted permanently. Remove it from those papers first.`);
+    await prisma.question.delete({ where: { id: q.id } });
+    await audit(req, 'QUESTION_PURGE', 'Question', q.id, { subject: q.subject.code, topic: q.topic, type: q.type, createdBy: q.createdBy.fullName });
     res.json({ ok: true });
   }),
 );

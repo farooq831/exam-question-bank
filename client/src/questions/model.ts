@@ -191,6 +191,8 @@ export function questionActions(user: SessionUser, q: Pick<QuestionDTO, 'status'
     review: live && inScope && user.role !== 'TEACHER' && (q.status === 'SUBMITTED' || (own && (q.status === 'DRAFT' || q.status === 'REJECTED'))),
     remove: live && canDelete,
     restore: !live && canDelete,
+    /** Permanent deletion: ADMIN, or HOA in assigned subjects; the server also refuses questions used in papers. */
+    purge: !live && (user.role === 'ADMIN' || (user.role === 'HOA' && user.subjectIds.includes(q.subjectId))),
     duplicate: live && inScope,
   };
 }

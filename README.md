@@ -106,6 +106,8 @@ hides actions that would be refused.
 | Edit questions | — | Any in assigned subjects | Own **draft/rejected** only |
 | Submit for review | Own | Own | Own |
 | Approve / reject (comment required to reject) | Submitted questions, any subject | Submitted questions, assigned subjects | No |
+| Move to recycle bin / restore | Any | Assigned subjects | Own non-approved |
+| Delete permanently (from recycle bin, only if not used in any paper) | Yes | Assigned subjects | No |
 | See other teachers' drafts | Yes | No | No |
 | See approved questions | All | Assigned | Assigned |
 | Build, preview, finalise papers; download paper and answer key PDFs | All subjects | Assigned subjects | No |

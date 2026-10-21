@@ -50,6 +50,16 @@ export function canReviewQuestion(user: SessionUser, q: Q): boolean {
   return (q.status === 'DRAFT' || q.status === 'REJECTED') && q.createdById === user.id;
 }
 
+/**
+ * Permanent deletion (from the recycle bin) is limited to ADMIN, or HOA within assigned subjects.
+ * Teachers can only move questions to the recycle bin and restore them.
+ */
+export function canPurgeQuestion(user: SessionUser, q: Q): boolean {
+  if (!q.deletedAt) return false;
+  if (user.role === 'ADMIN') return true;
+  return user.role === 'HOA' && user.subjectIds.includes(q.subjectId);
+}
+
 export function canDeleteQuestion(user: SessionUser, q: Q): boolean {
   if (user.role === 'ADMIN') return true;
   if (!user.subjectIds.includes(q.subjectId)) return false;

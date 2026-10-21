@@ -26,6 +26,7 @@ export function QuestionBank() {
   const [preview, setPreview] = useState<QuestionDTO | null>(null);
   const [review, setReview] = useState<{ question: QuestionDTO; decision: 'APPROVE' | 'REJECT' } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<QuestionDTO | null>(null);
+  const [confirmPurge, setConfirmPurge] = useState<QuestionDTO | null>(null);
 
   const filters = useMemo(
     () => ({
@@ -111,6 +112,17 @@ export function QuestionBank() {
     }
   }
 
+  async function purge(q: QuestionDTO) {
+    setConfirmPurge(null);
+    try {
+      await api(`/questions/${q.id}/permanent`, { method: 'DELETE' });
+      toast.success('Question deleted permanently');
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to delete the question');
+    }
+  }
+
   async function remove(q: QuestionDTO) {
     setConfirmDelete(null);
     try {
@@ -170,7 +182,19 @@ export function QuestionBank() {
                   <div className="flex flex-wrap items-center gap-1 md:justify-end">
                     <button title="Preview" onClick={() => setPreview(q)} className="action"><Eye size={17} /></button>
                     {q.deletedAt ? (
-                      can.restore && <button title="Restore" onClick={() => void post(q, '/restore', 'Question restored')} className="action"><ArchiveRestore size={17} /></button>
+                      <>
+                        {can.restore && <button title="Restore" onClick={() => void post(q, '/restore', 'Question restored')} className="secondary !min-h-9 !px-3"><ArchiveRestore size={16} />Restore</button>}
+                        {can.purge && (
+                          <button
+                            title={q.usedInPapers ? 'Used in a paper: remove it from the paper first' : 'Delete permanently'}
+                            disabled={!!q.usedInPapers}
+                            onClick={() => setConfirmPurge(q)}
+                            className="secondary !min-h-9 !px-3 text-red-700"
+                          >
+                            <Trash2 size={16} />Delete permanently
+                          </button>
+                        )}
+                      </>
                     ) : (
                       <>
                         {can.edit && <button title="Edit" onClick={() => void openEditor(q)} className="action"><Pencil size={17} /></button>}
@@ -214,6 +238,15 @@ export function QuestionBank() {
         />
       )}
       {review && <ReviewDialog question={review.question} initialDecision={review.decision} onClose={() => setReview(null)} onDone={() => { setReview(null); void load(); }} />}
+      <Confirm
+        open={!!confirmPurge}
+        danger
+        title="Delete this question permanently?"
+        message="The question, its answer and its review history are removed for good and cannot be restored. The deletion is recorded in the audit log."
+        confirmLabel="Delete permanently"
+        onConfirm={() => confirmPurge && void purge(confirmPurge)}
+        onCancel={() => setConfirmPurge(null)}
+      />
       <Confirm
         open={!!confirmDelete}
         title="Move to recycle bin?"

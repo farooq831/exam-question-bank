@@ -64,6 +64,31 @@ describe('question review workflow', () => {
   });
 });
 
+describe('permanent deletion from the recycle bin', () => {
+  it('requires the recycle bin first and is limited to ADMIN/HOA', async () => {
+    // Submitted, so the HOA can see it (other people's drafts are private).
+    const q = (await teacher.post('/api/questions?submit=1', shortQuestion(FAR)).expect(201)).body;
+    const live = await hoa.del(`/api/questions/${q.id}/permanent`).expect(400);
+    expect(live.body.error).toMatch(/recycle bin/);
+    await teacher.del(`/api/questions/${q.id}`).expect(200);
+    await teacher.del(`/api/questions/${q.id}/permanent`).expect(403);
+    const listed = (await hoa.get(`/api/questions/${q.id}`).expect(200)).body;
+    expect(listed.permissions.purge).toBe(true);
+    await hoa.del(`/api/questions/${q.id}/permanent`).expect(200);
+    expect(await prisma.question.findUnique({ where: { id: q.id } })).toBeNull();
+    expect(await prisma.auditLog.count({ where: { action: 'QUESTION_PURGE', entityId: String(q.id), username: 'hoa_far' } })).toBe(1);
+  });
+
+  it('refuses questions that are used in a paper', async () => {
+    const q = await approvedQuestion();
+    await hoa.post('/api/papers', paperBody([{ questionId: q.id }], 5)).expect(201);
+    await hoa.del(`/api/questions/${q.id}`).expect(200);
+    const res = await admin.del(`/api/questions/${q.id}/permanent`).expect(409);
+    expect(res.body.error).toMatch(/used in 1 paper/);
+    expect(await prisma.question.findUnique({ where: { id: q.id } })).not.toBeNull();
+  });
+});
+
 describe('paper building rules', () => {
   it('accepts only approved, non-deleted questions of the paper subject', async () => {
     const draft = (await teacher.post('/api/questions', shortQuestion(FAR)).expect(201)).body;

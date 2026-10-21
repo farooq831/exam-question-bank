@@ -15,7 +15,36 @@ button, input { font: inherit; }
 .action:hover { background: #f1f5f9; }
 .tool { display: inline-flex; align-items: center; gap: .4rem; border-radius: .6rem; background: #183153; color: white; padding: .55rem .75rem; font-size: .8rem; font-weight: 700; }
 .tool:hover { background: #23466f; }
+/* Buttons: at least 40px high so they are comfortable to tap on a tablet. */
+.primary, .secondary, .danger, .success { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-height: 2.5rem; border-radius: .65rem; padding: .55rem 1rem; font-size: .875rem; font-weight: 600; transition: background-color .15s; }
+.primary { background: #183153; color: white; }
+.primary:hover { background: #23466f; }
+.secondary { border: 1px solid #e2e8f0; background: white; color: #334155; }
+.secondary:hover { background: #f8fafc; }
+.danger { background: #b91c1c; color: white; }
+.danger:hover { background: #991b1b; }
+.success { background: #047857; color: white; }
+.success:hover { background: #065f46; }
+.primary:disabled, .secondary:disabled, .danger:disabled, .success:disabled { cursor: not-allowed; opacity: .5; }
+.label { display: block; color: #475569; font-size: .875rem; font-weight: 600; }
+input.field, select.field, textarea.field { display: block; width: 100%; border: 1px solid #e2e8f0; border-radius: .6rem; padding: .65rem .75rem; font-weight: 400; outline: none; background: white; }
+input.field:focus, select.field:focus, textarea.field:focus { box-shadow: 0 0 0 4px rgba(24,49,83,.1); border-color: #183153; }
+.badge { display: inline-flex; align-items: center; border-radius: .375rem; padding: .2rem .5rem; font-size: 11px; font-weight: 700; }
+.card { border-radius: 1rem; background: white; box-shadow: 0 12px 35px rgba(23, 32, 51, .08); }
+@media (pointer: coarse) { .action { min-width: 2.75rem; min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; } }
+
 .rich-editor .ProseMirror { min-height: 10rem; outline: none; }
+.rich-editor.compact .ProseMirror { min-height: 2.25rem; }
+.rich-editor p { margin: 0 0 .4rem; }
+.rich-editor ul { list-style: disc; padding-left: 1.5rem; }
+.rich-editor ol { list-style: decimal; padding-left: 1.5rem; }
+.rich-editor .selectedCell { background: rgba(201, 164, 92, .25); }
+.rich-editor .tableWrapper { overflow-x: auto; }
+.rich-editor .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #c9a45c; pointer-events: none; }
+.rich-editor td, .rich-editor th { position: relative; }
+.prose p { margin: 0 0 .5rem; }
+.prose ul { list-style: disc; padding-left: 1.5rem; }
+.prose ol { list-style: decimal; padding-left: 1.5rem; }
 .rich-editor table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
 .rich-editor th, .rich-editor td { border: 1px solid #cbd5e1; min-width: 5rem; padding: .4rem; vertical-align: top; }
 .rich-editor th { background: #f1f5f9; font-weight: 700; }

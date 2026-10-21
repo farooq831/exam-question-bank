@@ -126,7 +126,7 @@ Rules tightened on the server (`server/src/lib/access.ts`):
 
 Reviewed and kept: bcrypt (12 rounds) with a timing-equalised unknown-user path, session regeneration on login and password change, sessions destroyed on deactivation, reset and password change, HttpOnly `SameSite=Strict` cookie (Secure in production), synchroniser CSRF token, account lockout, login and API rate limits, Helmet CSP, zod validation, sanitize-html on save and render. No security control was weakened.
 
-New regression tests (server: 36 tests in 4 files, all passing):
+New regression tests (server: 35 tests in 4 files, all passing):
 
 - `tests/auth.test.ts`:
   - 401 when unauthenticated
@@ -164,3 +164,40 @@ New regression tests (server: 36 tests in 4 files, all passing):
   - answer-key PDF contains answers and advice but no private notes
   - download audit records
   - "Page X of Y" on every page after page 1
+
+## Milestone 3 — Question lifecycle
+
+- [x] **Done.** New question editor (`client/src/questions/`):
+  - Fixed the edit data-loss bug: every content type now loads from the saved question (MCQ options and correct answer, MCQ-group items, true/false, parts, sub-parts and part answers).
+  - Rich-text MCQ options with stable editors.
+  - MCQ groups with any number of items.
+  - Long and case-study questions support parts, sub-parts, per-part model answers and a label-style choice.
+  - Marks of structured questions are derived exactly as on the server.
+  - Client-side validation; the server still validates everything.
+  - "Save draft" and "Save & submit for review" actions.
+  - The reviewer's rejection comment is shown to the author.
+  - Clearly separated "Answer key only" (answer, advice) and "Private — never printed" (source, internal comments) sections.
+- [x] **Done.** TipTap toolbar:
+  - Bold, italic, underline, superscript, subscript, bulleted and numbered lists, and left/centre/right alignment (for figures).
+  - Insert table, add/delete row and column, merge, split, header row, delete table.
+  - 36 px touch targets.
+  - A built-in help panel explains that merge needs adjacent selected cells, that the header row is the table's first row, and that header rows repeat on printed pages. Word/Excel paste is cleaned by the server sanitiser.
+- [x] **Done.** New **Review queue** page (`/review`, ADMIN and HOA):
+  - Shows submitted questions oldest first with subject, topic, type, marks, author and submission time.
+  - Inline preview, Approve, and Reject with a mandatory comment.
+- [x] **Done.** Question bank:
+  - Responsive cards and URL-based filters.
+  - Debounced search; "Mine" and "Recycle bin" (restore) filters.
+  - Actions mirror the server rules: no edit button while a question awaits review.
+  - Confirmation dialog before deletion.
+  - Full preview of every type.
+- [x] **Done.** Seed fix: the AUD/CMA/BL/MFA demo questions are now filed under their own subjects (the AUD ones were under FAR).
+- Browser verification (Playwright against an isolated server on :4100 with its own temporary database; the user's running dev server and `dev.db` were not touched):
+  1. teacher_far creates an MCQ with a table and four options and saves it.
+  2. On reopening, the options, correct answer and table are intact.
+  3. Save & submit hides the edit button.
+  4. hoa_far previews the question in the queue; Reject stays disabled until a comment is entered, then rejects.
+  5. The teacher sees the comment, edits and resubmits.
+  6. HOA approves.
+  7. No horizontal overflow at 768 px.
+- Tests: shared 10/10, server 35/35, client typecheck and build pass.

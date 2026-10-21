@@ -1,61 +1,216 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { QuestionDTO, SubjectDTO, Paged } from '@skans/shared';
-import { Plus, Search, Eye, Pencil, Send, Check, X, Copy, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { QUESTION_STATUS_LABELS, QUESTION_STATUSES, QUESTION_TYPE_LABELS, QUESTION_TYPES, type Paged, type QuestionDTO, type SubjectDTO } from '@skans/shared';
+import { useSearchParams } from 'react-router-dom';
+import { ArchiveRestore, Check, Copy, Eye, Pencil, Plus, Search, Send, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from './api';
 import { useAuth } from './auth';
-import { RichEditor } from './components/RichEditor';
+import { Confirm } from './components/Confirm';
+import { Modal } from './components/Modal';
+import { draftFromQuestion, emptyDraft, questionActions, type QuestionDraft } from './questions/model';
+import { QuestionContent, QuestionMeta } from './questions/QuestionPreview';
+import { QuestionEditor } from './questions/QuestionEditor';
+import { ReviewDialog } from './questions/ReviewDialog';
 
-const blankBody = '<p>Write the question here…</p>';
-type FormState = {
-  id?: number; subjectId: number; topic: string; type: 'MCQ' | 'MCQ_GROUP' | 'TRUE_FALSE' | 'SHORT' | 'LONG' | 'CASE_STUDY';
-  marks: number; difficulty: 'EASY' | 'MEDIUM' | 'HARD'; source: string; body: string; answer: string; advice: string; comments: string;
-};
-const emptyForm = (subjectId: number): FormState => ({ subjectId, topic: '', type: 'SHORT', marks: 5, difficulty: 'MEDIUM', source: '', body: blankBody, answer: '', advice: '', comments: '' });
-
-function Preview({ question, close }: { question: QuestionDTO; close(): void }) {
-  return <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/50 p-4"><div className="mx-auto mt-10 max-w-3xl rounded-2xl bg-white p-7 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-gold">{question.subjectCode} · {question.type}</p><h2 className="mt-1 text-xl font-semibold">{question.topic || 'Untitled question'}</h2></div><button onClick={close} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X /></button></div><div className="prose mt-6 max-w-none text-sm" dangerouslySetInnerHTML={{ __html: question.body }} />{question.type === 'MCQ' && <div className="mt-4 space-y-2">{((question.content.options ?? []) as { key: string; html: string }[]).map((option) => <div key={option.key} className="rounded-lg border border-slate-200 p-3"><strong>({option.key}) </strong><span dangerouslySetInnerHTML={{ __html: option.html }} /></div>)}</div>}<div className="mt-6 border-t border-slate-100 pt-4 text-sm text-slate-500"><span className="font-semibold text-ink">{question.marks} marks</span> · {question.difficulty} · {question.status}</div><button onClick={close} className="mt-6 rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white">Close preview</button></div></div>;
-}
-
-function Editor({ initial, subjects, onClose, onSaved }: { initial: FormState; subjects: SubjectDTO[]; onClose(): void; onSaved(): void }) {
-  const [form, setForm] = useState(initial);
-  const [options, setOptions] = useState([{ key: 'a', html: '<p>Option A</p>', correct: true }, { key: 'b', html: '<p>Option B</p>', correct: false }, { key: 'c', html: '<p>Option C</p>', correct: false }, { key: 'd', html: '<p>Option D</p>', correct: false }]);
-  const [trueFalseAnswer, setTrueFalseAnswer] = useState(true);
-  const [parts, setParts] = useState([{ id: 'part-a', html: '<p>Explain your answer.</p>', marks: form.marks, answer: '' }]);
-  const [busy, setBusy] = useState(false);
-  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((current) => ({ ...current, [key]: value }));
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    const content = form.type === 'MCQ' ? { options, layout: 'auto' } : form.type === 'MCQ_GROUP' ? { items: [{ id: 'item-1', stem: form.body, options, layout: 'auto', marks: Number(form.marks) }] } : form.type === 'TRUE_FALSE' ? { correct: trueFalseAnswer } : form.type === 'LONG' || form.type === 'CASE_STUDY' ? { parts, partLabelStyle: null } : {};
-    try {
-      const payload = { ...form, content, marks: Number(form.marks) };
-      if (form.id) await api(`/questions/${form.id}`, { method: 'PUT', body: JSON.stringify(payload) });
-      else await api('/questions', { method: 'POST', body: JSON.stringify(payload) });
-      toast.success(form.id ? 'Question updated' : 'Question created');
-      onSaved();
-    } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to save question'); }
-    finally { setBusy(false); }
-  }
-  return <div className="fixed inset-0 z-40 overflow-y-auto bg-ink/40 p-4"><form onSubmit={save} className="mx-auto max-w-5xl rounded-2xl bg-white p-6 shadow-2xl sm:p-8"><div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-gold">{form.id ? 'Edit question' : 'New question'}</p><h2 className="mt-1 text-2xl font-semibold text-ink">Question details</h2></div><button type="button" onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X /></button></div><div className="mt-7 grid gap-4 sm:grid-cols-4"><label className="sm:col-span-2 field">Subject<select value={form.subjectId} onChange={(e) => set('subjectId', Number(e.target.value))}>{subjects.map((s) => <option key={s.id} value={s.id}>{s.code} — {s.name}</option>)}</select></label><label className="field">Type<select value={form.type} onChange={(e) => set('type', e.target.value as FormState['type'])}><option value="SHORT">Short</option><option value="LONG">Long</option><option value="CASE_STUDY">Case study</option><option value="MCQ">MCQ</option><option value="MCQ_GROUP">MCQ group</option><option value="TRUE_FALSE">True / False</option></select></label><label className="field">Marks<input type="number" min="0.5" step="0.5" value={form.marks} onChange={(e) => set('marks', Number(e.target.value))} /></label><label className="sm:col-span-2 field">Topic<input value={form.topic} onChange={(e) => set('topic', e.target.value)} placeholder="e.g. Revenue recognition" /></label><label className="field">Difficulty<select value={form.difficulty} onChange={(e) => set('difficulty', e.target.value as FormState['difficulty'])}><option>EASY</option><option>MEDIUM</option><option>HARD</option></select></label><label className="field">Source<input value={form.source} onChange={(e) => set('source', e.target.value)} placeholder="Reference paper or bank" /></label></div><label className="mt-5 block field">Question body<RichEditor value={form.body} onChange={(value) => set('body', value)} /></label>{(form.type === 'MCQ' || form.type === 'MCQ_GROUP') && <div className="mt-5 rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between"><h3 className="font-semibold">Answer options</h3><button type="button" className="text-sm font-semibold text-navy" onClick={() => setOptions([...options, { key: String.fromCharCode(97 + options.length), html: '<p>New option</p>', correct: false }])}>+ Add option</button></div>{options.map((option, index) => <div key={option.key} className="mt-3 flex items-center gap-3"><input type="radio" checked={option.correct} onChange={() => setOptions(options.map((item, i) => ({ ...item, correct: i === index })))} /><span className="w-5 font-semibold">({option.key})</span><input className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" value={option.html.replace(/<[^>]+>/g, '')} onChange={(e) => setOptions(options.map((item, i) => i === index ? { ...item, html: `<p>${e.target.value}</p>` } : item))} /><button type="button" onClick={() => setOptions(options.filter((_, i) => i !== index))} className="text-slate-400 hover:text-red-600"><Trash2 size={16} /></button></div>)}</div>}{(form.type === 'LONG' || form.type === 'CASE_STUDY') && <div className="mt-5 rounded-xl border border-slate-200 p-4"><div className="flex items-center justify-between"><h3 className="font-semibold">Parts and sub-parts</h3><button type="button" className="text-sm font-semibold text-navy" onClick={() => setParts([...parts, { id: `part-${parts.length}`, html: '<p>New part</p>', marks: 2, answer: '' }])}>+ Add part</button></div>{parts.map((part, index) => <div key={part.id} className="mt-4 rounded-lg bg-slate-50 p-3"><div className="mb-2 flex justify-between text-sm font-semibold">Part {String.fromCharCode(97 + index)}<input className="w-20 rounded border border-slate-200 px-2 py-1" type="number" value={part.marks} onChange={(e) => setParts(parts.map((p, i) => i === index ? { ...p, marks: Number(e.target.value) } : p))} /></div><RichEditor value={part.html} onChange={(value) => setParts(parts.map((p, i) => i === index ? { ...p, html: value } : p))} /></div>)}</div>}  {form.type === 'TRUE_FALSE' && <label className="mt-5 flex items-center gap-3 text-sm font-semibold text-slate-700"><input type="checkbox" checked={trueFalseAnswer} onChange={(e) => setTrueFalseAnswer(e.target.checked)} /> Correct answer is True</label>}<div className="mt-5 grid gap-4 sm:grid-cols-3"><label className="field sm:col-span-2">Answer<RichEditor value={form.answer} onChange={(value) => set('answer', value)} /></label><label className="field">Examiner advice<textarea value={form.advice.replace(/<[^>]+>/g, '')} onChange={(e) => set('advice', `<p>${e.target.value}</p>`)} rows={5} /></label></div><label className="mt-4 block field">Internal comments<textarea value={form.comments} onChange={(e) => set('comments', e.target.value)} rows={2} /></label><div className="mt-7 flex justify-end gap-3"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600">Cancel</button><button disabled={busy} className="rounded-lg bg-navy px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{busy ? 'Saving…' : 'Save draft'}</button></div></form></div>;
-}
+const PAGE_SIZE = 12;
+const plain = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 
 export function QuestionBank() {
   const { user } = useAuth();
+  const [params, setParams] = useSearchParams();
   const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
-  const [questions, setQuestions] = useState<QuestionDTO[]>([]);
-  const [total, setTotal] = useState(0);
-  const [filters, setFilters] = useState({ q: '', subjectId: '', type: '', status: '', marks: '' });
-  const [page, setPage] = useState(1);
+  const [result, setResult] = useState<Paged<QuestionDTO>>({ items: [], total: 0, page: 1, pageSize: PAGE_SIZE });
   const [loading, setLoading] = useState(true);
-  const [editor, setEditor] = useState<FormState | null>(null);
+  const [search, setSearch] = useState(params.get('q') ?? '');
+  const [editor, setEditor] = useState<{ draft: QuestionDraft; canSubmit: boolean } | null>(null);
   const [preview, setPreview] = useState<QuestionDTO | null>(null);
   const [review, setReview] = useState<{ question: QuestionDTO; decision: 'APPROVE' | 'REJECT' } | null>(null);
-  const query = useMemo(() => new URLSearchParams(Object.entries({ q: filters.q, subjectId: filters.subjectId, type: filters.type, status: filters.status, marksMin: filters.marks }).filter(([, value]) => value)), [filters]);
-  async function load() { setLoading(true); try { const [subjectRows, result] = await Promise.all([api<SubjectDTO[]>('/subjects'), api<Paged<QuestionDTO>>(`/questions?${query}&page=${page}&pageSize=12`)]); setSubjects(subjectRows); setQuestions(result.items); setTotal(result.total); } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to load questions'); } finally { setLoading(false); } }
-  useEffect(() => { void load(); }, [query, page]);
-  async function action(question: QuestionDTO, path: string, body?: unknown) { try { await api(`/questions/${question.id}${path}`, { method: 'POST', body: body ? JSON.stringify(body) : undefined }); toast.success('Question updated'); await load(); } catch (error) { toast.error(error instanceof Error ? error.message : 'Action failed'); } }
-  async function remove(question: QuestionDTO) { if (!window.confirm('Move this question to the recycle bin?')) return; try { await api(`/questions/${question.id}`, { method: 'DELETE' }); toast.success('Question moved to recycle bin'); await load(); } catch (error) { toast.error(error instanceof Error ? error.message : 'Unable to delete question'); } }
-  function edit(question: QuestionDTO) { setEditor({ id: question.id, subjectId: question.subjectId, topic: question.topic, type: question.type, marks: question.marks, difficulty: question.difficulty, source: question.source, body: question.body, answer: question.answer, advice: question.advice, comments: question.comments }); }
-  return <div className="mx-auto max-w-7xl"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm text-slate-500">Content library</p><h2 className="text-3xl font-semibold text-ink">Question bank</h2><p className="mt-2 text-sm text-slate-500">Create, review, and reuse subject-aligned questions.</p></div><button onClick={() => setEditor(emptyForm(subjects[0]?.id ?? 0))} disabled={!subjects.length} className="flex items-center gap-2 rounded-xl bg-navy px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"><Plus size={17} />New question</button></div><div className="mt-7 grid gap-3 rounded-2xl bg-white p-4 shadow-card sm:grid-cols-6"><label className="relative sm:col-span-2"><Search className="absolute left-3 top-3 text-slate-400" size={17} /><input className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-3 text-sm" placeholder="Search question text, topic, source…" value={filters.q} onChange={(e) => { setPage(1); setFilters({ ...filters, q: e.target.value }); }} /></label><select className="filter" value={filters.subjectId} onChange={(e) => { setPage(1); setFilters({ ...filters, subjectId: e.target.value }); }}><option value="">All subjects</option>{subjects.map((s) => <option key={s.id} value={s.id}>{s.code}</option>)}</select><select className="filter" value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })}><option value="">All types</option><option value="MCQ">MCQ</option><option value="MCQ_GROUP">MCQ group</option><option value="SHORT">Short</option><option value="LONG">Long</option><option value="CASE_STUDY">Case study</option><option value="TRUE_FALSE">True/False</option></select><select className="filter" value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}><option value="">All statuses</option><option value="DRAFT">Draft</option><option value="SUBMITTED">Submitted</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option>  </select><input className="filter" type="number" min="0" placeholder="Min marks" value={filters.marks} onChange={(e) => setFilters({ ...filters, marks: e.target.value })} /></div><div className="mt-5 overflow-hidden rounded-2xl bg-white shadow-card">{loading ? <div className="p-10 text-center text-sm text-slate-500">Loading questions…</div> : questions.length === 0 ? <div className="p-10 text-center text-sm text-slate-500">No questions match these filters.</div> : <div className="divide-y divide-slate-100">{questions.map((question) => <div key={question.id} className="flex flex-wrap items-center gap-4 p-5"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="rounded bg-slate-100 px-2 py-1 text-[11px] font-bold text-navy">{question.subjectCode}</span><span className={`rounded px-2 py-1 text-[11px] font-bold ${question.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' : question.status === 'SUBMITTED' ? 'bg-amber-50 text-amber-700' : question.status === 'REJECTED' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-600'}`}>{question.status}</span><span className="text-xs text-slate-400">{question.type} · {question.marks} marks</span></div><h3 className="mt-2 truncate font-semibold text-ink">{question.topic || 'Untitled question'}</h3><div className="prose mt-1 line-clamp-2 max-w-3xl text-sm text-slate-500" dangerouslySetInnerHTML={{ __html: question.body }} /></div><div className="flex items-center gap-1"><button title="Preview" onClick={() => setPreview(question)} className="action"><Eye size={16} /></button>{question.status !== 'APPROVED' && <button title="Edit" onClick={() => edit(question)} className="action"><Pencil size={16} /></button>}{question.status === 'DRAFT' && question.createdById === user?.id && <button title="Submit" onClick={() => action(question, '/submit')} className="action text-amber-700"><Send size={16} /></button>  }{(user?.role === 'HOA' || user?.role === 'ADMIN') && (question.status === 'SUBMITTED' || question.status === 'DRAFT' || question.status === 'REJECTED') && <><button title="Approve" onClick={() => setReview({ question, decision: 'APPROVE' })} className="action text-emerald-700"><Check size={16} /></button><button title="Reject" onClick={() => setReview({ question, decision: 'REJECT' })} className="action text-red-700"><X size={16} /></button></>}{question.status === 'APPROVED' && <button title="Duplicate" onClick={() => action(question, '/duplicate')} className="action"><Copy size={16} />  </button>}{(user?.role === 'HOA' || user?.role === 'ADMIN' || question.createdById === user?.id) && <button title="Delete" onClick={() => remove(question)} className="action text-red-600"><Trash2 size={16} /></button>}</div></div>)}</div>}<div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 text-sm text-slate-500"><span>{total} questions</span><div className="flex items-center gap-2"><button disabled={page === 1} onClick={() => setPage(page - 1)} className="page-btn">Previous</button><span>Page {page} of {Math.max(1, Math.ceil(total / 12))}</span><button disabled={page >= Math.ceil(total / 12)} onClick={() => setPage(page + 1)} className="page-btn">Next</button></div></div></div>{preview && <Preview question={preview} close={() => setPreview(null)} />}{editor && <Editor initial={editor} subjects={subjects} onClose={() => setEditor(null)} onSaved={() => { setEditor(null); void load(); }} />}{review && <div className="fixed inset-0 z-50 grid place-items-center bg-ink/50 p-4"><div className="w-full max-w-md rounded-2xl bg-white p-6"><h2 className="text-lg font-semibold">Review question</h2><p className="mt-2 text-sm text-slate-500">{review.decision === 'APPROVE' ? 'Approve this question for paper building?' : 'A comment is required when rejecting.'}</p><textarea id="review-comment" className="mt-4 w-full rounded-lg border border-slate-200 p-3 text-sm" placeholder="Review comment" /><div className="mt-5 flex justify-end gap-3"><button onClick={() => setReview(null)} className="page-btn">Cancel</button><button onClick={() => { const comment = (document.getElementById('review-comment') as HTMLTextAreaElement).value; void action(review.question, '/review', { decision: review.decision, comment }).then(() => setReview(null)); }} className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white">{review.decision === 'APPROVE' ? 'Approve' : 'Reject'}</button></div></div></div>}</div>;
+  const [confirmDelete, setConfirmDelete] = useState<QuestionDTO | null>(null);
+
+  const filters = useMemo(
+    () => ({
+      q: params.get('q') ?? '',
+      subjectId: params.get('subjectId') ?? '',
+      type: params.get('type') ?? '',
+      status: params.get('status') ?? '',
+      mine: params.get('mine') ?? '',
+      deleted: params.get('deleted') ?? '',
+      page: Number(params.get('page') ?? 1),
+    }),
+    [params],
+  );
+  const setFilter = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    if (key !== 'page') next.delete('page');
+    setParams(next, { replace: true });
+  };
+
+  // Debounce the free-text search so typing does not fire a request per key.
+  useEffect(() => {
+    const t = setTimeout(() => search !== filters.q && setFilter('q', search), 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const query = new URLSearchParams({ page: String(filters.page), pageSize: String(PAGE_SIZE) });
+      for (const key of ['q', 'subjectId', 'type', 'status', 'mine', 'deleted'] as const) if (filters[key]) query.set(key, filters[key]);
+      const [subjectRows, page] = await Promise.all([api<SubjectDTO[]>('/subjects'), api<Paged<QuestionDTO>>(`/questions?${query}`)]);
+      setSubjects(subjectRows.filter((s) => s.isActive));
+      setResult(page);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to load questions');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+  useEffect(() => { void load(); }, [load]);
+
+  if (!user) return null;
+  const pages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
+  const ownSubjects = subjects.filter((s) => user.subjectIds.includes(s.id));
+
+  async function openEditor(q?: QuestionDTO) {
+    if (!q) {
+      if (!ownSubjects.length) return toast.error('No subjects are assigned to you yet. Ask the administrator.');
+      const subjectId = Number(filters.subjectId) || ownSubjects[0].id;
+      setEditor({ draft: emptyDraft(ownSubjects.some((s) => s.id === subjectId) ? subjectId : ownSubjects[0].id), canSubmit: true });
+      return;
+    }
+    try {
+      const full = await api<QuestionDTO & { permissions: { edit: boolean; submit: boolean } }>(`/questions/${q.id}`);
+      if (!full.permissions.edit) return toast.error('You cannot edit this question.');
+      setEditor({ draft: draftFromQuestion(full), canSubmit: full.permissions.submit });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to open question');
+    }
+  }
+
+  async function post(q: QuestionDTO, path: string, message: string) {
+    try {
+      await api(`/questions/${q.id}${path}`, { method: 'POST' });
+      toast.success(message);
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Action failed');
+    }
+  }
+
+  async function remove(q: QuestionDTO) {
+    setConfirmDelete(null);
+    try {
+      await api(`/questions/${q.id}`, { method: 'DELETE' });
+      toast.success('Question moved to the recycle bin');
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to delete question');
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-7xl">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm text-slate-500">Content library</p>
+          <h2 className="text-3xl font-semibold text-ink">Question bank</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {user.role === 'TEACHER' ? 'Your questions and the approved questions of your subjects.' : user.role === 'HOA' ? 'Questions of your assigned subjects.' : 'All questions across the school.'}
+          </p>
+        </div>
+        {user.role !== 'ADMIN' && <button onClick={() => void openEditor()} disabled={!ownSubjects.length} className="primary"><Plus size={17} />New question</button>}
+      </div>
+
+      <div className="card mt-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
+        <label className="relative sm:col-span-2">
+          <Search className="absolute left-3 top-3 text-slate-400" size={17} />
+          <input className="field !pl-10" placeholder="Search text, topic, source…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search questions" />
+        </label>
+        <select className="field" value={filters.subjectId} onChange={(e) => setFilter('subjectId', e.target.value)} aria-label="Subject"><option value="">All subjects</option>{subjects.map((s) => <option key={s.id} value={s.id}>{s.code} — {s.name}</option>)}</select>
+        <select className="field" value={filters.type} onChange={(e) => setFilter('type', e.target.value)} aria-label="Type"><option value="">All types</option>{QUESTION_TYPES.map((t) => <option key={t} value={t}>{QUESTION_TYPE_LABELS[t]}</option>)}</select>
+        <select className="field" value={filters.status} onChange={(e) => setFilter('status', e.target.value)} aria-label="Status"><option value="">All statuses</option>{QUESTION_STATUSES.map((s) => <option key={s} value={s}>{QUESTION_STATUS_LABELS[s]}</option>)}</select>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+          <label className="flex min-h-11 items-center gap-2"><input type="checkbox" className="h-4 w-4" checked={filters.mine === '1'} onChange={(e) => setFilter('mine', e.target.checked ? '1' : '')} />Mine</label>
+          <label className="flex min-h-11 items-center gap-2"><input type="checkbox" className="h-4 w-4" checked={filters.deleted === '1'} onChange={(e) => setFilter('deleted', e.target.checked ? '1' : '')} />Recycle bin</label>
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {loading ? (
+          <div className="card p-10 text-center text-sm text-slate-500">Loading questions…</div>
+        ) : result.items.length === 0 ? (
+          <div className="card p-10 text-center text-sm text-slate-500">No questions match these filters.</div>
+        ) : (
+          result.items.map((q) => {
+            const can = questionActions(user, q);
+            return (
+              <article key={q.id} className="card p-4 sm:p-5">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start">
+                  <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setPreview(q)}>
+                    <QuestionMeta question={q} />
+                    <h3 className="mt-2 font-semibold text-ink">{q.topic || 'Untitled question'}</h3>
+                    <p className="mt-1 line-clamp-2 text-sm text-slate-500">{plain(q.body)}</p>
+                    <p className="mt-2 text-xs text-slate-400">#{q.id} · by {q.createdBy} · updated {new Date(q.updatedAt).toLocaleDateString()}{q.usedInPapers ? ` · used in ${q.usedInPapers} paper${q.usedInPapers === 1 ? '' : 's'}` : ''}</p>
+                    {q.status === 'REJECTED' && q.reviewComment && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800"><strong>Reviewer:</strong> {q.reviewComment}</p>}
+                  </button>
+                  <div className="flex flex-wrap items-center gap-1 md:justify-end">
+                    <button title="Preview" onClick={() => setPreview(q)} className="action"><Eye size={17} /></button>
+                    {q.deletedAt ? (
+                      can.restore && <button title="Restore" onClick={() => void post(q, '/restore', 'Question restored')} className="action"><ArchiveRestore size={17} /></button>
+                    ) : (
+                      <>
+                        {can.edit && <button title="Edit" onClick={() => void openEditor(q)} className="action"><Pencil size={17} /></button>}
+                        {can.submit && <button title="Submit for review" onClick={() => void post(q, '/submit', 'Submitted for review')} className="action text-amber-700"><Send size={17} /></button>}
+                        {can.review && <button title="Review" onClick={() => setReview({ question: q, decision: 'APPROVE' })} className="secondary !min-h-9 !px-3 text-emerald-700"><Check size={16} />Review</button>}
+                        {can.duplicate && user.role !== 'ADMIN' && <button title="Duplicate as a new draft" onClick={() => void post(q, '/duplicate', 'Copied as a new draft')} className="action"><Copy size={17} /></button>}
+                        {can.remove && <button title="Move to recycle bin" onClick={() => setConfirmDelete(q)} className="action text-red-600"><Trash2 size={17} /></button>}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+        <span>{result.total} question{result.total === 1 ? '' : 's'}</span>
+        <div className="flex items-center gap-2">
+          <button disabled={filters.page <= 1} onClick={() => setFilter('page', String(filters.page - 1))} className="secondary">Previous</button>
+          <span>Page {filters.page} of {pages}</span>
+          <button disabled={filters.page >= pages} onClick={() => setFilter('page', String(filters.page + 1))} className="secondary">Next</button>
+        </div>
+      </div>
+
+      {preview && (
+        <Modal eyebrow={`Question #${preview.id}`} title={preview.topic || 'Untitled question'} onClose={() => setPreview(null)} footer={<button className="primary" onClick={() => setPreview(null)}>Close</button>}>
+          <QuestionMeta question={preview} />
+          <p className="mt-1 text-xs text-slate-500">Written by {preview.createdBy}{preview.reviewedBy ? ` · reviewed by ${preview.reviewedBy}` : ''}</p>
+          <div className="mt-4"><QuestionContent question={preview} /></div>
+        </Modal>
+      )}
+      {editor && (
+        <QuestionEditor
+          initial={editor.draft}
+          canSubmit={editor.canSubmit}
+          subjects={ownSubjects}
+          onClose={() => setEditor(null)}
+          onSaved={() => { setEditor(null); void load(); }}
+        />
+      )}
+      {review && <ReviewDialog question={review.question} initialDecision={review.decision} onClose={() => setReview(null)} onDone={() => { setReview(null); void load(); }} />}
+      <Confirm
+        open={!!confirmDelete}
+        title="Move to recycle bin?"
+        message="The question is hidden from the bank and cannot be added to new papers. It can be restored from the recycle bin. Papers that already use it are not changed."
+        confirmLabel="Move to recycle bin"
+        onConfirm={() => confirmDelete && void remove(confirmDelete)}
+        onCancel={() => setConfirmDelete(null)}
+      />
+    </div>
+  );
 }

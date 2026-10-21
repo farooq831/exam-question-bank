@@ -34,6 +34,7 @@ export type SeedStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
 
 export interface SeedQuestion {
   key?: string; // reference used by the seeded papers
+  subject?: string; // subject code; inferred from the source for the hand-written questions
   type: 'MCQ' | 'MCQ_GROUP' | 'TRUE_FALSE' | 'SHORT' | 'LONG' | 'CASE_STUDY';
   topic: string;
   marks: number;

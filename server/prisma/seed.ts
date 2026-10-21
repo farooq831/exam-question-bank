@@ -227,6 +227,7 @@ const questions: SeedQuestion[] = [
 function extraQuestions(subjectCode: string, author: string, count: number): SeedQuestion[] {
   return Array.from({ length: count }, (_, index) => ({
     key: `${subjectCode.toLowerCase()}-${index + 1}`,
+    subject: subjectCode,
     type: index % 3 === 0 ? 'MCQ' : index % 3 === 1 ? 'TRUE_FALSE' : 'SHORT',
     topic: `${subjectCode} revision topic ${index + 1}`,
     marks: index % 3 === 0 ? 1 : 2,
@@ -307,17 +308,7 @@ async function seedDemoContent(tx: Tx, ref: Awaited<ReturnType<typeof ensureRefe
   ];
   const questionRows = new Map<string, { id: number }>();
   for (const [index, question] of allQuestions.entries()) {
-    const subjectCode = question.source.startsWith('Tax')
-      ? 'TAX'
-      : question.source.toLowerCase().includes('audit')
-        ? 'AUD'
-        : question.key?.startsWith('cma')
-          ? 'CMA'
-          : question.key?.startsWith('bl-')
-            ? 'BL'
-            : question.key?.startsWith('mfa')
-              ? 'MFA'
-              : 'FAR';
+    const subjectCode = question.subject ?? (question.source.startsWith('Tax') ? 'TAX' : question.source.toLowerCase().includes('audit') ? 'AUD' : 'FAR');
     const subject = subjectRows.get(subjectCode)!;
     const author = userRows.get(question.by)!;
     const content = question.content ?? {};

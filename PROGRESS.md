@@ -201,3 +201,33 @@ New regression tests (server: 35 tests in 4 files, all passing):
   6. HOA approves.
   7. No horizontal overflow at 768 px.
 - Tests: shared 10/10, server 35/35, client typecheck and build pass.
+
+## Milestone 4 — Paper management
+
+- [x] **Done.** **Saved papers library** (`/papers`):
+  - Search and status filter.
+  - Cards with subject, format, status, a total/max marks indicator, version, author and date.
+  - Open, paper PDF, answer-key PDF, version history (restore as a new draft), duplicate, and delete (with confirmation).
+- [x] **Done.** **Four-step builder** that works on tablets: 1 subject & paper format, 2 paper details, 3 questions, 4 review & output. The open paper and step are kept in the URL, so Back/refresh works.
+- [x] **Done.** Paper details:
+  - Title and optional heading override, session, date, duration, reading time, maximum marks, batch, teacher, and test number.
+  - Template instructions are shown, or the paper can opt into custom instructions (bold and `{count}` tokens explained).
+- [x] **Done.** Marks:
+  - The client total now uses the shared `effectiveItemMarks`/`checkPaperMarks`, so it always agrees with the server.
+  - Overrides are locked for MCQ groups and long questions (their marks come from parts), with a reset-to-original link.
+  - Finalise is disabled unless the total equals the maximum; the server enforces this too.
+- [x] **Done.** Only approved questions of the chosen subject are offered. Changing subject asks before clearing the paper. Questions can be previewed (without private notes), reordered with arrow buttons (touch) or by drag (desktop), assigned to sections, and set to start on a new page.
+- [x] **Done.** FINAL papers:
+  - A banner explains that downloads print the frozen version.
+  - Saving changes requires confirming "Reopen as draft"; the final version stays in the history.
+- [x] **Done.** Downloads use plain links, so they work on iPad Safari without pop-up blocking, with an optional CONFIDENTIAL watermark. The live preview modal can switch between paper and answer key.
+- [x] **Done.** Race fixed: a title typed before the lists finished loading was being overwritten.
+- Browser verification on the isolated :4100 instance (hoa_far):
+  1. The library lists the seeded papers.
+  2. New paper: steps 1–4. Two approved questions give a 9/20 warning; MCQ-group marks are locked; a single-MCQ override brings the total to 20/20; reorder works.
+  3. The live preview shows the typed title.
+  4. Finalise shows version 1 and the final banner.
+  5. `FAR_Autumn2026_Paper.pdf` and `FAR_Autumn2026_AnswerKey.pdf` download.
+  6. Version history opens.
+  7. No horizontal overflow at 768 px.
+- Not added (no fake controls): rule-based auto-generation UI. The `/papers/auto-generate` endpoint remains available for a later iteration.

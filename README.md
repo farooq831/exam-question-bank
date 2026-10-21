@@ -54,6 +54,12 @@ server.
    questions, preview the ICAP/SKANS layout, save the paper, and download both PDFs. Use
    **Administration** for user, subject, template, and audit-log management.
 
+In the question editor, select adjacent table cells by dragging across them before using
+**Merge**. Click inside the first row before using **Header**; header rows repeat when a table
+continues onto another printed page. In Paper builder, the paper-details fields are printed
+header/instruction data, while question answer/advice is reserved for the answer key and internal
+comments remain private.
+
 ## Adding a paper template
 
 Paper formats are data in `PaperTemplate.config`, validated by `templateConfigSchema` in

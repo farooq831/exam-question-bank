@@ -205,7 +205,7 @@ export function renderPaperHtml(input: RenderInput): string {
   };
 
   // ---- header block
-  const title = header.titleOverride || subject.name;
+  const title = header.titleOverride || input.title || subject.name;
   let headerHtml = '';
   if (cfg.layout === 'ICAP') {
     const logo = cfg.header.logo !== 'none' ? logoDataUri(cfg.header.logo === 'skans' ? 'skans-logo' : 'exam-body-logo') : null;

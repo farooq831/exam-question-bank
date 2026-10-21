@@ -29,7 +29,7 @@ export function RichEditor({ value, onChange }: RichEditorProps) {
     onUpdate: ({ editor: instance }) => onChange(instance.getHTML()),
   });
   if (!editor) return <div className="h-48 animate-pulse rounded-xl bg-slate-100" />;
-  const button = (label: string, action: () => void, active = false) => <button type="button" onClick={action} className={`rounded px-2 py-1 text-xs font-semibold ${active ? 'bg-navy text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{label}</button>;
+  const button = (label: string, action: () => void, active = false, disabled = false, title?: string) => <button type="button" onClick={action} disabled={disabled} title={title} className={`rounded px-2 py-1 text-xs font-semibold ${active ? 'bg-navy text-white' : 'text-slate-600 hover:bg-slate-100'} disabled:cursor-not-allowed disabled:opacity-40`}>{label}</button>;
   return <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
     <div className="flex flex-wrap gap-1 border-b border-slate-100 bg-slate-50 p-2">
       {button('B', () => editor.chain().focus().toggleBold().run(), editor.isActive('bold'))}
@@ -45,9 +45,10 @@ export function RichEditor({ value, onChange }: RichEditorProps) {
       {button('+ col', () => editor.chain().focus().addColumnAfter().run())}
       {button('− row', () => editor.chain().focus().deleteRow().run())}
       {button('− col', () => editor.chain().focus().deleteColumn().run())}
-      {button('Merge', () => editor.chain().focus().mergeCells().run())}
-      {button('Header', () => editor.chain().focus().toggleHeaderRow().run())}
+      {button('Merge', () => editor.chain().focus().mergeCells().run(), false, !editor.can().mergeCells(), 'Select two or more adjacent cells, then merge them')}
+      {button('Header', () => editor.chain().focus().toggleHeaderRow().run(), false, !editor.can().toggleHeaderRow(), 'Place the cursor in a table, then make its first row a header')}
     </div>
     <EditorContent editor={editor} className="rich-editor min-h-48 p-4 text-sm leading-6 outline-none" />
+    <p className="border-t border-slate-100 px-3 py-2 text-xs text-slate-400">For Merge, drag across adjacent cells first. For Header, click inside the first row.</p>
   </div>;
 }

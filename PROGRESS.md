@@ -118,3 +118,8 @@ Status meanings: **Done** is evidenced by an implemented and testable surface; *
 - [x] **Done** - ADMIN can approve/reject submitted, draft, and rejected questions with the same review comment validation used by HOA.
 - [x] **Done** - ADMIN can select approved questions, build papers using ICAP or SKANS templates, preview them, save them, and download the paper and answer-key PDFs.
 - [x] **Done** - Added regression coverage proving ADMIN question review and paper-generation access.
+
+## Editor and paper-form clarification
+
+- [x] **Done** - Rich-text table controls now explain the required selection: Merge requires adjacent selected cells, while Header applies to the row containing the cursor.
+- [x] **Done** - Paper builder now prints the entered paper title and exposes reading time, batch number, teacher name, test number, and custom instructions.

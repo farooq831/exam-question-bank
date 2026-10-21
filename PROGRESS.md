@@ -1,125 +1,100 @@
-# SKANS Question Bank & Exam Paper Generator - Audit
+# SKANS Question Bank — Production Hardening Progress
 
-Audit performed on 17 October 2026 before application changes.
+The earlier prototype log (milestones 1–7 of the demo build) is kept in
+[docs/PROTOTYPE-HISTORY.md](docs/PROTOTYPE-HISTORY.md).
 
-## Baseline commands
+## Milestone 0 — Audit (21 October 2026)
+
+No application code was changed during the audit.
+
+### Architecture
+
+| Layer | Implementation |
+|---|---|
+| Workspaces | npm workspaces: `shared` (zod schemas, types, marks, template config), `server`, `client` |
+| Server | Express 4 + TypeScript (tsx runtime, `tsc --noEmit` typecheck), routes in `server/src/routes` |
+| Database | Prisma 6 on SQLite; enums and JSON stored as `String` for PostgreSQL portability; no migrations folder (`prisma db push`) |
+| Auth | express-session with a Prisma-backed session store, HttpOnly `SameSite=Strict` cookie (`secure` in production), synchroniser CSRF token, bcrypt (12 rounds), per-account lockout, login and API rate limits, Helmet CSP |
+| RBAC | `requireRole` route guards, `assertSubject` subject scope, row-level `questionVisibility` in every question query |
+| Rendering | `server/src/render/paperHtml.ts` builds one self-contained HTML document (embedded fonts and logos) used for both the live preview iframe and the Playwright PDF |
+| Client | React 18 + Vite + Tailwind + React Router; TipTap editor; four large screen files (`QuestionBank`, `PaperBuilder`, `Admin`, `App`) |
+| Tests | Vitest: 10 shared unit tests; 5 server tests (Supertest + real PDF) |
+
+### Baseline results
 
 | Command | Result |
 |---|---|
-| `npm install` | Passed. npm reports 48 audit findings (38 moderate, 8 high, 2 critical); no dependency changes were required. |
-| `npm run setup` | Failed after Prisma generation and `db push`: `server/prisma/seed.ts` is missing. Chromium installation was not reached. |
-| `npm run typecheck` | Shared and server typechecks pass. Client fails because `client/tsconfig.json` is missing, so `tsc` prints help and exits non-zero. |
-| `npm test` | Shared: 10 tests pass. Server: fails because no test files exist. |
-| `npm run dev` | Not yet usable: the client has no source entrypoint/package Vite configuration, and the server setup cannot seed the database. |
+| `npm run typecheck` | Pass (shared, server, client) |
+| `npm test` | Pass: shared 10/10, server 5/5 |
+| `npm run build` | Client build is reached only after server `prisma generate`. Server build failed with `EPERM` renaming the Prisma query-engine DLL, because the user's own `npm run dev` (ports 4000/5173) holds the DLL open. This is a Windows file lock, not a code defect. |
+| `npm run pdf:samples -w server` | Pass: FAR paper is 2 pages, FAR key, TAX paper and TAX key are 1 page each |
+| Running app | Dev server already running on 4000/5173 |
 
-## Specification checklist
+### Existing working features
 
-Status meanings: **Done** is evidenced by an implemented and testable surface; **Partial** means server/shared groundwork exists but the end-to-end feature is incomplete; **Missing** means no usable implementation was found.
+- Login/logout, change password, session cookies, CSRF with client retry, account lockout, admin unlock/reset.
+- Question CRUD with six types, status workflow (draft → submitted → approved/rejected), soft delete/restore, duplicate, search and filters.
+- Review endpoint with mandatory rejection comment (shared `reviewSchema`).
+- Paper CRUD with ordered items, sections, marks overrides, server-side marks validation on finalise, version snapshots, duplicate, version restore, auto-generate endpoint.
+- HTML preview and PDF downloads (paper and answer key) through the same renderer, optional watermark, audit entries for every mutation and download.
+- Admin screens for users, subjects, templates (raw JSON) and the audit log.
 
-### Foundation and security
+### Defects and gaps found
 
-- [ ] **Partial** - Login, session auth, HttpOnly cookies, CSRF, helmet, rate limiting, lockout, zod validation, sanitized HTML. Evidence: [server/src/app.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/app.ts>), [server/src/middleware/auth.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/middleware/auth.ts>), [server/src/routes/auth.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/auth.ts>), and [server/src/lib/sanitize.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/lib/sanitize.ts>) contain the server mechanisms; there is no client to exercise them and no server tests.
-- [x] **Done** - Login, logout, change-password UI, session cookies, CSRF token handling, protected routing, role-aware shell, and toast/confirm components are implemented in [client/src](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src>) and backed by [server/src/routes/auth.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/auth.ts>).
-- [x] **Done** - Server dashboard endpoint and a thin authenticated dashboard UI exist in [server/src/routes/dashboard.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/dashboard.ts>) and [client/src/App.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/App.tsx>).
+**Data and seed**
 
-### Question bank
+1. **Destructive seed (high).** `prisma/seed.ts` deletes every table, including users and audit logs, and `npm run setup` / `db:setup` always runs it. Rerunning setup on a school server would wipe live data.
+2. The seeded **FINAL** FAR paper contains a **DRAFT** question (`far-short`), which breaks the approved-only rule.
+3. Seed question marks bypass `computeQuestionMarks`: the FAR impairment question stores 12 marks but its parts total 4, so the paper header total and the printed marks disagree.
+4. Seeded FINAL papers have no version snapshot (`currentVersion = 0`), so they print from live data.
+5. PRC-level subjects (CR, AAE) are seeded although the system is CAF-only.
+6. **Server tests run against the development database** and change its data (they approve a submitted question).
 
-- [x] **Done** - Server CRUD, status transitions, visibility, subject access, soft delete/restore, duplicate, review, search/filter, and import routes are wired to a polished list/editor UI in [client/src/QuestionBank.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/QuestionBank.tsx>) and [server/src/routes/questions.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/questions.ts>).
-- [x] **Done** - Shared schemas/types cover MCQ, MCQ group, true/false, short, long, and case study content; TipTap supports tables, table row/column controls, merge/header rows, paste, formatting, lists, and rich answer/advice fields in [client/src/components/RichEditor.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/components/RichEditor.tsx>).
+**Security and RBAC**
 
-### Templates, paper builder, preview, and PDF
+7. Teachers can edit their own **SUBMITTED** questions while those questions wait for review. The specification allows editing only drafts and rejected questions.
+8. HOA and ADMIN can approve **other people's drafts and rejected questions** without the author resubmitting them, which skips the submission step.
+9. Users flagged `mustChangePassword` get 403 on every API call, but the client never redirects them to the change-password screen, so the app appears broken.
+10. Test coverage is thin. There are no tests for CSRF, lockout, password change, HOA scope, teacher review/PDF denial, rejection comments, approved-only papers, admin CRUD or audit records.
 
-- [ ] **Partial** - Template configuration and rendering helpers exist in [shared/src/template.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/shared/src/template.ts>), [server/src/routes/templates.ts](<D:/0🔒  🔒/6 semester/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/templates.ts>), and [server/src/render/paperHtml.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/render/paperHtml.ts>), but no seed or template editor UI exists.
-- [x] **Done** - Paper CRUD, ordering, versions, marks validation, finalise, duplicate, and downloads are wired to the HOA-only builder in [client/src/PaperBuilder.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/PaperBuilder.tsx>) and [server/src/routes/papers.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/papers.ts>).
-- [x] **Done** - Builder uses the existing server renderer for live HTML preview, supports approved-question selection, sections, drag/drop and move controls, marks overrides, save/reopen, paper/key download, and optional watermark.
-- [ ] **Partial** - Playwright PDF generation and separate answer-key endpoint exist in [server/src/render/pdf.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/render/pdf.ts>); sample comparison and validation are missing, and browser installation was not reached.
+**Question lifecycle (client)**
 
-### Administration and import
+11. **Data loss on edit (high).** The editor does not load saved MCQ options, true/false answers or long-question parts. Opening an existing MCQ and saving it replaces its options with "Option A–D".
+12. MCQ option text and examiner advice are plain-text inputs that strip formatting. Part answers and sub-parts cannot be edited. An MCQ group supports only one item.
+13. There is no "Save and submit" action in the editor and no dedicated review queue. The review modal shows no question preview and reads its comment from the DOM.
+14. The preview shows only MCQ options and omits parts, answers and advice.
 
-- [x] **Done** - User/subject/template CRUD, password reset/unlock, and filtered audit-log administration are available in [client/src/Admin.tsx](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client/src/Admin.tsx>).
-- [ ] **Partial** - CSV sample/download and validation/import endpoint exist in [server/src/routes/import.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/import.ts>); import UI/report display is missing.
+**Paper management**
 
-### Seed data and documentation
+15. The client marks total ignores structured marks: overrides on MCQ groups and long questions are ignored by the server but counted by the client, so the two can disagree.
+16. Saved papers cannot be deleted, duplicated or reopened from version history in the UI. FINAL papers open as editable without warning.
 
-- [x] **Done** - Idempotent seed entrypoint, six demo users, 16 subjects, 41 questions across FAR/AUD/TAX and additional subjects/statuses, table-rich questions, two templates assigned to every subject, and two sample papers. Evidence: [server/prisma/seed.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/prisma/seed.ts>) and [server/prisma/seed-data/helpers.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/prisma/seed-data/helpers.ts>). `npm run setup` now completes, including Playwright Chromium installation.
-- [ ] **Partial** - README now documents setup, demo accounts, and current structure in [README.md](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/README.md>); template extension and deployment notes remain for the documentation milestone.
-- [ ] **Done** - Reference PDFs are present: [samples/](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/samples>) contains FAR, AUDIT, and TAX sample papers.
+**PDF and templates**
 
-## Errors and blockers found
+17. **Running header missing on the CAF template (bug).** The header font (Carlito) is used only in `@page` margin boxes, so Chromium never loads the embedded font and `font-display:block` leaves "Page X of Y" invisible. The SKANS template works because its header font matches the body font.
+18. **Branding risk.** `client/public/branding/exam-body-logo.svg` is a home-made crest labelled "ICAP" and is printed on every CAF paper. The template is named "ICAP Exam Style", and the SKANS logo is also an unofficial placeholder. The brief allows only authorised logos.
+19. Template editing is raw JSON only and is available to ADMIN only. HOA has the API but no UI.
+20. Answer-key MCQ tables and examiner advice work. Internal comments, review comments and source notes are not rendered; this was confirmed in `paperHtml.ts`.
 
-1. `npm run setup` cannot seed because `server/prisma/seed.ts` is missing.
-2. `npm run typecheck` cannot typecheck the client because `client/tsconfig.json` and client source entrypoints are missing.
-3. `npm test` fails in the server workspace because there are no server test files.
-4. `npm run dev` cannot provide a working full-stack app until the client and seed are restored.
-5. The dependency audit reports 48 findings (38 moderate, 8 high, 2 critical); this is recorded for later review and is not being changed blindly.
+**Admin and tablet UX**
 
-## Milestone 1 result
+21. The admin screen uses CSS classes (`primary`, `secondary`, `label`) that are not defined, so its buttons render unstyled.
+22. The ADMIN dashboard shows a pending-review count of 0 (computed for HOA only), no paper count, no recent activity and no quick actions.
+23. The sidebar is a fixed 288 px from 768 px upwards and cannot be collapsed, which wastes a third of an iPad portrait screen. List rows use wide flex rows, and the paper-builder rows overflow on tablets.
+24. Password reset uses `window.prompt`, and the users list has no deactivate shortcut.
 
-- **Backend setup:** Done. `npm run setup` passes through schema push, seed, and Chromium installation.
-- **Seed:** Done. `npm run db:seed` is repeatable and recreates the deterministic demo dataset.
-- **Runtime:** Done. `GET http://localhost:4000/api/health` returned HTTP 200 with `{"ok":true}`.
-- **Validation:** Server build/typecheck and shared tests pass. Server tests remain out of scope until Milestone 7.
-- **Still intentionally unavailable:** Client UI and all browser demo flow features; they are not exposed by the current milestone.
+**Dependencies**
 
-## Milestone 2 result
+25. `npm audit` reported 48 advisories at the prototype audit. They were not changed blindly and are recorded for review.
 
-- [x] **Done** - `npm run pdf:samples -w server` generates FAR and TAX paper PDFs plus separate answer keys in `output/` using the existing HTML renderer and Playwright.
-- [x] **Done** - TAX output is one page like [samples/TAX BATCH 1.pdf](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/samples/TAX BATCH 1.pdf>); FAR output is two pages because the seeded demo contains fewer questions than [samples/FAR-Spring-2026.pdf](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/samples/FAR-Spring-2026.pdf>).
-- [x] **Done** - PDF text inspection confirms generated paper PDFs contain no URL, `about:blank`, `file://`, Chrome, or browser date text. PDF metadata is set to `SKANS Question Bank`.
-- [x] **Done** - Existing renderer embeds Tinos/Arimo/Carlito fonts, preserves table header rows, prevents short tables from splitting, and emits `Page X of Y` through CSS margin boxes.
-- [ ] **Partial** - Automated raster PNG rendering and pixel-level comparison against reference page 1 were not added because no PDF raster utility is available in the current environment; page counts and extracted page text were compared instead. This remains a visual QA limitation, not a hidden UI feature.
+### Recommended implementation order (adopted)
 
-## Milestone 3 result
+1. **M1 Foundation:** make the seed non-destructive and idempotent (`--reset` explicit), fix the seed data (marks, approved-only, CAF-only, version snapshots), isolate the test database, and document the environment.
+2. **M2 Authorization:** tighten edit and review state rules, enforce the forced password change in the client, and add a broad permission test suite.
+3. **M3 Question lifecycle:** rebuild the editor so it loads every content type and has rich options and parts, add save-and-submit, a review queue page with preview and required rejection comment, and a full preview.
+4. **M4 Paper management:** fix structured-marks totals, add a saved-papers list with open/duplicate/delete/versions, and add a reopen guard for FINAL papers.
+5. **M5 PDF output:** fix the running-header font, remove unauthorised branding (print a logo only when an authorised file is present), rename the template to "CAF Examination Paper", and add automated PDF text, page-count and URL checks.
+6. **M6 Admin and tablet UX:** admin dashboard, styled admin forms, collapsible sidebar, card layouts on tablets, and a template form for common fields.
+7. **M7 Handover:** README, production env example, backups, PostgreSQL notes, final validation.
 
-- [x] **Done** - Vite, TypeScript, Tailwind, router, API client with cookie credentials and CSRF headers, auth context, protected routes, responsive sidebar, toast, and confirmation components are in [client/](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/client>).
-- [x] **Done** - Headless browser smoke test successfully loaded the login page, signed in as `teacher_far`, and displayed the teacher dashboard.
-- [x] **Done** - Client typecheck and production build pass.
-- [ ] **Out of scope for this milestone** - Paper builder, admin navigation, and CSV UI were intentionally not linked yet; no fake buttons are exposed.
-
-## Milestone 4 result
-
-- [x] **Done** - Question list supports keyword, subject, type, status, minimum-marks filters, pagination, preview, edit, duplicate, and soft-delete actions.
-- [x] **Done** - Teacher create/edit supports rich HTML tables, MCQ options/correct answer, MCQ groups, true/false, long/case-study parts, answers, advice, and comments.
-- [x] **Done** - Teacher submit and HOA approve/reject actions are wired to the existing server permissions.
-- [x] **Done** - Headless browser smoke test created a new table question as `teacher_far`, saved it, and submitted it successfully.
-- [ ] **Partial** - The current editor initializes options/parts when editing but does not yet hydrate previously saved MCQ option rows and long-question parts into editable controls; preview remains complete. This is a small edit-UX limitation to address if time remains.
-
-## Milestone 5 result
-
-- [x] **Done** - HOA-only paper builder is linked from the role-aware sidebar and protected by the existing server RBAC.
-- [x] **Done** - Headless browser smoke test selected an approved question, showed the marks total, rendered the exact server HTML preview in an iframe, and saved a draft.
-- [x] **Done** - Client typecheck/build and server typecheck pass.
-- [ ] **Partial** - The builder intentionally keeps rule-based auto-generation and version-history browsing out of the thin demo UI; the existing server endpoints remain available but are not represented by fake controls.
-
-## Milestone 6 result
-
-- [x] **Done** - Dashboards now show server-backed role-scoped question counts and HOA/teacher review indicators.
-- [x] **Done** - ADMIN navigation provides user CRUD, subject CRUD, template editing, password reset/unlock, filtered audit log, question review, and paper builder/PDF access.
-- [x] **Done** - Browser smoke test loaded the ADMIN dashboard and administration page with seeded account/audit data.
-
-## Milestone 7 result
-
-- [x] **Done** - Focused server tests cover unauthenticated access, teacher paper RBAC, teacher subject isolation, marks-total validation, template rendering, and real PDF generation. Evidence: [server/tests/workflow.test.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/tests/workflow.test.ts>).
-- [x] **Done** - Full `npm test`, `npm run typecheck`, `npm run build`, and `npm run setup` validation completed; the RBAC regression found during testing was fixed in [server/src/routes/questions.ts](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/server/src/routes/questions.ts>).
-- [x] **Done** - [README.md](<D:/0🔒  🔒/6 semester/web tech/Web Technologies course for Final exam/Web Technologies course for Final exam/JavaScript/completed worl/paper_demo/README.md>) now includes setup, demo flow/accounts, structure, template extension, deployment, and scope notes.
-
-## Demo follow-up fix
-
-- [x] **Done** - ADMIN can now access the school-wide question bank for review and can open the paper builder/PDF downloads.
-- [x] **Done** - Client API retries one failed mutating request after refreshing the CSRF token when a stale tab/server restart produces the standard security-token error. RBAC responses are not retried or weakened.
-
-## ADMIN workspace follow-up
-
-- [x] **Done** - ADMIN now has working tabs for user CRUD, subject CRUD, paper-template editing, password reset/unlock, and filtered audit-log viewing. These controls call the existing server endpoints and remain hidden from non-ADMIN users.
-- [x] **Done** - Template JSON editing preserves in-progress text and relies on the server's shared template schema for final validation.
-
-## ADMIN review and PDF follow-up
-
-- [x] **Done** - ADMIN can approve/reject submitted, draft, and rejected questions with the same review comment validation used by HOA.
-- [x] **Done** - ADMIN can select approved questions, build papers using ICAP or SKANS templates, preview them, save them, and download the paper and answer-key PDFs.
-- [x] **Done** - Added regression coverage proving ADMIN question review and paper-generation access.
-
-## Editor and paper-form clarification
-
-- [x] **Done** - Rich-text table controls now explain the required selection: Merge requires adjacent selected cells, while Header applies to the row containing the cursor.
-- [x] **Done** - Paper builder now prints the entered paper title and exposes reading time, batch number, teacher name, test number, and custom instructions.
+No schema change is planned, so Prisma client regeneration (blocked by the running dev server's file lock) is not needed.

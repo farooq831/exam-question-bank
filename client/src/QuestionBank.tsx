@@ -70,9 +70,20 @@ export function QuestionBank() {
   }, [filters]);
   useEffect(() => { void load(); }, [load]);
 
+  const ownSubjects = user ? subjects.filter((s) => user.subjectIds.includes(s.id)) : [];
+
+  // Dashboard quick action: /questions?new=1 opens a blank editor once subjects are known.
+  useEffect(() => {
+    if (params.get('new') !== '1' || !ownSubjects.length) return;
+    const next = new URLSearchParams(params);
+    next.delete('new');
+    setParams(next, { replace: true });
+    setEditor({ draft: emptyDraft(ownSubjects[0].id), canSubmit: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, ownSubjects.length]);
+
   if (!user) return null;
   const pages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
-  const ownSubjects = subjects.filter((s) => user.subjectIds.includes(s.id));
 
   async function openEditor(q?: QuestionDTO) {
     if (!q) {

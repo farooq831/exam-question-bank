@@ -265,3 +265,37 @@ Comparison with the reference documents in `samples/` (visual comparison of rend
 **Not claimed:** an exact match. Exact fonts, sizes, margins and spacing must be set from the approved school specification when it is supplied. These values are data in the template configuration, not code. Template text, such as the CAF MCQ intro "Each MCQ carries ONE mark", should also be confirmed by the school.
 
 Validation: shared 10/10, server 37/37, full typecheck passes. Sample PDFs were regenerated from a freshly seeded temporary database (`output/`, git-ignored).
+
+## Milestone 6 — Admin and tablet UX
+
+- [x] **Done.** App shell (`client/src/App.tsx`):
+  - Navigation follows the recommended structure: Dashboard, Review queue, Question bank, Paper builder, Users, Subjects, Templates, Audit log, filtered by role.
+  - Below 1024 px (iPad portrait and landscape) the sidebar is a drawer with an overlay and closes after navigation. On desktop it can collapse to an icon rail, remembered per browser with a storage fallback.
+  - Sticky top bar; 44 px touch targets; an in-app 404 page.
+- [x] **Done.** Dashboard (`client/src/Dashboard.tsx`), all tiles linking to filtered lists:
+  - ADMIN: pending review, approved, rejected, drafts, papers, active users, subjects, templates.
+  - HOA: pending review, approved, rejected, drafts.
+  - Teacher: drafts, awaiting review, approved, sent back.
+  - Quick actions, recent papers, recent activity, and per-subject counts (scrollable table).
+- [x] **Done.** Users:
+  - Search and role/status filters; responsive cards with role, status, locked badge, last sign-in and subject chips.
+  - Add/edit form with subject checklist and a generated policy-compliant temporary password (works without HTTPS).
+  - Reset-password dialog (replaces `window.prompt`).
+  - Unlock, and deactivate/activate with confirmation (you cannot deactivate yourself; the server also protects the last administrator).
+- [x] **Done.** Subjects: cards with inline default-format selection, and an add/edit form (code, name, level, format, active).
+- [x] **Done.** Templates (ADMIN, and HOA where permitted):
+  - "Common settings" form covering fonts, size, line height, margins, institute line, logo choice, date format, batch/teacher/test fields, instructions (title, numbering, box, lines), heading pattern and style, gap, marks format and position, sections, running header/footer text, position and first page, and end text.
+  - "Advanced (JSON)" tab for everything else, validated by the server.
+  - Duplicate a template to start a new format.
+  - HOA gets a view-only editor for templates shared with subjects outside their scope.
+- [x] **Done.** Audit log: filters by action, username, record type and date range; paging; expandable details with IP.
+- [x] **Done.** Fixed: the admin screens used undefined CSS classes (`primary`, `secondary`, `label`), so their buttons were unstyled. These are now shared utility classes.
+- Browser verification (isolated :4100 instance):
+  1. Admin dashboard.
+  2. Create a teacher with a generated password.
+  3. Change template font size via the form and see "11 pt".
+  4. Filter the audit log to USER_CREATE.
+  5. Sidebar collapse and expand.
+  6. At 768×1024: no horizontal overflow on Dashboard, Users, Subjects, Templates, Audit, Review queue, Papers and Question bank; drawer navigation works.
+  7. The new teacher is forced to change the temporary password, then reaches the teacher workspace.
+  8. hoa_audit sees templates as view-only.

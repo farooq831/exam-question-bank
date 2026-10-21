@@ -135,7 +135,9 @@ router.put(
       throw forbidden(
         existing.status === 'APPROVED'
           ? 'Approved questions can only be changed by the Head of Academics. Duplicate it to make a new version.'
-          : 'You cannot edit this question.',
+          : existing.status === 'SUBMITTED'
+            ? 'This question is waiting for review and cannot be changed until it is approved or sent back.'
+            : 'You cannot edit this question.',
       );
     }
     const input = parse(questionInputSchema, req.body);

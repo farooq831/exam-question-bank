@@ -1,4 +1,11 @@
-import { env } from './config';
+import { env, isProd } from './config';
+
+if (isProd && env.TRUST_PROXY !== '1') {
+  console.warn(
+    '[server] NODE_ENV=production uses Secure cookies, which are only sent over HTTPS. ' +
+      'When running behind Nginx set TRUST_PROXY=1, otherwise sign-in will not persist.',
+  );
+}
 import { createApp } from './app';
 import { prisma } from './db';
 import { closeBrowser } from './render/pdf';

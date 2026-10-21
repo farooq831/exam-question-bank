@@ -39,19 +39,21 @@ router.get(
       .filter((r) => user.role !== 'ADMIN' || r.DRAFT + r.SUBMITTED + r.APPROVED + r.REJECTED > 0);
 
     const pendingReview =
-      user.role === 'HOA'
-        ? await prisma.question.count({ where: { subjectId: { in: user.subjectIds }, status: 'SUBMITTED', deletedAt: null } })
-        : 0;
+      user.role === 'TEACHER'
+        ? 0
+        : await prisma.question.count({
+            where: { ...(user.role === 'HOA' ? { subjectId: { in: user.subjectIds } } : {}), status: 'SUBMITTED', deletedAt: null },
+          });
     const myRejected =
       user.role === 'TEACHER'
         ? await prisma.question.count({ where: { createdById: user.id, status: 'REJECTED', deletedAt: null } })
         : 0;
 
     const recentPapers =
-      user.role === 'HOA'
+      user.role !== 'TEACHER'
         ? (
             await prisma.paper.findMany({
-              where: { subjectId: { in: user.subjectIds }, deletedAt: null },
+              where: { ...(user.role === 'HOA' ? { subjectId: { in: user.subjectIds } } : {}), deletedAt: null },
               include: paperInclude,
               orderBy: { updatedAt: 'desc' },
               take: 5,

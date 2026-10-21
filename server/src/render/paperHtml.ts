@@ -469,6 +469,12 @@ export function renderPaperHtml(input: RenderInput): string {
   const empty = input.items.length === 0 ? `<p class="empty">No questions have been added to this paper yet.</p>` : '';
   const endText = cfg.endText ? `<div class="the-end">${escapeHtml(cfg.endText)}</div>` : '';
   const watermark = input.watermark ? `<div class="watermark"><span>${escapeHtml(input.watermark)}</span></div>` : '';
+  // Chromium only downloads a web font that page content uses. When the running header has its
+  // own font (e.g. Carlito on the CAF template) and nothing else uses it, the @page margin boxes
+  // would stay invisible, so an invisible text run in that font forces it to load.
+  const headerFontLoader = cfg.runningHeader.enabled
+    ? `<div class="font-loader" aria-hidden="true">${escapeHtml(`${cfg.runningHeader.left} ${cfg.runningHeader.center} ${cfg.runningHeader.right} Page 0123456789 of`)}</div>`
+    : '';
 
   // ---- styles
   const rh = cfg.runningHeader;
@@ -494,6 +500,7 @@ ${BASE_CSS}
 body{font-family:${fontStack(cfg.fonts.body)};font-size:${cfg.fonts.sizePt}pt;line-height:${cfg.fonts.lineHeight};}
 .q-head,.q-num,.icap-head,.skans-head,.section-div,.instructions,.the-end,.key-banner{font-family:${fontStack(cfg.fonts.heading)};}
 .q{margin-top:${cfg.questions.gapMm}mm;}
+.font-loader{font-family:${fontStack(cfg.fonts.runningHeader)};position:absolute;left:0;top:0;height:0;overflow:hidden;visibility:hidden;white-space:nowrap;}
 `;
 
   return `<!doctype html>
@@ -505,6 +512,7 @@ body{font-family:${fontStack(cfg.fonts.body)};font-size:${cfg.fonts.sizePt}pt;li
 </head>
 <body class="layout-${cfg.layout.toLowerCase()} mode-${mode}">
 ${watermark}
+${headerFontLoader}
 ${headerHtml}
 ${instructionsHtml}
 <main>

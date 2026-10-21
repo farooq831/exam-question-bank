@@ -112,3 +112,55 @@ No schema change is planned, so Prisma client regeneration (blocked by the runni
 - [x] **Done.** Server tests use a brand-new SQLite file in the OS temp directory per run (`server/vitest.config.ts`, `tests/global-setup.ts`) and delete it afterwards. They no longer modify `dev.db`. Prisma's AI-safety guard refused `db push --force-reset`. The design therefore needs no destructive command; the guard was not bypassed.
 - [x] **Done.** `BRANDING_DIR` is documented in `server/.env.example`.
 - Validation: server typecheck passes; server tests 5/5 pass.
+
+## Milestone 2 — Production authorization
+
+Rules tightened on the server (`server/src/lib/access.ts`):
+
+- [x] **Done.** Teachers can edit only their own **DRAFT** or **REJECTED** questions. A **SUBMITTED** question is frozen until it is reviewed (clear 403 message).
+- [x] **Done.** Reviewers (HOA within assigned subjects, ADMIN everywhere) decide on **SUBMITTED** questions. Another person's draft or rejected question must be (re)submitted by its author first. Reviewers may still approve their own drafts.
+- [x] **Done.** Client: accounts flagged `mustChangePassword` now see a dedicated change-password screen instead of a broken workspace.
+- [x] **Done.** The dashboard shows the ADMIN pending-review count and recent papers school-wide (previously HOA only).
+- [x] **Done.** A startup warning appears when `NODE_ENV=production` runs without `TRUST_PROXY=1`, because Secure cookies would not stick behind Nginx.
+- [x] **Done (found while adding PDF tests; planned for M5).** The CAF running header ("Page X of Y") was invisible. The renderer now forces the header font to load.
+
+Reviewed and kept: bcrypt (12 rounds) with a timing-equalised unknown-user path, session regeneration on login and password change, sessions destroyed on deactivation, reset and password change, HttpOnly `SameSite=Strict` cookie (Secure in production), synchroniser CSRF token, account lockout, login and API rate limits, Helmet CSP, zod validation, sanitize-html on save and render. No security control was weakened.
+
+New regression tests (server: 36 tests in 4 files, all passing):
+
+- `tests/auth.test.ts`:
+  - 401 when unauthenticated
+  - generic login error
+  - cookie flags
+  - no password hashes in any response
+  - logout
+  - CSRF missing, wrong or stale token
+  - token rotation
+  - forced password change and its validation
+  - admin reset signs the user out
+  - lockout and unlock
+  - deactivation
+- `tests/rbac.test.ts`:
+  - teacher denied papers, PDFs, preview, users, audit, templates and subjects
+  - teacher subject isolation
+  - teacher cannot see other teachers' drafts
+  - teacher cannot review
+  - teacher cannot edit submitted or approved questions
+  - HOA subject scope for questions and papers
+  - HOA template edit scope
+  - nobody approves an unsubmitted draft
+  - ADMIN user, subject and template CRUD with validation and audit
+  - audit filter
+  - admin dashboard counts
+- `tests/papers.test.ts`:
+  - rejection requires a comment
+  - reject → resubmit → approve with audit trail
+  - ADMIN review
+  - approved-only, same-subject and non-deleted paper items
+  - duplicate items rejected
+  - marks under or over blocks finalising
+  - HTML preview hides answers, advice, internal comments, source and review comments
+  - question-paper PDF: headers, filename, page count, title, date, watermark, no URL/browser date, no answers or private notes
+  - answer-key PDF contains answers and advice but no private notes
+  - download audit records
+  - "Page X of Y" on every page after page 1

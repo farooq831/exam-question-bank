@@ -356,3 +356,31 @@ Validation: shared 10/10, server 37/37, full typecheck passes. Sample PDFs were 
   - Refused (409) if the question is used in any paper, so papers and their versions never lose content. The button is disabled with an explanation in that case.
   - Each deletion is recorded as `QUESTION_PURGE` in the audit log, with subject, topic, type and author.
 - Tests: 2 new server tests cover recycle-bin-first, teacher denied, HOA allowed, removal from the database, the audit record, and refusal when used in a paper. Totals: shared 10/10, server 40/40, typecheck clean.
+
+## Follow-up — SKANS internal system: two roles, no demo data, SKANS branding (21 October 2026)
+
+- [x] **Two roles only (ADMIN, TEACHER).**
+  - The HOA role is removed from schemas, server rules, routes, the client and tests.
+  - ADMIN now reviews questions, builds and downloads papers, manages templates, and can create and edit any question.
+  - Legacy `HOA` accounts are converted to TEACHER by the seed and are treated as TEACHER until then (least privilege). Creating an HOA user is rejected.
+- [x] **Sub-questions.** Previously they appeared only after choosing the "Long question" type.
+  - Short questions now offer **Add sub-questions** (a), (b)…
+  - Sub-questions can be split further into parts, e.g. (ii)(a).
+  - Labels read "Sub-question (i)" and "Part (ii)(a)"; type names read "Long question (with sub-questions)".
+- [x] **Demo data removed from the product.**
+  - The seed is now a production bootstrap: SKANS formats, CAF subjects, and one `admin` with a one-time random password (or `SKANS_ADMIN_PASSWORD`) that must be changed at first sign-in.
+  - Demo users, questions and papers moved to `server/tests/fixtures/` and are loaded only into the temporary test database.
+  - `db:reset` no longer uses Prisma's `--force-reset`; the seed deletes data itself.
+  - `pdf:samples` renders a built-in example instead of reading demo papers.
+  - `dev.db` was backed up to `server/backups/skans-20261021-153853/` and then reset to a clean system.
+- [x] **ICAP removed; SKANS branding.**
+  - The format is now **SKANS CAF Examination** (`SKANS_CAF`, layout `CAF`). Its formatting is taken from the reference CAF paper, with the SKANS logo (`client/public/branding/skans-logo.jpg`, supplied by the school) at the **top right**.
+  - The SKANS Internal Test format prints the same logo top left.
+  - The app sidebar and sign-in page use `skans-logo-dark.jpg`, and the theme colours match the logo (navy `#1B2A4B`, gold `#C08A2E`).
+  - The exam-body logo option is removed. Old saved configs (`layout: 'ICAP'`, `logo: 'exam-body'`) are read as `CAF` / `skans`, and the seed renames `ICAP_EXAM` to `SKANS_CAF`.
+- Pending from the administration: full CAF paper names, one finalised standard sample paper, and formatting guidelines (font family, size and weight, margins, line spacing, paragraph spacing). Current values are provisional and editable in **Templates**.
+- Validation:
+  - Tests: shared 11/11, server 40/40; typecheck clean.
+  - Browser check on an isolated instance: bootstrap admin forced password change; navigation shows no HOA; empty bank; question with sub-questions (i), (ii) and part (ii)(a) saved.
+  - Sample PDFs show the SKANS logo top right (CAF) and top left (internal test).
+  - The user's dev server signs in as the new `admin`.

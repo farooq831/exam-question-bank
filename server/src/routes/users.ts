@@ -6,7 +6,7 @@ import { prisma } from '../db';
 import { audit } from '../lib/audit';
 import { ah, badRequest, conflict, idParam, notFound, parse } from '../lib/http';
 import { PrismaSessionStore } from '../lib/sessionStore';
-import { requireRole } from '../middleware/auth';
+import { normaliseRole, requireRole } from '../middleware/auth';
 import { BCRYPT_ROUNDS } from './auth';
 
 const router = Router();
@@ -20,7 +20,7 @@ function toDTO(u: UserRow): UserDTO {
     username: u.username,
     fullName: u.fullName,
     email: u.email,
-    role: u.role as Role,
+    role: normaliseRole(u.role),
     isActive: u.isActive,
     lockedUntil: u.lockedUntil && u.lockedUntil > new Date() ? u.lockedUntil.toISOString() : null,
     failedLogins: u.failedLogins,

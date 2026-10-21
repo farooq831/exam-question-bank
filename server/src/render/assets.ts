@@ -65,7 +65,7 @@ const MIME: Record<string, string> = { '.svg': 'image/svg+xml', '.png': 'image/p
  */
 const logoCache = new Map<string, { mtime: number; uri: string }>();
 
-export function logoDataUri(name: 'skans-logo' | 'exam-body-logo'): string | null {
+export function logoDataUri(name: 'skans-logo'): string | null {
   for (const ext of ['.png', '.jpg', '.jpeg', '.svg']) {
     const file = path.join(paths.branding, name + ext);
     if (!existsSync(file)) continue;

@@ -1,16 +1,14 @@
 # SKANS Question Bank & Examination Paper Management System
 
-Question bank, academic review and examination-paper generation for **SKANS School of
-Accountancy** (CAF level). Teachers write questions; Heads of Academics (HOA) and administrators
-review them; approved questions are assembled into papers that are printed to PDF together with a
-separate answer key.
+Internal question bank and examination-paper system of **SKANS School System** (CAF level).
+Teachers write questions; administrators review them; approved questions are assembled into
+papers that are printed to PDF together with a separate answer key.
 
-> The CAF reference paper supplied by the school is used only as a **formatting reference**. This
-> is not an ICAP system. No examining-body branding is included; logos are printed only when the
-> school adds authorised files (see [Branding](#authorised-branding-assets)).
+> This is a SKANS internal system. A published CAF examination paper is used only as the
+> **formatting reference** for the SKANS CAF format; papers carry the SKANS logo only.
 
 Contents: [Setup](#setup) · [Environment](#environment-variables) · [Database](#database) ·
-[Demo accounts](#demo-accounts) · [Roles](#role-permissions) · [Commands](#development-commands) ·
+[First sign-in](#first-sign-in) · [Roles](#role-permissions) · [Commands](#development-commands) ·
 [Templates](#adding-or-changing-a-paper-template) · [Branding](#authorised-branding-assets) ·
 [PostgreSQL](#migrating-from-sqlite-to-postgresql) · [Deployment](#local-school-server-deployment) ·
 [Backups](#backups) · [Browsers](#tablet-and-browser-support) · [Limitations](#current-limitations)
@@ -34,11 +32,12 @@ dependencies and Chromium.
 
 ```bash
 npm run setup     # creates server/.env with a random secret, installs packages,
-                  # creates/updates the SQLite schema, seeds demo data, installs Chromium
+                  # creates/updates the SQLite schema, bootstraps formats, subjects and
+                  # the first admin account (password printed once), installs Chromium
 npm run dev       # API on http://localhost:4000, web app on http://localhost:5173
 ```
 
-Open http://localhost:5173 and sign in with a [demo account](#demo-accounts).
+Open http://localhost:5173 and sign in as described in [First sign-in](#first-sign-in).
 
 `npm run setup` is safe to repeat. It never deletes data (see [Database](#database)).
 
@@ -68,28 +67,23 @@ the same schema works on SQLite and PostgreSQL.
 | Command | What it does | Destructive? |
 |---|---|---|
 | `npm run db:setup -w server` | Generate the Prisma client, apply the schema (`prisma db push`), run the seed | No |
-| `npm run db:seed -w server` | Create **missing** templates, CAF subjects and demo accounts; add demo questions and sample papers **only if the question bank is empty** | No |
-| `npm run db:reset` | Recreate the schema and the demo dataset from scratch | **Yes**. Refused when `NODE_ENV=production` unless `--force` is added. |
+| `npm run db:seed -w server` | Create **missing** SKANS paper formats and CAF subjects; create the first `admin` account if no administrator exists; upgrade data from older versions | No |
+| `npm run db:reset` | Delete **all** data and bootstrap an empty system (formats, subjects, a new `admin`) | **Yes**. Refused when `NODE_ENV=production` unless `--force` is added. |
 | `npm run db:backup` | Consistent online copy of the SQLite database and branding folder | No |
 
 The seed never changes existing rows. Passwords, edited templates and assigned subjects survive.
 Normal application start-up never modifies data.
 
-## Demo accounts
+## First sign-in
 
-All demo accounts use the password **`SkansDemo2026`**. Change or deactivate them before real use.
+The system ships **without demo data**. The seed creates one administrator:
 
-| Username | Role | Subjects |
-|---|---|---|
-| `admin` | Administrator | All subjects |
-| `hoa_far` | Head of Academics | FAR, FAR1, FAR2, CMA, TAX |
-| `hoa_audit` | Head of Academics | AUD |
-| `teacher_far` | Teacher | FAR, FAR1, FAR2 |
-| `teacher_tax` | Teacher | TAX, TPC |
-| `teacher_audit` | Teacher | AUD |
+- username **`admin`**
+- a random one-time password, printed **once** in the terminal by `npm run setup`, `npm run db:seed` or `npm run db:reset`. Set `SKANS_ADMIN_PASSWORD` in the environment beforehand to choose it yourself.
+- the password must be changed at first sign-in.
 
-Sample papers: "FAR Spring 2026 Examination" (CAF format) and "Tax Batch 1 Internal Test"
-(SKANS format), both final.
+Then, as `admin`: create teacher accounts and assign their subjects (**Users**), check subjects and
+default formats (**Subjects**), and review the paper formats (**Templates**).
 
 Emergency administrator recovery on the server console:
 `npm run reset-admin -- <username> <new-password>`.
@@ -99,22 +93,24 @@ Emergency administrator recovery on the server console:
 Every rule is enforced by the server (`server/src/lib/access.ts`, route guards). The interface only
 hides actions that would be refused.
 
-| Capability | Admin | HOA | Teacher |
-|---|---|---|---|
-| Subjects visible | All | Assigned | Assigned |
-| Create questions | — | Assigned subjects | Assigned subjects |
-| Edit questions | — | Any in assigned subjects | Own **draft/rejected** only |
-| Submit for review | Own | Own | Own |
-| Approve / reject (comment required to reject) | Submitted questions, any subject | Submitted questions, assigned subjects | No |
-| Move to recycle bin / restore | Any | Assigned subjects | Own non-approved |
-| Delete permanently (from recycle bin, only if not used in any paper) | Yes | Assigned subjects | No |
-| See other teachers' drafts | Yes | No | No |
-| See approved questions | All | Assigned | Assigned |
-| Build, preview, finalise papers; download paper and answer key PDFs | All subjects | Assigned subjects | No |
-| Users (create/edit/deactivate, reset password, unlock) | Yes | No | No |
-| Subjects and default formats | Yes | Switch format of assigned subject | No |
-| Templates | Yes | Only templates whose subjects are all assigned to them | No |
-| Audit log | Yes | No | No |
+There are two roles.
+
+| Capability | Administrator | Teacher |
+|---|---|---|
+| Subjects visible | All | Assigned only |
+| Create questions (all types, tables, sub-questions) | Any subject | Assigned subjects |
+| Edit questions | Any | Own **draft/rejected** only |
+| Submit for review | Own | Own |
+| Approve / reject (comment required to reject) | Yes (submitted questions) | No |
+| See other teachers' drafts | Yes | No |
+| See approved questions | All | Assigned subjects |
+| Move to recycle bin / restore | Any | Own non-approved |
+| Delete permanently (from recycle bin, only if not used in any paper) | Yes | No |
+| Build, preview, finalise papers; download paper and answer-key PDFs | Yes | No |
+| Users, subjects, paper formats (templates), audit log | Yes | No |
+
+Accounts created with the former "Head of Academics" role are converted to **Teacher** by the seed
+(and are treated as teachers until then). Promote them to Administrator in **Users** if needed.
 
 Only **approved**, non-deleted questions of the paper's subject can be added to a paper. A paper
 can only be finalised when its marks total equals the maximum marks. Final papers print from a
@@ -136,7 +132,7 @@ npm run typecheck      # shared, server and client
 npm test               # shared unit tests + server API/PDF tests
 npm run build          # production client build (client/dist) + server typecheck
 npm start              # production server (serves client/dist and the API on PORT)
-npm run pdf:samples    # writes sample paper + answer key PDFs for the seeded papers to output/
+npm run pdf:samples    # renders a built-in example through every paper format to output/
 ```
 
 ### Tests
@@ -149,7 +145,7 @@ npm run pdf:samples    # writes sample paper + answer key PDFs for the seeded pa
 The server tests cover:
 
 - **Authentication:** login/logout, cookie flags, CSRF, password change, lockout and unlock, deactivation.
-- **Permissions:** every ADMIN/HOA/TEACHER rule and teacher subject isolation.
+- **Permissions:** every ADMIN/TEACHER rule, teacher subject isolation, and the removed HOA role.
 - **Workflow:** review with a required rejection comment, approved-only papers, marks validation, audit records.
 - **Output:** HTML preview, and question-paper and answer-key PDF generation with text extraction, which checks:
   - no URLs or browser date stamps
@@ -158,19 +154,24 @@ The server tests cover:
   - repeated table header rows
   - page count
 
-The server tests create a **fresh temporary SQLite database** for each run and delete it afterwards.
-They never touch `dev.db`. Chromium must be installed (`npm run browsers -w server`).
+The server tests create a **fresh temporary SQLite database** for each run, bootstrap it, load
+test-only fixtures (`server/tests/fixtures/`, never loaded into a real database) and delete it
+afterwards. They never touch `dev.db`. Chromium must be installed (`npm run browsers -w server`).
 
 ## Adding or changing a paper template
 
 Paper formats are data (`PaperTemplate.config`), validated by `templateConfigSchema` in
 `shared/src/template.ts`. Two formats ship:
 
-- **CAF Examination Paper** (internal key `ICAP_EXAM`, layout `ICAP`)
-- **SKANS Internal Test** (`SKANS_INTERNAL`, layout `SKANS`)
+- **SKANS CAF Examination** (`SKANS_CAF`, layout `CAF`): formatting taken from the reference CAF
+  examination paper (title block, date/marks/duration lines, boxed instructions, section bars,
+  "QUESTION n" headings, right-aligned marks, "Page X of Y" header from page 2, "(THE END)"),
+  with the **SKANS logo at the top right**.
+- **SKANS Internal Test** (`SKANS_INTERNAL`, layout `SKANS`): the school's internal test layout
+  (logo top left, batch/teacher/test and time/marks/date block).
 
-Their fonts, sizes, margins and wording are **provisional** until the administration supplies the
-approved specification.
+Fonts, sizes, margins and spacing are **provisional** until the administration supplies the
+official guidelines (font family, size and weight, margins, line and paragraph spacing).
 
 To change one: **Templates → Edit**.
 
@@ -186,7 +187,7 @@ Placeholders:
 To add a format: **Templates → Duplicate** an existing one, adjust it, then assign it to subjects
 in **Subjects**. Check the result with **Paper builder → Review & output → Preview**.
 
-To ship a new default format with the code, add a config constant next to `ICAP_TEMPLATE_CONFIG` and
+To ship a new default format with the code, add a config constant next to `CAF_TEMPLATE_CONFIG` and
 an `ensureTemplate` call in `server/prisma/seed.ts`.
 
 When the approved sample arrives, set each value from it. Then compare a generated PDF with the
@@ -194,13 +195,13 @@ sample page by page before calling the format final.
 
 ## Authorised branding assets
 
-Drop authorised files into `client/public/branding/`, or into the folder set in `BRANDING_DIR`:
+`client/public/branding/` (or the folder in `BRANDING_DIR`) holds the SKANS logo:
 
-- `skans-logo.png`: SKANS internal tests
-- `exam-body-logo.png`: CAF format, only with written permission from the examining body
+- `skans-logo.jpg`: printed on papers (white background). Top right on the CAF format, top left on internal tests.
+- `skans-logo-dark.jpg`: shown in the app (sidebar and sign-in page).
 
-Files are picked up immediately. Without them, the SKANS header prints the institute name as text
-and the CAF header prints no logo. See `client/public/branding/README.md`.
+To replace the artwork, overwrite these files (a `.png`/`.svg` named `skans-logo` is also accepted
+for printing). Changes are picked up immediately. See `client/public/branding/README.md`.
 
 ## Migrating from SQLite to PostgreSQL
 
@@ -233,8 +234,8 @@ Differences to check:
    `TRUST_PROXY=1`, a new `SESSION_SECRET`, an absolute `DATABASE_URL`, and `BRANDING_DIR`.
 3. Run `npm start` under a service manager, for example a systemd unit or NSSM on Windows, so it
    restarts automatically. It serves the built client and the API on `PORT`, bound behind Nginx.
-4. Sign in as `admin`, change the password, create real accounts, and **deactivate the demo
-   accounts**.
+4. Sign in as `admin` with the one-time password printed by `db:setup`, change it, then create
+   the teacher accounts.
 
 ### HTTPS with Nginx
 
@@ -295,6 +296,6 @@ persist; the server prints a warning at start-up.
 - **Logos:** none ship. Add authorised files to enable them.
 - **CSV import:** the endpoint (`POST /api/import/questions`) exists but has no interface yet.
 - **Auto-generation:** rule-based paper auto-generation (`POST /api/papers/auto-generate`) has no interface yet.
-- **Submission date:** the review queue shows the question's last update time. A submitted question cannot be edited by its author, so this time equals the submission time unless an HOA edits it.
+- **Submission date:** the review queue shows the question's last update time. A submitted question cannot be edited by its author, so this time equals the submission time unless an administrator edits it.
 - **Dependency advisories:** `npm audit` reports moderate/high advisories in transitive packages (TipTap, React Router, Prisma tooling, csv-parse). Their fixes need major-version upgrades, which should be planned and tested rather than forced. The reachable csv-parse prototype issue is mitigated in code and covered by a test.
 - **Production runtime:** the server runs TypeScript through `tsx`. There is no separate compile step.

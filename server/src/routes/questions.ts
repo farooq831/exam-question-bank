@@ -10,7 +10,7 @@ import { questionInclude, sanitizeQuestionInput, toQuestionDTO } from '../lib/qu
 import { assertSubject, requireRole } from '../middleware/auth';
 
 const router = Router();
-router.use(requireRole('ADMIN', 'HOA', 'TEACHER'));
+router.use(requireRole('ADMIN', 'TEACHER'));
 
 async function loadVisible(user: Express.Request['user'], id: number, includeDeleted = false) {
   const q = await prisma.question.findFirst({
@@ -135,7 +135,7 @@ router.put(
     if (!canEditQuestion(req.user!, existing)) {
       throw forbidden(
         existing.status === 'APPROVED'
-          ? 'Approved questions can only be changed by the Head of Academics. Duplicate it to make a new version.'
+          ? 'Approved questions can only be changed by the administrator. Duplicate it to make a new version.'
           : existing.status === 'SUBMITTED'
             ? 'This question is waiting for review and cannot be changed until it is approved or sent back.'
             : 'You cannot edit this question.',
@@ -178,7 +178,7 @@ router.post(
 
 router.post(
   '/:id/review',
-  requireRole('ADMIN', 'HOA'),
+  requireRole('ADMIN'),
   ah(async (req, res) => {
     const q = await loadVisible(req.user, idParam(req));
     if (!canReviewQuestion(req.user!, q)) throw forbidden('This question is not awaiting your review.');
@@ -257,7 +257,7 @@ router.delete(
   ah(async (req, res) => {
     const q = await loadVisible(req.user, idParam(req), true);
     if (!q.deletedAt) throw badRequest('Move the question to the recycle bin before deleting it permanently.');
-    if (!canPurgeQuestion(req.user!, q)) throw forbidden('Only an administrator or the Head of Academics can delete questions permanently.');
+    if (!canPurgeQuestion(req.user!, q)) throw forbidden('Only an administrator can delete questions permanently.');
     const used = await prisma.paperItem.count({ where: { questionId: q.id } });
     if (used > 0) throw conflict(`This question is used in ${used} paper(s) and cannot be deleted permanently. Remove it from those papers first.`);
     await prisma.question.delete({ where: { id: q.id } });

@@ -179,20 +179,21 @@ export function validateDraft(d: QuestionDraft): string[] {
   return errors;
 }
 
-/** Mirrors the server rules so only actions that will succeed are shown. */
+/** Mirrors the server rules (server/src/lib/access.ts) so only actions that will succeed are shown. */
 export function questionActions(user: SessionUser, q: Pick<QuestionDTO, 'status' | 'createdById' | 'subjectId' | 'deletedAt'>) {
+  const admin = user.role === 'ADMIN';
   const own = q.createdById === user.id;
-  const inScope = user.role === 'ADMIN' || user.subjectIds.includes(q.subjectId);
+  const inScope = admin || user.subjectIds.includes(q.subjectId);
   const live = !q.deletedAt;
-  const canDelete = user.role === 'ADMIN' || (inScope && (user.role === 'HOA' || (own && q.status !== 'APPROVED')));
+  const canDelete = admin || (inScope && own && q.status !== 'APPROVED');
   return {
-    edit: live && user.subjectIds.includes(q.subjectId) && (user.role === 'HOA' || (user.role === 'TEACHER' && own && (q.status === 'DRAFT' || q.status === 'REJECTED'))),
+    edit: live && (admin || (inScope && own && (q.status === 'DRAFT' || q.status === 'REJECTED'))),
     submit: live && own && (q.status === 'DRAFT' || q.status === 'REJECTED'),
-    review: live && inScope && user.role !== 'TEACHER' && (q.status === 'SUBMITTED' || (own && (q.status === 'DRAFT' || q.status === 'REJECTED'))),
+    review: live && admin && (q.status === 'SUBMITTED' || (own && (q.status === 'DRAFT' || q.status === 'REJECTED'))),
     remove: live && canDelete,
     restore: !live && canDelete,
-    /** Permanent deletion: ADMIN, or HOA in assigned subjects; the server also refuses questions used in papers. */
-    purge: !live && (user.role === 'ADMIN' || (user.role === 'HOA' && user.subjectIds.includes(q.subjectId))),
+    /** Permanent deletion is ADMIN only; the server also refuses questions used in papers. */
+    purge: !live && admin,
     duplicate: live && inScope,
   };
 }

@@ -71,7 +71,8 @@ export function QuestionBank() {
   }, [filters]);
   useEffect(() => { void load(); }, [load]);
 
-  const ownSubjects = user ? subjects.filter((s) => user.subjectIds.includes(s.id)) : [];
+  // Subjects the user may write questions in: all for the administrator, assigned ones for teachers.
+  const ownSubjects = user ? subjects.filter((s) => user.role === 'ADMIN' || user.subjectIds.includes(s.id)) : [];
 
   // Dashboard quick action: /questions?new=1 opens a blank editor once subjects are known.
   useEffect(() => {
@@ -141,10 +142,10 @@ export function QuestionBank() {
           <p className="text-sm text-slate-500">Content library</p>
           <h2 className="text-3xl font-semibold text-ink">Question bank</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {user.role === 'TEACHER' ? 'Your questions and the approved questions of your subjects.' : user.role === 'HOA' ? 'Questions of your assigned subjects.' : 'All questions across the school.'}
+            {user.role === 'TEACHER' ? 'Your questions and the approved questions of your subjects.' : 'All questions across the school.'}
           </p>
         </div>
-        {user.role !== 'ADMIN' && <button onClick={() => void openEditor()} disabled={!ownSubjects.length} className="primary"><Plus size={17} />New question</button>}
+        <button onClick={() => void openEditor()} disabled={!ownSubjects.length} className="primary"><Plus size={17} />New question</button>
       </div>
 
       <div className="card mt-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
@@ -200,7 +201,7 @@ export function QuestionBank() {
                         {can.edit && <button title="Edit" onClick={() => void openEditor(q)} className="action"><Pencil size={17} /></button>}
                         {can.submit && <button title="Submit for review" onClick={() => void post(q, '/submit', 'Submitted for review')} className="action text-amber-700"><Send size={17} /></button>}
                         {can.review && <button title="Review" onClick={() => setReview({ question: q, decision: 'APPROVE' })} className="secondary !min-h-9 !px-3 text-emerald-700"><Check size={16} />Review</button>}
-                        {can.duplicate && user.role !== 'ADMIN' && <button title="Duplicate as a new draft" onClick={() => void post(q, '/duplicate', 'Copied as a new draft')} className="action"><Copy size={17} /></button>}
+                        {can.duplicate && <button title="Duplicate as a new draft" onClick={() => void post(q, '/duplicate', 'Copied as a new draft')} className="action"><Copy size={17} /></button>}
                         {can.remove && <button title="Move to recycle bin" onClick={() => setConfirmDelete(q)} className="action text-red-600"><Trash2 size={17} /></button>}
                       </>
                     )}

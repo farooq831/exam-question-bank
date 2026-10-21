@@ -1,15 +1,15 @@
 import { Router } from 'express';
-import type { Request } from 'express';
 import type { Prisma } from '@prisma/client';
 import { templateConfigSchema, templateInputSchema, type TemplateDTO } from '@skans/shared';
 import { prisma } from '../db';
 import { audit } from '../lib/audit';
-import { ah, conflict, forbidden, idParam, notFound, parse } from '../lib/http';
+import { ah, conflict, idParam, notFound, parse } from '../lib/http';
 import { parseJson } from '../lib/questions';
 import { requireRole } from '../middleware/auth';
 
 const router = Router();
-router.use(requireRole('ADMIN', 'HOA'));
+// Paper formats are managed by administrators only.
+router.use(requireRole('ADMIN'));
 
 type Row = Prisma.PaperTemplateGetPayload<{ include: { subjects: { select: { id: true; code: true } } } }>;
 
@@ -27,20 +27,13 @@ export function toTemplateDTO(t: Row): TemplateDTO {
   };
 }
 
-/** HOA may edit a template only when every subject using it is assigned to them. */
-function canEdit(req: Request, t: Row) {
-  const u = req.user!;
-  if (u.role === 'ADMIN') return true;
-  return t.subjects.every((s) => u.subjectIds.includes(s.id));
-}
-
 const include = { subjects: { select: { id: true, code: true } } } as const;
 
 router.get(
   '/',
-  ah(async (req, res) => {
+  ah(async (_req, res) => {
     const rows = await prisma.paperTemplate.findMany({ include, orderBy: { name: 'asc' } });
-    res.json(rows.map((r) => ({ ...toTemplateDTO(r), canEdit: canEdit(req, r) })));
+    res.json(rows.map(toTemplateDTO));
   }),
 );
 
@@ -49,7 +42,7 @@ router.get(
   ah(async (req, res) => {
     const t = await prisma.paperTemplate.findUnique({ where: { id: idParam(req) }, include });
     if (!t) throw notFound('Template');
-    res.json({ ...toTemplateDTO(t), canEdit: canEdit(req, t) });
+    res.json(toTemplateDTO(t));
   }),
 );
 
@@ -79,7 +72,6 @@ router.put(
     const id = idParam(req);
     const existing = await prisma.paperTemplate.findUnique({ where: { id }, include });
     if (!existing) throw notFound('Template');
-    if (!canEdit(req, existing)) throw forbidden('This template is used by subjects not assigned to you.');
     const input = parse(templateInputSchema, req.body);
     if (input.code !== existing.code && (await prisma.paperTemplate.findUnique({ where: { code: input.code } }))) {
       throw conflict('Template code already exists.');

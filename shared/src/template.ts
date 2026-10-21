@@ -14,7 +14,9 @@ const shortText = (max = 200) => z.string().trim().max(max);
  * Instruction placeholders: {count} number of questions · {countWord} e.g. "NINE" · **bold**.
  */
 export const templateConfigSchema = z.object({
-  layout: z.enum(['ICAP', 'SKANS']),
+  // 'CAF' = SKANS CAF examination layout (formatting modelled on the reference exam paper);
+  // 'SKANS' = SKANS internal test layout. Older saved configs used 'ICAP' for the CAF layout.
+  layout: z.preprocess((v) => (v === 'ICAP' ? 'CAF' : v), z.enum(['CAF', 'SKANS'])),
   fonts: z.object({
     body: z.enum(FONT_KEYS),
     heading: z.enum(FONT_KEYS),
@@ -30,7 +32,8 @@ export const templateConfigSchema = z.object({
   }),
   header: z.object({
     instituteLine: shortText(200),
-    logo: z.enum(['exam-body', 'skans', 'none']),
+    // Only the SKANS logo is supported. The former 'exam-body' option is read as 'skans'.
+    logo: z.preprocess((v) => (v === 'exam-body' ? 'skans' : v), z.enum(['skans', 'none'])),
     dateFormat: z.enum(DATE_FORMATS),
     showBatch: z.boolean(),
     showTeacher: z.boolean(),
@@ -81,13 +84,13 @@ export const templateConfigSchema = z.object({
 });
 export type TemplateConfig = z.infer<typeof templateConfigSchema>;
 
-export const ICAP_TEMPLATE_CONFIG: TemplateConfig = {
-  layout: 'ICAP',
+export const CAF_TEMPLATE_CONFIG: TemplateConfig = {
+  layout: 'CAF',
   fonts: { body: 'Times', heading: 'Times', runningHeader: 'Calibri', sizePt: 11, lineHeight: 1.15 },
   page: { marginTopMm: 20, marginBottomMm: 16, marginLeftMm: 19, marginRightMm: 19 },
   header: {
-    instituteLine: 'Certificate in Accounting and Finance Stage Examination',
-    logo: 'exam-body',
+    instituteLine: 'Certificate in Accounting and Finance (CAF) Examination',
+    logo: 'skans',
     dateFormat: 'D MMMM YYYY',
     showBatch: false,
     showTeacher: false,

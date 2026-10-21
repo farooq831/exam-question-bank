@@ -6,7 +6,7 @@ import { api } from './api';
 import { QuestionContent } from './questions/QuestionPreview';
 import { ReviewDialog } from './questions/ReviewDialog';
 
-/** Submitted questions waiting for an ADMIN/HOA decision (the server limits HOA to assigned subjects). */
+/** Submitted questions waiting for the administrator's decision. */
 export function ReviewQueue() {
   const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
   const [subjectId, setSubjectId] = useState('');

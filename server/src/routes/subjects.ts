@@ -64,10 +64,10 @@ router.put(
   }),
 );
 
-/** HOA may switch the default template of a subject assigned to them. */
+/** Switches the default template of a subject. */
 router.patch(
   '/:id/template',
-  requireRole('ADMIN', 'HOA'),
+  requireRole('ADMIN'),
   ah(async (req, res) => {
     const id = idParam(req);
     assertSubject(req.user!, id);

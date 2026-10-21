@@ -42,7 +42,7 @@ router.get(
       user.role === 'TEACHER'
         ? 0
         : await prisma.question.count({
-            where: { ...(user.role === 'HOA' ? { subjectId: { in: user.subjectIds } } : {}), status: 'SUBMITTED', deletedAt: null },
+            where: { status: 'SUBMITTED', deletedAt: null },
           });
     const myRejected =
       user.role === 'TEACHER'
@@ -53,7 +53,7 @@ router.get(
       user.role !== 'TEACHER'
         ? (
             await prisma.paper.findMany({
-              where: { ...(user.role === 'HOA' ? { subjectId: { in: user.subjectIds } } : {}), deletedAt: null },
+              where: { deletedAt: null },
               include: paperInclude,
               orderBy: { updatedAt: 'desc' },
               take: 5,

@@ -5,8 +5,8 @@ export default {
     extend: {
       colors: {
         ink: '#172033',
-        navy: '#183153',
-        gold: '#c9a45c',
+        navy: '#1b2a4b', // SKANS logo navy
+        gold: '#c08a2e', // SKANS logo gold
         mist: '#f5f7fb',
       },
       boxShadow: { card: '0 12px 35px rgba(23, 32, 51, .08)' },

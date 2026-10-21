@@ -10,7 +10,7 @@ import { escapeHtml } from '../lib/sanitize';
 import { requireRole } from '../middleware/auth';
 
 const router = Router();
-router.use(requireRole('HOA', 'TEACHER'));
+router.use(requireRole('ADMIN', 'TEACHER'));
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -84,7 +84,7 @@ const SAMPLE_ROWS = [
     'SHORT',
     '4',
     'MEDIUM',
-    'ICAP Autumn 2025',
+    'Spring 2025 mock',
     'Explain the difference between tests of controls and substantive procedures.\nGive one example of each.',
     '',
     '',

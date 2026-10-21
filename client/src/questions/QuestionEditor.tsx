@@ -88,7 +88,7 @@ function SubPartEditor({ value, label, onChange, onRemove, marksDisabled = false
       <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
         <span className="font-semibold text-ink">{label}</span>
         <div className="flex items-end gap-2">
-          <MarksInput value={value.marks} disabled={marksDisabled} label={marksDisabled ? 'Marks (from sub-parts)' : 'Marks'} onChange={(marks) => onChange({ ...value, marks })} />
+          <MarksInput value={value.marks} disabled={marksDisabled} label={marksDisabled ? 'Marks (sum of parts)' : 'Marks'} onChange={(marks) => onChange({ ...value, marks })} />
           <button type="button" className="action text-slate-400 hover:text-red-600" title={`Remove ${label}`} onClick={onRemove}><Trash2 size={16} /></button>
         </div>
       </div>
@@ -199,6 +199,16 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
           </Section>
         )}
 
+        {d.type === 'SHORT' && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 p-4">
+            <div>
+              <p className="font-semibold text-ink">Sub-questions</p>
+              <p className="text-xs text-slate-500">Split this question into (a), (b), (c)… each with its own text, marks and model answer.</p>
+            </div>
+            <button type="button" className="secondary" onClick={() => setD((cur) => ({ ...cur, type: 'LONG', parts: [{ ...newPart(), marks: cur.marks || 2 }, newPart()] }))}><Plus size={15} />Add sub-questions</button>
+          </div>
+        )}
+
         {d.type === 'TRUE_FALSE' && (
           <Section title="Correct answer" hint="Printed only in the answer key.">
             <div className="grid max-w-sm grid-cols-2 gap-2">
@@ -238,8 +248,8 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
         )}
 
         {(d.type === 'LONG' || d.type === 'CASE_STUDY') && (
-          <Section title="Parts" hint="Leave parts empty for a single-requirement question. A part's marks equal the sum of its sub-parts when it has any.">
-            <label className="label mb-3 flex flex-wrap items-center gap-2">Part labels
+          <Section title="Sub-questions" hint="Each sub-question has its own text, marks and model answer. A sub-question can be split further into parts; its marks are then the sum of those parts. Remove all sub-questions for a single-requirement question.">
+            <label className="label mb-3 flex flex-wrap items-center gap-2">Numbering
               <select className="field w-56" value={d.partLabelStyle ?? ''} onChange={(e) => set('partLabelStyle', (e.target.value || null) as LabelStyle | null)}>
                 <option value="">Template default</option>
                 <option value="roman">(i), (ii), (iii)</option>
@@ -249,16 +259,16 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
             </label>
             <div className="space-y-3">
               {d.parts.map((p, i) => (
-                <SubPartEditor key={p.id} value={p} label={`Part ${partLabel(i + 1, style)}`} marksDisabled={p.parts.length > 0} onChange={(v) => updatePart(i, { ...p, ...v })} onRemove={() => set('parts', d.parts.filter((_, j) => j !== i))}>
+                <SubPartEditor key={p.id} value={p} label={`Sub-question ${partLabel(i + 1, style)}`} marksDisabled={p.parts.length > 0} onChange={(v) => updatePart(i, { ...p, ...v })} onRemove={() => set('parts', d.parts.filter((_, j) => j !== i))}>
                   <div className="ml-2 mt-3 space-y-3 border-l-2 border-slate-100 pl-3 sm:ml-4">
                     {p.parts.map((s, j) => (
-                      <SubPartEditor key={s.id} value={s} label={`Sub-part ${partLabel(j + 1, subStyle)}`} onChange={(v) => updatePart(i, { ...p, parts: p.parts.map((x, k) => (k === j ? v : x)) })} onRemove={() => updatePart(i, { ...p, parts: p.parts.filter((_, k) => k !== j) })} />
+                      <SubPartEditor key={s.id} value={s} label={`Part ${partLabel(i + 1, style)}${partLabel(j + 1, subStyle)}`} onChange={(v) => updatePart(i, { ...p, parts: p.parts.map((x, k) => (k === j ? v : x)) })} onRemove={() => updatePart(i, { ...p, parts: p.parts.filter((_, k) => k !== j) })} />
                     ))}
-                    <button type="button" className="secondary" disabled={p.parts.length >= 12} onClick={() => updatePart(i, { ...p, parts: [...p.parts, newSubPart()] })}><Plus size={15} />Add sub-part</button>
+                    <button type="button" className="secondary" disabled={p.parts.length >= 12} onClick={() => updatePart(i, { ...p, parts: [...p.parts, newSubPart()] })}><Plus size={15} />Add part {partLabel(i + 1, style)}{partLabel(p.parts.length + 1, subStyle)}</button>
                   </div>
                 </SubPartEditor>
               ))}
-              <button type="button" className="secondary" disabled={d.parts.length >= 12} onClick={() => set('parts', [...d.parts, newPart()])}><Plus size={15} />Add part</button>
+              <button type="button" className="secondary" disabled={d.parts.length >= 12} onClick={() => set('parts', [...d.parts, newPart()])}><Plus size={15} />Add sub-question</button>
             </div>
           </Section>
         )}

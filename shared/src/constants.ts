@@ -1,8 +1,7 @@
-export const ROLES = ['ADMIN', 'HOA', 'TEACHER'] as const;
+export const ROLES = ['ADMIN', 'TEACHER'] as const;
 export type Role = (typeof ROLES)[number];
 export const ROLE_LABELS: Record<Role, string> = {
   ADMIN: 'Administrator',
-  HOA: 'Head of Academics',
   TEACHER: 'Teacher',
 };
 
@@ -13,8 +12,8 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   MCQ_GROUP: 'MCQ group (shared stem)',
   TRUE_FALSE: 'True / False',
   SHORT: 'Short question',
-  LONG: 'Long question (with parts)',
-  CASE_STUDY: 'Case study',
+  LONG: 'Long question (with sub-questions)',
+  CASE_STUDY: 'Case study (with sub-questions)',
 };
 
 export const QUESTION_STATUSES = ['DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED'] as const;
@@ -87,27 +86,23 @@ export const AUDIT_ACTIONS = [
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 /**
- * Chartered Accountancy papers known to the system. The school teaches CAF only; PRC entries are
- * kept for reference and are not seeded. `layout` picks the default format: 'ICAP' is the internal
- * key of the "CAF Examination Paper" format, 'SKANS' of the "SKANS Internal Test" format.
+ * CAF papers taught at SKANS (seeded as subjects; the administration will confirm the final list
+ * and full names). `layout` picks the default paper format: 'CAF' = SKANS CAF examination format,
+ * 'SKANS' = SKANS internal test format.
  */
-export const CA_PAPERS: { code: string; name: string; level: string; layout: 'ICAP' | 'SKANS' }[] = [
-  { code: 'FAR', name: 'Financial Accounting and Reporting', level: 'CAF', layout: 'ICAP' },
-  { code: 'FAR1', name: 'Financial Accounting and Reporting I', level: 'CAF', layout: 'ICAP' },
-  { code: 'FAR2', name: 'Financial Accounting and Reporting II', level: 'CAF', layout: 'ICAP' },
-  { code: 'AUD', name: 'Audit and Assurance Essentials', level: 'CAF', layout: 'ICAP' },
+export const CA_PAPERS: { code: string; name: string; level: string; layout: 'CAF' | 'SKANS' }[] = [
+  { code: 'FAR', name: 'Financial Accounting and Reporting', level: 'CAF', layout: 'CAF' },
+  { code: 'FAR1', name: 'Financial Accounting and Reporting I', level: 'CAF', layout: 'CAF' },
+  { code: 'FAR2', name: 'Financial Accounting and Reporting II', level: 'CAF', layout: 'CAF' },
+  { code: 'AUD', name: 'Audit and Assurance Essentials', level: 'CAF', layout: 'CAF' },
   { code: 'TAX', name: 'Taxation', level: 'CAF', layout: 'SKANS' },
-  { code: 'CMA', name: 'Cost and Management Accounting', level: 'CAF', layout: 'ICAP' },
+  { code: 'CMA', name: 'Cost and Management Accounting', level: 'CAF', layout: 'CAF' },
   { code: 'BL', name: 'Business Law', level: 'CAF', layout: 'SKANS' },
   { code: 'CL', name: 'Corporate Laws', level: 'CAF', layout: 'SKANS' },
-  { code: 'MFA', name: 'Management, Finance and Analytics', level: 'CAF', layout: 'ICAP' },
+  { code: 'MFA', name: 'Management, Finance and Analytics', level: 'CAF', layout: 'CAF' },
   { code: 'DSR', name: 'Data, Systems and Risks', level: 'CAF', layout: 'SKANS' },
   { code: 'TPC', name: 'Tax Practices and Compliance', level: 'CAF', layout: 'SKANS' },
   { code: 'BLD', name: 'Business Laws and Documentation', level: 'CAF', layout: 'SKANS' },
-  { code: 'MA', name: 'Management Accounting', level: 'CAF', layout: 'ICAP' },
-  { code: 'CR', name: 'Corporate Reporting', level: 'PRC', layout: 'ICAP' },
-  { code: 'BIA', name: 'Business Insights and Analytics', level: 'CAF', layout: 'ICAP' },
-  { code: 'AAE', name: 'Advanced Audit and Ethics', level: 'PRC', layout: 'ICAP' },
-  { code: 'SBM', name: 'Strategic Business Management', level: 'PRC', layout: 'ICAP' },
-  { code: 'ATP', name: 'Advanced Taxation Practices', level: 'PRC', layout: 'SKANS' },
+  { code: 'MA', name: 'Management Accounting', level: 'CAF', layout: 'CAF' },
+  { code: 'BIA', name: 'Business Insights and Analytics', level: 'CAF', layout: 'CAF' },
 ];

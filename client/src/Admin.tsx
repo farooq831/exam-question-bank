@@ -130,7 +130,7 @@ export function AdminUsers() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Administration" title="Users" intro="Accounts, roles and subject assignments. Teachers and HOA see only their assigned subjects." action={<button className="primary" onClick={() => setForm({ username: '', fullName: '', email: '', role: 'TEACHER', password: temporaryPassword(), subjectIds: [], isActive: true })}><Plus size={16} />Add user</button>} />
+      <PageHeader eyebrow="Administration" title="Users" intro="Accounts, roles and subject assignments. Teachers see only their assigned subjects; administrators see everything." action={<button className="primary" onClick={() => setForm({ username: '', fullName: '', email: '', role: 'TEACHER', password: temporaryPassword(), subjectIds: [], isActive: true })}><Plus size={16} />Add user</button>} />
       <div className="card mt-6 grid gap-3 p-4 sm:grid-cols-[1fr_180px_180px]">
         <label className="relative"><Search className="absolute left-3 top-3 text-slate-400" size={17} /><input className="field !pl-10" placeholder="Search name, username or email…" value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} aria-label="Search users" /></label>
         <select className="field" value={filter.role} onChange={(e) => setFilter({ ...filter, role: e.target.value })} aria-label="Role"><option value="">All roles</option>{ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}</select>
@@ -276,14 +276,13 @@ export function AdminSubjects() {
 
 // ------------------------------------------------------------------ Templates
 
-type TemplateRow = TemplateDTO & { canEdit?: boolean };
 type TemplateDraft = { id?: number; code: string; name: string; description: string; isActive: boolean; config: TemplateConfig };
 
 function Field({ label, children, hint, wide = false }: { label: string; children: ReactNode; hint?: string; wide?: boolean }) {
   return <label className={`label ${wide ? 'sm:col-span-2' : ''}`}>{label}{children}{hint && <span className="mt-1 block text-xs font-normal text-slate-500">{hint}</span>}</label>;
 }
 
-function TemplateEditor({ initial, readOnly, onClose, onSaved }: { initial: TemplateDraft; readOnly: boolean; onClose(): void; onSaved(): void }) {
+function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft; onClose(): void; onSaved(): void }) {
   const [d, setD] = useState(initial);
   const [tab, setTab] = useState<'basic' | 'json'>('basic');
   const [json, setJson] = useState(JSON.stringify(initial.config, null, 2));
@@ -319,10 +318,9 @@ function TemplateEditor({ initial, readOnly, onClose, onSaved }: { initial: Temp
   }
 
   return (
-    <Modal size="xl" eyebrow={d.id ? 'Paper template' : 'New paper template'} title={d.name || 'Template'} onClose={onClose} footer={<><button className="secondary" onClick={onClose}>{readOnly ? 'Close' : 'Cancel'}</button>{!readOnly && <button className="primary" disabled={busy} onClick={() => void save()}>{busy ? 'Saving…' : 'Save template'}</button>}</>}>
-      {readOnly && <p className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">View only: this template is also used by subjects that are not assigned to you.</p>}
+    <Modal size="xl" eyebrow={d.id ? 'Paper template' : 'New paper template'} title={d.name || 'Template'} onClose={onClose} footer={<><button className="secondary" onClick={onClose}>Cancel</button><button className="primary" disabled={busy} onClick={() => void save()}>{busy ? 'Saving…' : 'Save template'}</button></>}>
       <p className="mb-4 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-900">Values here are provisional until the administration supplies the approved specification (fonts, sizes, margins, header/footer, marks format, numbering). Set them from the approved sample and check the result with a paper preview.</p>
-      <fieldset disabled={readOnly} className="space-y-5">
+      <fieldset className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Name"><input className="field mt-1" value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} /></Field>
           <Field label="Code" hint="Capital letters, digits, - or _"><input className="field mt-1" value={d.code} onChange={(e) => setD({ ...d, code: e.target.value.toUpperCase() })} /></Field>
@@ -350,7 +348,7 @@ function TemplateEditor({ initial, readOnly, onClose, onSaved }: { initial: Temp
             </div></section>
             <section><h3 className="font-semibold">Header</h3><div className="mt-2 grid gap-4 sm:grid-cols-2">
               <Field label="Institute / level line" wide><input className="field mt-1" value={cfg.header.instituteLine} onChange={(e) => set('header', { instituteLine: e.target.value })} /></Field>
-              <Field label="Logo" hint="Printed only when an authorised file exists in the branding folder."><select className="field mt-1" value={cfg.header.logo} onChange={(e) => set('header', { logo: e.target.value as TemplateConfig['header']['logo'] })}><option value="none">No logo</option><option value="skans">SKANS logo (skans-logo.png)</option><option value="exam-body">Exam-body logo (exam-body-logo.png)</option></select></Field>
+              <Field label="Logo" hint="Uses the SKANS logo file in the branding folder (skans-logo.jpg)."><select className="field mt-1" value={cfg.header.logo} onChange={(e) => set('header', { logo: e.target.value as TemplateConfig['header']['logo'] })}><option value="skans">SKANS logo</option><option value="none">No logo</option></select></Field>
               <Field label="Date format"><select className="field mt-1" value={cfg.header.dateFormat} onChange={(e) => set('header', { dateFormat: e.target.value as TemplateConfig['header']['dateFormat'] })}>{DATE_FORMATS.map((f) => <option key={f}>{f}</option>)}</select></Field>
               <div className="flex flex-wrap gap-4 sm:col-span-2">{(['showBatch', 'showTeacher', 'showTest'] as const).map((k) => <label key={k} className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" className="h-4 w-4" checked={cfg.header[k]} onChange={(e) => set('header', { [k]: e.target.checked })} />Print {k.replace('show', '').toLowerCase()}</label>)}</div>
             </div></section>
@@ -385,13 +383,13 @@ function TemplateEditor({ initial, readOnly, onClose, onSaved }: { initial: Temp
 }
 
 export function AdminTemplates() {
-  const [templates, setTemplates] = useState<TemplateRow[]>([]);
-  const [editing, setEditing] = useState<{ draft: TemplateDraft; readOnly: boolean } | null>(null);
+  const [templates, setTemplates] = useState<TemplateDTO[]>([]);
+  const [editing, setEditing] = useState<TemplateDraft | null>(null);
   const load = useCallback(async () => {
-    try { setTemplates(await api<TemplateRow[]>('/templates')); } catch (error) { toast.error(errorText(error, 'Unable to load templates')); }
+    try { setTemplates(await api<TemplateDTO[]>('/templates')); } catch (error) { toast.error(errorText(error, 'Unable to load templates')); }
   }, []);
   useEffect(() => { void load(); }, [load]);
-  const draftOf = (t: TemplateRow): TemplateDraft => ({ id: t.id, code: t.code, name: t.name, description: t.description, isActive: t.isActive, config: t.config });
+  const draftOf = (t: TemplateDTO): TemplateDraft => ({ id: t.id, code: t.code, name: t.name, description: t.description, isActive: t.isActive, config: t.config });
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -404,13 +402,13 @@ export function AdminTemplates() {
             <p className="mt-2 flex-1 text-sm text-slate-600">{t.description}</p>
             <p className="mt-2 text-xs text-slate-500">Used by: {t.subjectCodes.length ? t.subjectCodes.join(', ') : 'no subjects'}</p>
             <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-              <button className="secondary !min-h-9" onClick={() => setEditing({ draft: draftOf(t), readOnly: t.canEdit === false })}>{t.canEdit === false ? 'View' : <><Pencil size={15} />Edit</>}</button>
-              <button className="secondary !min-h-9" onClick={() => setEditing({ draft: { ...draftOf(t), id: undefined, code: `${t.code}_COPY`.slice(0, 40), name: `${t.name} (copy)` }, readOnly: false })}><Copy size={15} />Duplicate</button>
+              <button className="secondary !min-h-9" onClick={() => setEditing(draftOf(t))}><Pencil size={15} />Edit</button>
+              <button className="secondary !min-h-9" onClick={() => setEditing({ ...draftOf(t), id: undefined, code: `${t.code}_COPY`.slice(0, 40), name: `${t.name} (copy)` })}><Copy size={15} />Duplicate</button>
             </div>
           </article>
         ))}
       </div>
-      {editing && <TemplateEditor initial={editing.draft} readOnly={editing.readOnly} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(); }} />}
+      {editing && <TemplateEditor initial={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); void load(); }} />}
     </div>
   );
 }

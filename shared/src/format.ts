@@ -93,8 +93,8 @@ function plural(n: number, word: string) {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
-/** ICAP style: "3 hours and 15 minutes (including 15 minutes' reading time)". */
-export function formatDurationIcap(durationMinutes: number, readingMinutes: number): string {
+/** CAF examination style: "3 hours and 15 minutes (including 15 minutes' reading time)". */
+export function formatDurationCaf(durationMinutes: number, readingMinutes: number): string {
   const total = durationMinutes + readingMinutes;
   const h = Math.floor(total / 60);
   const m = total % 60;

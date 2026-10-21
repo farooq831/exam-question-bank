@@ -52,7 +52,7 @@ export function QuestionContent({ question, showAnswers = true, showPrivate = tr
           <div className="mt-3 space-y-3">
             {parts.map((p, i) => (
               <div key={i} className="rounded-xl border border-slate-100 p-3">
-                <div className="flex justify-between gap-3 text-xs font-semibold text-slate-500"><span>Part {partLabel(i + 1, style)}</span>{!p.parts?.length && <span>{p.marks} marks</span>}</div>
+                <div className="flex justify-between gap-3 text-xs font-semibold text-slate-500"><span>Sub-question {partLabel(i + 1, style)}</span>{!p.parts?.length && <span>{p.marks} marks</span>}</div>
                 <Html html={p.html} />
                 {showAnswers && p.answer && <div className="mt-2 rounded-lg bg-emerald-50 p-2"><p className="text-[11px] font-bold uppercase text-emerald-700">Model answer</p><Html html={p.answer} /></div>}
                 {(p.parts ?? []).map((s, j) => (

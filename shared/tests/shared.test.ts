@@ -4,10 +4,10 @@ import {
   computeQuestionMarks,
   fillTokens,
   formatDate,
-  formatDurationIcap,
+  formatDurationCaf,
   formatDurationSkans,
   formatMarks,
-  ICAP_TEMPLATE_CONFIG,
+  CAF_TEMPLATE_CONFIG,
   partLabel,
   questionInputSchema,
   safeFileName,
@@ -58,7 +58,7 @@ describe('marks total validation', () => {
 });
 
 describe('formatting helpers', () => {
-  it('formats marks with ICAP and SKANS patterns', () => {
+  it('formats marks with CAF and SKANS patterns', () => {
     expect(formatMarks(8, '({nn} marks)', '({nn} mark)')).toBe('(08 marks)');
     expect(formatMarks(1, '({nn} marks)', '({nn} mark)')).toBe('(01 mark)');
     expect(formatMarks(15, '({nn} marks)')).toBe('(15 marks)');
@@ -68,7 +68,7 @@ describe('formatting helpers', () => {
   it('formats dates and durations', () => {
     expect(formatDate('2026-03-02', 'D MMMM YYYY')).toBe('2 March 2026');
     expect(formatDate('2025-10-20', 'MM/DD/YYYY')).toBe('10/20/2025');
-    expect(formatDurationIcap(180, 15)).toBe("3 hours and 15 minutes (including 15 minutes' reading time)");
+    expect(formatDurationCaf(180, 15)).toBe("3 hours and 15 minutes (including 15 minutes' reading time)");
     expect(formatDurationSkans(60)).toBe('1 Hour(s)');
   });
 
@@ -82,8 +82,15 @@ describe('formatting helpers', () => {
 
 describe('schemas', () => {
   it('accepts the seeded default templates', () => {
-    expect(templateConfigSchema.safeParse(ICAP_TEMPLATE_CONFIG).success).toBe(true);
+    expect(templateConfigSchema.safeParse(CAF_TEMPLATE_CONFIG).success).toBe(true);
     expect(templateConfigSchema.safeParse(SKANS_TEMPLATE_CONFIG).success).toBe(true);
+  });
+
+  it('reads formats saved by earlier versions as SKANS formats', () => {
+    const legacy = { ...CAF_TEMPLATE_CONFIG, layout: 'ICAP', header: { ...CAF_TEMPLATE_CONFIG.header, logo: 'exam-body' } };
+    const parsed = templateConfigSchema.parse(legacy);
+    expect(parsed.layout).toBe('CAF');
+    expect(parsed.header.logo).toBe('skans');
   });
 
   it('requires exactly one correct MCQ option', () => {

@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { TEST_DB_FILE, TEST_ENV } from './test-env';
 
 /**
- * Creates the schema in a fresh, empty test database and seeds the demo dataset once per run.
- * Both steps are non-destructive (the file is new), and the file is removed afterwards.
+ * Creates the schema in a fresh, empty test database, runs the production bootstrap seed and then
+ * loads the test-only demo fixtures. The file is new (nothing is destroyed) and removed afterwards.
  */
 export default function setup() {
   const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -16,6 +16,7 @@ export default function setup() {
   const run = (cmd: string) => execSync(cmd, { cwd, env, stdio: 'pipe' });
   run('npx prisma db push --skip-generate');
   run('npx tsx prisma/seed.ts');
+  run('npx tsx tests/fixtures/demo-data.ts');
   return () => {
     for (const suffix of ['', '-journal']) rmSync(TEST_DB_FILE + suffix, { force: true });
   };

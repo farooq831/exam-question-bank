@@ -7,7 +7,7 @@ import { prisma } from '../db';
 import { audit } from '../lib/audit';
 import { ah, HttpError, parse } from '../lib/http';
 import { PrismaSessionStore } from '../lib/sessionStore';
-import { ensureCsrfToken, requireAuth } from '../middleware/auth';
+import { ensureCsrfToken, normaliseRole, requireAuth } from '../middleware/auth';
 
 export const BCRYPT_ROUNDS = 12;
 // Used to keep response time similar when the username does not exist.
@@ -86,7 +86,7 @@ router.post(
         id: user.id,
         username: user.username,
         fullName: user.fullName,
-        role: user.role,
+        role: normaliseRole(user.role),
         mustChangePassword: user.mustChangePassword,
         subjectIds: subjects.map((s) => s.subjectId),
       },

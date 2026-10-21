@@ -37,7 +37,7 @@ export function Dashboard() {
         <p className="text-sm text-blue-100">Welcome</p>
         <h2 className="mt-1 text-2xl font-semibold sm:text-3xl">{user.fullName}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
-          {admin ? 'School-wide overview of the question bank, reviews and papers.' : user.role === 'HOA' ? 'Your subjects: review submitted questions and build papers.' : 'Write questions for your subjects and submit them for review.'}
+          {admin ? 'School-wide overview of the question bank, reviews and papers.' : 'Write questions for your subjects and submit them for review.'}
         </p>
       </div>
 
@@ -47,7 +47,7 @@ export function Dashboard() {
             <Stat label="Pending review" value={data?.pendingReview} tone="bg-amber-50 text-amber-700" icon={ClipboardCheck} to="/review" />
             <Stat label="Approved questions" value={t?.APPROVED} tone="bg-emerald-50 text-emerald-700" icon={CheckCircle2} to="/questions?status=APPROVED" />
             <Stat label="Rejected questions" value={t?.REJECTED} tone="bg-red-50 text-red-700" icon={XCircle} to="/questions?status=REJECTED" />
-            <Stat label={admin ? 'Draft questions' : 'Drafts (yours)'} value={t?.DRAFT} tone="bg-slate-100 text-slate-600" icon={PenLine} to="/questions?status=DRAFT" />
+            <Stat label="Draft questions" value={t?.DRAFT} tone="bg-slate-100 text-slate-600" icon={PenLine} to="/questions?status=DRAFT" />
           </>
         ) : (
           <>
@@ -74,7 +74,7 @@ export function Dashboard() {
           <div className="mt-3 grid gap-2">
             {staff && <QuickAction to="/review" label="Open the review queue" icon={ClipboardCheck} />}
             {staff && <QuickAction to="/papers?paper=new" label="Build a new paper" icon={FilePlus2} />}
-            {!admin && <QuickAction to="/questions?new=1" label="Write a new question" icon={Plus} />}
+            <QuickAction to="/questions?new=1" label="Write a new question" icon={Plus} />
             {admin && <QuickAction to="/admin/users" label="Manage users" icon={Users} />}
             {admin && <QuickAction to="/admin/audit" label="View the audit log" icon={ScrollText} />}
           </div>

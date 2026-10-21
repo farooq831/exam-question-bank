@@ -10,7 +10,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "db:setup": "prisma generate && prisma db push --skip-generate && tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset --skip-generate && tsx prisma/seed.ts --reset",
+    "db:reset": "prisma db push --skip-generate && tsx prisma/seed.ts --reset",
     "db:seed": "tsx prisma/seed.ts",
     "pdf:samples": "tsx scripts/generate-samples.ts",
     "reset-admin": "tsx scripts/reset-admin.ts",

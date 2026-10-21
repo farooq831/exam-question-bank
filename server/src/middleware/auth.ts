@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
-import type { Role, SessionUser } from '@skans/shared';
+import { ROLES, type Role, type SessionUser } from '@skans/shared';
 import { prisma } from '../db';
 import { forbidden, HttpError } from '../lib/http';
 
@@ -20,6 +20,11 @@ declare global {
   }
 }
 
+/** Roles that are no longer supported (e.g. the former HOA role) get the least privileged role. */
+export function normaliseRole(role: string): Role {
+  return (ROLES as readonly string[]).includes(role) ? (role as Role) : 'TEACHER';
+}
+
 /**
  * Loads the signed-in user from the database on every request, so that deactivation,
  * role changes and subject re-assignment take effect immediately.
@@ -37,7 +42,7 @@ export async function loadUser(req: Request, _res: Response, next: NextFunction)
           id: u.id,
           username: u.username,
           fullName: u.fullName,
-          role: u.role as Role,
+          role: normaliseRole(u.role),
           mustChangePassword: u.mustChangePassword,
           subjectIds: u.subjects.map((s) => s.subjectId),
         };

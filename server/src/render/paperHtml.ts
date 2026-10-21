@@ -2,7 +2,7 @@ import { parse as parseHtml, type HTMLElement } from 'node-html-parser';
 import {
   fillTokens,
   formatDate,
-  formatDurationIcap,
+  formatDurationCaf,
   formatDurationSkans,
   formatMarks,
   numberWord,
@@ -22,7 +22,7 @@ import { fontFacesFor, fontStack, logoDataUri } from './assets';
 /**
  * Renders a paper (or its answer key) to a single self-contained HTML document.
  * The SAME document is printed by Chromium for the PDF and for the live preview, so what the
- * HOA sees in the builder is exactly what gets downloaded.
+ * the administrator sees in the builder is exactly what gets downloaded.
  */
 
 export interface RenderQuestion {
@@ -122,7 +122,7 @@ function unwrapP(html: string): string {
 
 /**
  * Appends the marks to the last paragraph of a block of rich text (so "(08 marks)" sits on the
- * last line, right-aligned like ICAP papers), or adds a separate line when the text ends in a
+ * last line, right-aligned as on the reference examination paper), or adds a separate line when the text ends in a
  * table or is empty.
  */
 function withMarks(html: string, marksHtml: string): string {
@@ -207,27 +207,26 @@ export function renderPaperHtml(input: RenderInput): string {
   // ---- header block
   const title = header.titleOverride || input.title || subject.name;
   let headerHtml = '';
-  if (cfg.layout === 'ICAP') {
-    const logo = cfg.header.logo !== 'none' ? logoDataUri(cfg.header.logo === 'skans' ? 'skans-logo' : 'exam-body-logo') : null;
+  const logo = cfg.header.logo === 'skans' ? logoDataUri('skans-logo') : null;
+  if (cfg.layout === 'CAF') {
     const meta = [
       dateText,
       header.maxMarks ? `${header.maxMarks} marks` : '',
-      header.durationMinutes ? formatDurationIcap(header.durationMinutes, header.readingMinutes) : '',
+      header.durationMinutes ? formatDurationCaf(header.durationMinutes, header.readingMinutes) : '',
     ]
       .filter(Boolean)
       .map(escapeHtml)
       .join('<br>');
     headerHtml = `
-<header class="icap-head">
-  <div class="icap-head-text">
+<header class="caf-head">
+  <div class="caf-head-text">
     ${cfg.header.instituteLine ? `<div class="inst">${escapeHtml(cfg.header.instituteLine)}</div>` : ''}
     <h1 class="subj">${escapeHtml(title)}${isKey ? ' <span class="key-tag">– Answer Key</span>' : ''}</h1>
     <div class="meta">${meta}</div>
   </div>
-  ${logo ? `<div class="icap-logo"><img src="${logo}" alt=""></div>` : ''}
+  ${logo ? `<div class="caf-logo"><img src="${logo}" alt="SKANS"></div>` : ''}
 </header>`;
   } else {
-    const logo = cfg.header.logo !== 'none' ? logoDataUri(cfg.header.logo === 'exam-body' ? 'exam-body-logo' : 'skans-logo') : null;
     const left = [
       cfg.header.showBatch ? ['Batch No', header.batchNo] : null,
       cfg.header.showTeacher ? ['Teacher Name', header.teacherName] : null,
@@ -504,7 +503,7 @@ ${firstPage}
 @page{@${pos}-left{${marginBoxStyle}text-align:left;}@${pos}-center{${marginBoxStyle}text-align:center;}@${pos}-right{${marginBoxStyle}text-align:right;}}
 ${BASE_CSS}
 body{font-family:${fontStack(cfg.fonts.body)};font-size:${cfg.fonts.sizePt}pt;line-height:${cfg.fonts.lineHeight};}
-.q-head,.q-num,.icap-head,.skans-head,.section-div,.instructions,.the-end,.key-banner{font-family:${fontStack(cfg.fonts.heading)};}
+.q-head,.q-num,.caf-head,.skans-head,.section-div,.instructions,.the-end,.key-banner{font-family:${fontStack(cfg.fonts.heading)};}
 .q{margin-top:${cfg.questions.gapMm}mm;}
 .font-loader{font-family:${fontStack(cfg.fonts.runningHeader)};position:absolute;left:0;top:0;height:0;overflow:hidden;visibility:hidden;white-space:nowrap;}
 `;
@@ -540,14 +539,14 @@ h1,h2{margin:0;font-weight:700;}
 .muted{color:#555;font-style:italic;}
 .empty{color:#666;font-style:italic;text-align:center;margin-top:20mm;}
 
-/* ICAP header */
-.icap-head{display:flex;justify-content:space-between;align-items:flex-start;margin:2mm 0 4mm;}
-.icap-head .inst{font-size:13pt;font-weight:700;margin-bottom:3.5mm;}
-.icap-head .subj{font-size:17pt;margin-bottom:3.5mm;}
-.icap-head .key-tag{font-size:13pt;color:#000;}
-.icap-head .meta{font-size:11pt;line-height:1.15;}
-.icap-logo{flex:0 0 30mm;text-align:center;}
-.icap-logo img{width:30mm;height:auto;}
+/* CAF examination header: title block left, SKANS logo top right (as on the reference paper) */
+.caf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:6mm;margin:2mm 0 4mm;}
+.caf-head .inst{font-size:13pt;font-weight:700;margin-bottom:3.5mm;}
+.caf-head .subj{font-size:17pt;margin-bottom:3.5mm;}
+.caf-head .key-tag{font-size:13pt;color:#000;}
+.caf-head .meta{font-size:11pt;line-height:1.15;}
+.caf-logo{flex:0 0 44mm;text-align:right;}
+.caf-logo img{width:44mm;height:auto;}
 
 /* SKANS header */
 .skans-head{margin-bottom:2mm;}
@@ -625,7 +624,7 @@ h1,h2{margin:0;font-weight:700;}
 .q-content hr{border:0;border-top:.6pt solid #000;}
 sub,sup{font-size:70%;line-height:0;}
 
-/* tables: solid outer border, dashed inner rules (ICAP style); never split short tables */
+/* tables: solid outer border, dashed inner rules (reference paper style); never split short tables */
 .tbl{break-inside:avoid;page-break-inside:avoid;margin:2mm 0 3mm;display:flex;justify-content:center;}
 .tbl table{border-collapse:collapse;border:.8pt solid #000;font-size:inherit;line-height:1.1;max-width:100%;}
 .tbl th,.tbl td{border:.6pt dashed #333;padding:.3mm 2mm;vertical-align:top;}

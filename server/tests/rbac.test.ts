@@ -4,18 +4,13 @@ import { login, shortQuestion, subjectId, unique, type Session } from './helpers
 
 let teacher: Session;
 let teacherTax: Session;
-let hoa: Session;
-let hoaAudit: Session;
 let admin: Session;
 let FAR = 0;
 let TAX = 0;
-let AUD = 0;
 
 beforeAll(async () => {
-  [teacher, teacherTax, hoa, hoaAudit, admin] = await Promise.all(
-    ['teacher_far', 'teacher_tax', 'hoa_far', 'hoa_audit', 'admin'].map((u) => login(u)),
-  );
-  [FAR, TAX, AUD] = await Promise.all(['FAR', 'TAX', 'AUD'].map(subjectId));
+  [teacher, teacherTax, admin] = await Promise.all(['teacher_far', 'teacher_tax', 'admin'].map((u) => login(u)));
+  [FAR, TAX] = await Promise.all(['FAR', 'TAX'].map(subjectId));
 });
 
 describe('TEACHER restrictions', () => {
@@ -49,9 +44,13 @@ describe('TEACHER restrictions', () => {
   });
 
   it("cannot see other teachers' drafts", async () => {
-    const own = (await teacherTax.post('/api/questions', shortQuestion(TAX)).expect(201)).body;
-    await hoa.get(`/api/questions/${own.id}`).expect(404); // HOA does not see private drafts either
+    // Give both teachers a shared subject: drafts stay private even inside the same subject.
+    const tax = await prisma.user.findUniqueOrThrow({ where: { username: 'teacher_tax' } });
+    await prisma.userSubject.upsert({ where: { userId_subjectId: { userId: tax.id, subjectId: FAR } }, update: {}, create: { userId: tax.id, subjectId: FAR } });
+    const own = (await teacherTax.post('/api/questions', shortQuestion(FAR)).expect(201)).body;
+    await teacher.get(`/api/questions/${own.id}`).expect(404);
     await admin.get(`/api/questions/${own.id}`).expect(200);
+    await prisma.userSubject.delete({ where: { userId_subjectId: { userId: tax.id, subjectId: FAR } } });
   });
 
   it('cannot approve or reject questions', async () => {
@@ -86,51 +85,45 @@ describe('CSV import hardening', () => {
   });
 });
 
-describe('HOA restrictions', () => {
-  it('cannot manage users, subjects or the audit log', async () => {
-    await hoa.get('/api/users').expect(403);
-    await hoa.get('/api/audit').expect(403);
-    await hoa.post('/api/subjects', { code: 'ZZ', name: 'Nope', level: 'CAF', templateId: null }).expect(403);
-    await hoa.post('/api/users', {}).expect(403);
+describe('two-role model', () => {
+  it('no longer accepts the HOA role', async () => {
+    const res = await admin.post('/api/users', { username: unique('h_').toLowerCase(), fullName: 'Former HOA', role: 'HOA', password: 'Welcome2026xx', subjectIds: [] }).expect(400);
+    expect(JSON.stringify(res.body)).toMatch(/role/);
   });
 
-  it('is limited to assigned subjects for questions and papers', async () => {
-    const audQuestion = await prisma.question.findFirstOrThrow({ where: { subjectId: AUD, status: 'SUBMITTED' } });
-    await hoa.get(`/api/questions/${audQuestion.id}`).expect(404);
-    await hoa.post(`/api/questions/${audQuestion.id}/review`, { decision: 'APPROVE', comment: '' }).expect(404);
-    await hoa.get(`/api/questions?subjectId=${AUD}`).expect(403);
-
-    const farPaper = await prisma.paper.findFirstOrThrow({ where: { subjectId: FAR } });
-    await hoaAudit.get(`/api/papers/${farPaper.id}`).expect(403);
-    await hoaAudit.get(`/api/papers/${farPaper.id}/pdf`).expect(403);
-    await hoaAudit.get(`/api/papers/${farPaper.id}/answer-key.pdf`).expect(403);
-    const listed = (await hoaAudit.get('/api/papers').expect(200)).body as { subjectCode: string }[];
-    expect(listed.every((p) => p.subjectCode === 'AUD')).toBe(true);
+  it('treats a leftover HOA account as a teacher (least privilege)', async () => {
+    const username = unique('legacy_').toLowerCase();
+    await admin.post('/api/users', { username, fullName: 'Legacy HOA', role: 'TEACHER', password: 'Welcome2026xx', subjectIds: [FAR] }).expect(201);
+    await prisma.user.update({ where: { username }, data: { role: 'HOA', mustChangePassword: false } });
+    const legacy = await login(username, 'Welcome2026xx');
+    expect((await legacy.get('/api/auth/me')).body.user.role).toBe('TEACHER');
+    await legacy.get('/api/papers').expect(403);
+    await legacy.get('/api/templates').expect(403);
   });
 
-  it('may only edit templates whose subjects are all assigned to them', async () => {
-    const templates = (await hoaAudit.get('/api/templates').expect(200)).body as { id: number; canEdit: boolean; code: string; name: string; description: string; isActive: boolean; config: unknown }[];
-    const caf = templates.find((t) => t.code === 'ICAP_EXAM')!;
-    expect(caf.canEdit).toBe(false);
-    await hoaAudit.put(`/api/templates/${caf.id}`, caf).expect(403);
-  });
-
-  it('cannot approve someone else\'s draft before it is submitted', async () => {
+  it("ADMIN cannot approve someone else's draft before it is submitted", async () => {
     const draft = (await teacher.post('/api/questions', shortQuestion(FAR)).expect(201)).body;
     await admin.get(`/api/questions/${draft.id}`).expect(200);
     await admin.post(`/api/questions/${draft.id}/review`, { decision: 'APPROVE', comment: '' }).expect(403);
+  });
+
+  it('ADMIN can edit any question and see every subject', async () => {
+    const approved = await prisma.question.findFirstOrThrow({ where: { subjectId: TAX, status: 'APPROVED' } });
+    const full = (await admin.get(`/api/questions/${approved.id}`).expect(200)).body;
+    expect(full.permissions.edit).toBe(true);
+    expect((await admin.get('/api/subjects').expect(200)).body.length).toBeGreaterThan(10);
   });
 });
 
 describe('ADMIN administration', () => {
   it('creates and updates users, subjects and templates with audit records', async () => {
     const username = unique('u_').toLowerCase();
-    const user = (await admin.post('/api/users', { username, fullName: 'New HOA', role: 'HOA', password: 'Welcome2026xx', subjectIds: [FAR] }).expect(201)).body;
+    const user = (await admin.post('/api/users', { username, fullName: 'New Teacher', role: 'TEACHER', password: 'Welcome2026xx', subjectIds: [FAR] }).expect(201)).body;
     expect(user.subjectIds).toEqual([FAR]);
-    await admin.post('/api/users', { username, fullName: 'Dup', role: 'HOA', password: 'Welcome2026xx', subjectIds: [] }).expect(409);
-    await admin.post('/api/users', { username: 'Bad Name!', fullName: 'x', role: 'HOA', password: 'short', subjectIds: [] }).expect(400);
-    const updated = (await admin.put(`/api/users/${user.id}`, { fullName: 'Renamed HOA', email: '', role: 'TEACHER', subjectIds: [FAR, TAX], isActive: true }).expect(200)).body;
-    expect(updated.role).toBe('TEACHER');
+    await admin.post('/api/users', { username, fullName: 'Dup', role: 'TEACHER', password: 'Welcome2026xx', subjectIds: [] }).expect(409);
+    await admin.post('/api/users', { username: 'Bad Name!', fullName: 'x', role: 'TEACHER', password: 'short', subjectIds: [] }).expect(400);
+    const updated = (await admin.put(`/api/users/${user.id}`, { fullName: 'Promoted Admin', email: '', role: 'ADMIN', subjectIds: [FAR, TAX], isActive: true }).expect(200)).body;
+    expect(updated.role).toBe('ADMIN');
 
     const me = (await admin.get('/api/auth/me')).body.user;
     await admin.put(`/api/users/${me.id}`, { fullName: me.fullName, email: '', role: 'TEACHER', subjectIds: [], isActive: true }).expect(400);

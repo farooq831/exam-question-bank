@@ -24,7 +24,7 @@ describe('authentication', () => {
   it('uses one generic message for unknown users and wrong passwords', async () => {
     const s = await anonymous();
     const unknown = await s.post('/api/auth/login', { username: 'nobody_here', password: 'whatever123' }).expect(401);
-    const wrong = await s.post('/api/auth/login', { username: 'hoa_audit', password: 'wrong-password-1' }).expect(401);
+    const wrong = await s.post('/api/auth/login', { username: 'teacher_audit', password: 'wrong-password-1' }).expect(401);
     expect(unknown.body.error).toBe(wrong.body.error);
   });
 
@@ -60,7 +60,7 @@ describe('CSRF protection', () => {
     await agent.get('/api/auth/csrf').expect(200);
     await agent.post('/api/auth/login').send({ username: 'admin', password: 'SkansDemo2026' }).expect(403);
 
-    const s = await login('hoa_far');
+    const s = await login('teacher_tax');
     await s.agent.post('/api/questions').send({}).expect(403);
     await s.agent.post('/api/questions').set('x-csrf-token', 'x'.repeat(64)).send({}).expect(403);
     await s.agent.post('/api/auth/logout').expect(403);
@@ -70,7 +70,7 @@ describe('CSRF protection', () => {
 
   it('rotates the token on sign-in', async () => {
     const s = await anonymous();
-    const res = await s.post('/api/auth/login', { username: 'hoa_far', password: 'SkansDemo2026' }).expect(200);
+    const res = await s.post('/api/auth/login', { username: 'teacher_tax', password: 'SkansDemo2026' }).expect(200);
     expect(res.body.csrfToken).not.toBe(s.csrf);
     await s.agent.post('/api/questions/lookup').set('x-csrf-token', s.csrf).send({ ids: [] }).expect(403);
     await s.agent.post('/api/questions/lookup').set('x-csrf-token', res.body.csrfToken).send({ ids: [] }).expect(200);

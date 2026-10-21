@@ -1,20 +1,15 @@
-# Authorised branding files
+# SKANS branding files
 
-Papers print a logo **only** when an authorised file is present in this folder, or in the folder
-set by `BRANDING_DIR` in `server/.env`. The application ships without any logo.
+| File | Used for |
+|---|---|
+| `skans-logo.jpg` | Printed papers (white background): top right on the SKANS CAF Examination format, top left on the SKANS Internal Test format |
+| `skans-logo-dark.jpg` | The web application (sidebar and sign-in page) |
 
-| File name (first match wins: .png, .jpg, .jpeg, .svg) | Used by | Printed where |
-|---|---|---|
-| `skans-logo.png` | Templates whose header logo is `skans` (SKANS Internal Test) | Top left of the header |
-| `exam-body-logo.png` | Templates whose header logo is `exam-body` (CAF Examination Paper) | Top right of the header |
+Artwork supplied by SKANS School System. To replace it, overwrite the files with the same names
+(for printing, `skans-logo.png` or `.svg` is also accepted; the first of .png, .jpg, .jpeg, .svg
+found is used). Use high-resolution artwork (at least 1200 px wide). Changes are picked up
+immediately; check with `npm run pdf:samples -w server`.
 
-Rules:
+Only SKANS artwork is used. No examining-body marks are printed on SKANS papers.
 
-- Add only artwork that the school administration has authorised in writing. Do **not** add the
-  ICAP crest or any other examining-body mark without written permission.
-- Use a high-resolution PNG (at least 600 px wide), or an SVG whose text has been converted to outlines.
-- If there is no SKANS logo file, the SKANS header prints the institute name as text. If there is
-  no exam-body logo, the CAF header prints no logo.
-- The files are re-read whenever they change, so new artwork appears straight away. To check the
-  result, generate a sample with `npm run pdf:samples -w server`.
-- Back up this folder together with the database.
+Back up this folder together with the database (`npm run db:backup` does this).

@@ -75,6 +75,17 @@ describe('TEACHER restrictions', () => {
   });
 });
 
+describe('CSV import hardening', () => {
+  it('rejects CSV headers that could replace the record prototype', async () => {
+    const res = await teacher.agent
+      .post('/api/import/questions?dryRun=1')
+      .set('x-csrf-token', teacher.csrf)
+      .attach('file', Buffer.from('__proto__,body\nx,y\n'), 'questions.csv')
+      .expect(400);
+    expect(res.body.error).toMatch(/Invalid column name/);
+  });
+});
+
 describe('HOA restrictions', () => {
   it('cannot manage users, subjects or the audit log', async () => {
     await hoa.get('/api/users').expect(403);

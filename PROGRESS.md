@@ -299,3 +299,50 @@ Validation: shared 10/10, server 37/37, full typecheck passes. Sample PDFs were 
   6. At 768×1024: no horizontal overflow on Dashboard, Users, Subjects, Templates, Audit, Review queue, Papers and Question bank; drawer navigation works.
   7. The new teacher is forced to change the temporary password, then reaches the teacher workspace.
   8. hoa_audit sees templates as view-only.
+
+## Milestone 7 — Deployment and handover
+
+- [x] **Done.** `README.md` rewritten. It covers:
+  - architecture and setup
+  - environment variables and database commands (destructive ones marked)
+  - demo accounts and the role-permission matrix
+  - development, test and PDF commands
+  - how to add or change a template and add authorised branding
+  - SQLite → PostgreSQL migration (including case-sensitivity and sequence notes)
+  - school-server deployment, Nginx/HTTPS, firewall, backups and restore
+  - tablet and browser support, and current limitations
+- [x] **Done.** `server/.env.production.example` with production values and guidance.
+- [x] **Done.** `npm run db:backup`: an online, consistent SQLite backup (`VACUUM INTO`) plus a copy of the branding folder, timestamped in local time. Verified on a temporary database.
+- [x] **Done.** Dependency review (`npm audit --omit=dev`): 38 moderate/high advisories, all transitive or requiring major upgrades (TipTap, React Router, Prisma tooling, csv-parse). Not force-upgraded. The one reachable issue — csv-parse prototype replacement through CSV headers in the HOA/teacher import endpoint — is mitigated in code and covered by a new test.
+
+### Final validation (21 October 2026)
+
+| Check | Result |
+|---|---|
+| `npm test` | shared 10/10, server 38/38 (fresh temporary database per run) |
+| `npm run typecheck` | 0 errors (shared, server, client) |
+| `npm run build -w client` | Pass |
+| Server typecheck (`tsc --noEmit`) | Pass. `npm run build -w server` also runs `prisma generate`, which fails with `EPERM` only while another `npm run dev` holds the Prisma engine DLL (Windows file lock). Stop the dev server first. |
+| Browser checks (Playwright, isolated instance) | Question lifecycle, paper builder, admin screens, forced password change, iPad-portrait layout of 8 screens (no horizontal overflow) |
+| User's running dev server (4000/5173, `dev.db`) | Healthy after all changes; its data was not modified by any test or seed |
+
+### What works
+
+- **Teacher:** writes all six question types with tables and answers in assigned subjects only, then saves and submits.
+- **Review:** ADMIN/HOA review from the queue; rejection requires a comment and the author resubmits.
+- **Papers:**
+  - only approved questions are offered
+  - the 4-step builder validates marks
+  - live preview uses the PDF renderer
+  - finalise, version history, duplicate and delete
+  - paper and answer-key PDFs with optional watermark
+- **Admin:** dashboard, users, subjects, templates (form + JSON), audit log.
+- **Permissions:** all enforced on the server, with 38 automated tests.
+
+### What remains (needs school input or a later iteration)
+
+1. Approved CAF and SKANS specifications and sample papers. Set the template values from them, then compare page by page; no exact match is claimed yet.
+2. Authorised logo files and written permission for any examining-body mark.
+3. Optional interfaces for CSV import and rule-based auto-generation (the server endpoints exist).
+4. Planned major-version dependency upgrades (TipTap 3, React Router 7, Prisma 7) to clear the remaining advisories.
+5. Before go-live: deactivate the demo accounts, set real passwords, and schedule `npm run db:backup`.

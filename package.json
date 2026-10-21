@@ -16,7 +16,9 @@
     "test": "npm run test -w shared && npm run test -w server",
     "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client",
     "db:reset": "npm run db:reset -w server",
-    "reset-admin": "npm run reset-admin -w server"
+    "reset-admin": "npm run reset-admin -w server",
+    "db:backup": "npm run db:backup -w server --",
+    "pdf:samples": "npm run pdf:samples -w server"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

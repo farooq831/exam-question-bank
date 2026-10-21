@@ -130,7 +130,14 @@ router.post(
     let records: Record<string, string>[];
     try {
       records = parseCsv(req.file.buffer.toString('utf8').replace(/^﻿/, ''), {
-        columns: (h: string[]) => h.map((x) => x.trim().toLowerCase()),
+        // Header names become object keys; refuse names that could replace the record prototype
+        // (csv-parse advisory GHSA-8cw4-87c7-c6xx).
+        columns: (h: string[]) =>
+          h.map((x) => {
+            const key = x.trim().toLowerCase();
+            if (['__proto__', 'constructor', 'prototype'].includes(key)) throw new Error(`Invalid column name "${key}".`);
+            return key;
+          }),
         skip_empty_lines: true,
         trim: false,
         relax_column_count: true,

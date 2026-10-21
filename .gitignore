@@ -6,3 +6,4 @@ client/dist/
 server/dist/
 output/
 .DS_Store
+server/backups/

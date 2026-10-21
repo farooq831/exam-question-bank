@@ -14,6 +14,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "pdf:samples": "tsx scripts/generate-samples.ts",
     "reset-admin": "tsx scripts/reset-admin.ts",
+    "db:backup": "tsx scripts/backup-db.ts",
     "browsers": "playwright install chromium"
   },
   "dependencies": {

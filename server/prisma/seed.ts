@@ -1,23 +1,51 @@
+/**
+ * Demo/initial data.
+ *
+ *   npm run db:seed            Non-destructive and idempotent. Creates templates, subjects and demo
+ *                              accounts that do not exist yet (existing rows are never modified, so
+ *                              passwords and admin edits survive). Demo questions and sample papers
+ *                              are only added when the question bank is completely empty.
+ *   npm run db:reset           DESTRUCTIVE. Recreates the schema and the demo dataset from scratch.
+ *                              Refused when NODE_ENV=production unless --force is also given.
+ */
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
-import { CA_PAPERS, ICAP_TEMPLATE_CONFIG, SKANS_TEMPLATE_CONFIG } from '@skans/shared';
-import { ol, opts, p, required, table, type SeedQuestion } from './seed-data/helpers';
+import type { Prisma } from '@prisma/client';
+import { CA_PAPERS, computeQuestionMarks, ICAP_TEMPLATE_CONFIG, SKANS_TEMPLATE_CONFIG } from '@skans/shared';
+import { prisma } from '../src/db';
+import { buildSnapshot, paperInclude, parseTemplateConfig } from '../src/lib/papers';
+import { buildSearchText } from '../src/lib/questions';
+import { ol, opts, p, table, type SeedQuestion } from './seed-data/helpers';
 
-const prisma = new PrismaClient();
 const DEMO_PASSWORD = 'SkansDemo2026';
+const RESET = process.argv.includes('--reset');
+const FORCE = process.argv.includes('--force');
 
-const subjects = CA_PAPERS.filter(({ code }) =>
-  ['AUD', 'TAX', 'FAR1', 'FAR2', 'CMA', 'BL', 'CL', 'MFA', 'FAR', 'DSR', 'TPC', 'BLD', 'MA', 'CR', 'BIA', 'AAE'].includes(code),
+// The school teaches CAF only.
+const subjects = CA_PAPERS.filter(({ code, level }) =>
+  level === 'CAF' && ['AUD', 'TAX', 'FAR1', 'FAR2', 'CMA', 'BL', 'CL', 'MFA', 'FAR', 'DSR', 'TPC', 'BLD', 'MA', 'BIA'].includes(code),
 );
 
 const users = [
   { username: 'admin', fullName: 'SKANS IT Administrator', role: 'ADMIN', subjects: subjects.map((s) => s.code) },
   { username: 'hoa_far', fullName: 'HOA - Financial Reporting', role: 'HOA', subjects: ['FAR', 'FAR1', 'FAR2', 'CMA', 'TAX'] },
-  { username: 'hoa_audit', fullName: 'HOA - Audit and Assurance', role: 'HOA', subjects: ['AUD', 'AAE'] },
+  { username: 'hoa_audit', fullName: 'HOA - Audit and Assurance', role: 'HOA', subjects: ['AUD'] },
   { username: 'teacher_far', fullName: 'FAR Teacher', role: 'TEACHER', subjects: ['FAR', 'FAR1', 'FAR2'] },
-  { username: 'teacher_tax', fullName: 'Tax Teacher', role: 'TEACHER', subjects: ['TAX', 'TPC', 'ATP'] },
-  { username: 'teacher_audit', fullName: 'Audit Teacher', role: 'TEACHER', subjects: ['AUD', 'AAE'] },
+  { username: 'teacher_tax', fullName: 'Tax Teacher', role: 'TEACHER', subjects: ['TAX', 'TPC'] },
+  { username: 'teacher_audit', fullName: 'Audit Teacher', role: 'TEACHER', subjects: ['AUD'] },
 ];
+
+export const CAF_TEMPLATE = {
+  code: 'ICAP_EXAM',
+  name: 'CAF Examination Paper',
+  description:
+    'CAF examination-paper layout modelled on the reference paper supplied by the school. Fonts, margins, logo and wording are provisional until the administration approves the official specification.',
+};
+export const SKANS_TEMPLATE = {
+  code: 'SKANS_INTERNAL',
+  name: 'SKANS Internal Test',
+  description:
+    'SKANS internal test layout. Logo, fonts and spacing are provisional until the approved sample and authorised logo file are supplied.',
+};
 
 const questions: SeedQuestion[] = [
   {
@@ -56,17 +84,27 @@ const questions: SeedQuestion[] = [
     key: 'far-fair-value',
     type: 'LONG',
     topic: 'Fair value measurement',
-    marks: 12,
+    marks: 11,
     source: 'FAR Spring 2026 style',
     body: p('A company acquired a cash-generating unit containing land, plant and equipment. At year end management identified indicators of impairment and prepared the following fair value information:'),
     content: {
-      parts: [{
-        id: 'a',
-        html: p('Determine the recoverable amount and explain the accounting treatment.'),
-        marks: 8,
-        answer: p('The recoverable amount is the higher of fair value less costs of disposal and value in use. Recognise impairment to the extent carrying amount exceeds recoverable amount.'),
-        parts: [{ id: 'a-i', html: table([['Asset', 'Carrying amount', 'Fair value', 'Disposal costs'], ['Land', '>2,000,000', '>2,150,000', '>20,000'], ['Plant', '>1,600,000', '>1,450,000', '>15,000'], ['Equipment', '>900,000', '>820,000', '>10,000']], 1), marks: 4, answer: p('Use the fair value less costs of disposal column in the comparison.') }],
-      }],
+      parts: [
+        {
+          id: 'a',
+          html: p('Determine the recoverable amount of each asset from the following information:') +
+            table([['Asset', 'Carrying amount', 'Fair value', 'Disposal costs'], ['Land', '>2,000,000', '>2,150,000', '>20,000'], ['Plant', '>1,600,000', '>1,450,000', '>15,000'], ['Equipment', '>900,000', '>820,000', '>10,000']], 1),
+          marks: 8,
+          answer: p('The recoverable amount is the higher of fair value less costs of disposal and value in use. Use the fair value less costs of disposal column in the comparison.'),
+          parts: [],
+        },
+        {
+          id: 'b',
+          html: p('Explain the accounting treatment of any impairment loss.'),
+          marks: 3,
+          answer: p('Recognise an impairment loss in profit or loss to the extent the carrying amount exceeds the recoverable amount.'),
+          parts: [],
+        },
+      ],
       partLabelStyle: 'roman',
     },
     answer: p('Award marks for calculation, comparison and a clear impairment conclusion.'),
@@ -202,128 +240,200 @@ function extraQuestions(subjectCode: string, author: string, count: number): See
   }));
 }
 
-async function main() {
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
+type Tx = Prisma.TransactionClient;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.paperVersion.deleteMany();
-    await tx.paperItem.deleteMany();
-    await tx.paper.deleteMany();
-    await tx.question.deleteMany();
-    await tx.auditLog.deleteMany();
-    await tx.userSubject.deleteMany();
-    await tx.subject.deleteMany();
-    await tx.paperTemplate.deleteMany();
-    await tx.user.deleteMany();
-    await tx.session.deleteMany();
-
-    const icap = await tx.paperTemplate.create({
-      data: { code: 'ICAP_EXAM', name: 'ICAP Exam Style', description: 'Serif ICAP-style examination paper.', config: JSON.stringify(ICAP_TEMPLATE_CONFIG) },
-    });
-    const skans = await tx.paperTemplate.create({
-      data: { code: 'SKANS_INTERNAL', name: 'SKANS Internal Test', description: 'SKANS internal assessment format.', config: JSON.stringify(SKANS_TEMPLATE_CONFIG) },
-    });
-    const subjectRows = new Map<string, { id: number; code: string; name: string }>();
-    for (const subject of subjects) {
-      const row = await tx.subject.create({
-        data: { code: subject.code, name: subject.name, level: subject.level, templateId: subject.layout === 'ICAP' ? icap.id : skans.id },
-      });
-      subjectRows.set(subject.code, row);
-    }
-
-    const userRows = new Map<string, { id: number }>();
-    for (const user of users) {
-      const row = await tx.user.create({
-        data: {
-          username: user.username,
-          fullName: user.fullName,
-          role: user.role,
-          passwordHash,
-          mustChangePassword: false,
-          subjects: { create: user.subjects.flatMap((code) => subjectRows.has(code) ? [{ subjectId: subjectRows.get(code)!.id }] : []) },
-        },
-      });
-      userRows.set(user.username, row);
-    }
-
-    const allQuestions = [
-      ...questions,
-      ...extraQuestions('CMA', 'teacher_far', 10),
-      ...extraQuestions('BL', 'teacher_far', 8),
-      ...extraQuestions('AUD', 'teacher_audit', 6),
-      ...extraQuestions('MFA', 'admin', 4),
-    ];
-    const questionRows = new Map<string, { id: number }>();
-    for (const [index, question] of allQuestions.entries()) {
-      const subjectCode = question.source.startsWith('Tax') ? 'TAX' : question.source.toLowerCase().includes('audit') ? 'AUD' : question.key?.startsWith('cma') ? 'CMA' : question.key?.startsWith('bl-') ? 'BL' : 'FAR';
-      const subject = subjectRows.get(subjectCode)!;
-      const author = userRows.get(question.by)!;
-      const content = JSON.stringify(question.content ?? {});
-      const row = await tx.question.create({
-        data: {
-          subjectId: subject.id,
-          topic: question.topic,
-          type: question.type,
-          marks: question.marks,
-          difficulty: question.difficulty ?? (index % 3 === 0 ? 'EASY' : index % 3 === 1 ? 'MEDIUM' : 'HARD'),
-          source: question.source,
-          body: question.body,
-          content,
-          answer: question.answer ?? '',
-          advice: question.advice ?? '',
-          comments: question.comments ?? '',
-          searchText: `${question.topic} ${question.source} ${question.body.replace(/<[^>]+>/g, ' ')}`.slice(0, 20_000),
-          status: question.status,
-          reviewComment: question.reviewComment ?? '',
-          ...(question.status === 'APPROVED' || question.status === 'REJECTED'
-            ? { reviewedById: userRows.get(question.by === 'teacher_tax' ? 'hoa_far' : question.by === 'teacher_audit' ? 'hoa_audit' : 'hoa_far')!.id, reviewedAt: new Date() }
-            : {}),
-          createdById: author.id,
-          updatedById: author.id,
-        },
-      });
-      if (question.key) questionRows.set(question.key, row);
-    }
-
-    const farSubject = subjectRows.get('FAR')!;
-    const taxSubject = subjectRows.get('TAX')!;
-    const farItems = ['far-group', 'far-alpha', 'far-fair-value', 'far-short'].map((key, position) => ({ questionId: questionRows.get(key)!.id, section: position < 2 ? 'SECTION A' : 'SECTION B', position, marksOverride: null, newPage: false }));
-    const taxItems = ['tax-q1', 'tax-q2', 'tax-q3', 'tax-q4'].map((key, position) => ({ questionId: questionRows.get(key)!.id, section: '', position, marksOverride: null, newPage: false }));
-    const farPaper = await tx.paper.create({
-      data: {
-        title: 'FAR Spring 2026 Examination',
-        subjectId: farSubject.id,
-        templateId: icap.id,
-        status: 'FINAL',
-        header: JSON.stringify({ session: 'Spring 2026', examDate: '2026-04-15', durationMinutes: 180, readingMinutes: 15, maxMarks: 25, batchNo: '', teacherName: '', testNo: '', titleOverride: '', instructionsOverride: null }),
-        sections: JSON.stringify(['SECTION A', 'SECTION B']),
-        createdById: userRows.get('hoa_far')!.id,
-        updatedById: userRows.get('hoa_far')!.id,
-        items: { create: farItems },
-      },
-    });
-    const taxPaper = await tx.paper.create({
-      data: {
-        title: 'Tax Batch 1 Internal Test',
-        subjectId: taxSubject.id,
-        templateId: skans.id,
-        status: 'FINAL',
-        header: JSON.stringify({ session: 'Batch 1', examDate: '2026-05-01', durationMinutes: 120, readingMinutes: 10, maxMarks: 25, batchNo: '1', teacherName: 'Tax Faculty', testNo: '1', titleOverride: 'Taxation', instructionsOverride: null }),
-        sections: JSON.stringify([]),
-        createdById: userRows.get('hoa_far')!.id,
-        updatedById: userRows.get('hoa_far')!.id,
-        items: { create: taxItems },
-      },
-    });
-  });
-
-  console.log(`Seeded ${subjects.length} subjects, 41 questions, two templates and two sample papers.`);
-  console.log(`Demo password for all accounts: ${DEMO_PASSWORD}`);
+async function wipe(tx: Tx) {
+  await tx.paperVersion.deleteMany();
+  await tx.paperItem.deleteMany();
+  await tx.paper.deleteMany();
+  await tx.question.deleteMany();
+  await tx.auditLog.deleteMany();
+  await tx.userSubject.deleteMany();
+  await tx.subject.deleteMany();
+  await tx.paperTemplate.deleteMany();
+  await tx.user.deleteMany();
+  await tx.session.deleteMany();
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-}).finally(async () => {
-  await prisma.$disconnect();
-});
+/** Creates rows that are missing; never changes rows that already exist. */
+async function ensureReferenceData(tx: Tx, passwordHash: string) {
+  const ensureTemplate = (t: typeof CAF_TEMPLATE, config: unknown) =>
+    tx.paperTemplate.upsert({ where: { code: t.code }, update: {}, create: { ...t, config: JSON.stringify(config) } });
+  const caf = await ensureTemplate(CAF_TEMPLATE, ICAP_TEMPLATE_CONFIG);
+  const skans = await ensureTemplate(SKANS_TEMPLATE, SKANS_TEMPLATE_CONFIG);
+
+  const subjectRows = new Map<string, { id: number }>();
+  for (const subject of subjects) {
+    const row = await tx.subject.upsert({
+      where: { code: subject.code },
+      update: {},
+      create: { code: subject.code, name: subject.name, level: subject.level, templateId: subject.layout === 'ICAP' ? caf.id : skans.id },
+    });
+    subjectRows.set(subject.code, row);
+  }
+
+  const userRows = new Map<string, { id: number }>();
+  let createdUsers = 0;
+  for (const user of users) {
+    const existing = await tx.user.findUnique({ where: { username: user.username } });
+    if (existing) {
+      userRows.set(user.username, existing);
+      continue;
+    }
+    const row = await tx.user.create({
+      data: {
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role,
+        passwordHash,
+        mustChangePassword: false,
+        subjects: { create: user.subjects.flatMap((code) => (subjectRows.has(code) ? [{ subjectId: subjectRows.get(code)!.id }] : [])) },
+      },
+    });
+    userRows.set(user.username, row);
+    createdUsers += 1;
+  }
+  return { caf, skans, subjectRows, userRows, createdUsers };
+}
+
+async function seedDemoContent(tx: Tx, ref: Awaited<ReturnType<typeof ensureReferenceData>>) {
+  const { caf, skans, subjectRows, userRows } = ref;
+  const allQuestions = [
+    ...questions,
+    ...extraQuestions('CMA', 'teacher_far', 10),
+    ...extraQuestions('BL', 'teacher_far', 8),
+    ...extraQuestions('AUD', 'teacher_audit', 6),
+    ...extraQuestions('MFA', 'admin', 4),
+  ];
+  const questionRows = new Map<string, { id: number }>();
+  for (const [index, question] of allQuestions.entries()) {
+    const subjectCode = question.source.startsWith('Tax')
+      ? 'TAX'
+      : question.source.toLowerCase().includes('audit')
+        ? 'AUD'
+        : question.key?.startsWith('cma')
+          ? 'CMA'
+          : question.key?.startsWith('bl-')
+            ? 'BL'
+            : question.key?.startsWith('mfa')
+              ? 'MFA'
+              : 'FAR';
+    const subject = subjectRows.get(subjectCode)!;
+    const author = userRows.get(question.by)!;
+    const content = question.content ?? {};
+    const reviewer = question.by === 'teacher_audit' ? 'hoa_audit' : 'hoa_far';
+    const row = await tx.question.create({
+      data: {
+        subjectId: subject.id,
+        topic: question.topic,
+        type: question.type,
+        // Marks always follow the question structure, exactly as the API computes them.
+        marks: computeQuestionMarks(question.type, content, question.marks),
+        difficulty: question.difficulty ?? (index % 3 === 0 ? 'EASY' : index % 3 === 1 ? 'MEDIUM' : 'HARD'),
+        source: question.source,
+        body: question.body,
+        content: JSON.stringify(content),
+        answer: question.answer ?? '',
+        advice: question.advice ?? '',
+        comments: question.comments ?? '',
+        searchText: buildSearchText(question.topic, question.source, question.body, content, question.answer ?? ''),
+        status: question.status,
+        reviewComment: question.reviewComment ?? '',
+        ...(question.status === 'APPROVED' || question.status === 'REJECTED'
+          ? { reviewedById: userRows.get(reviewer)!.id, reviewedAt: new Date() }
+          : {}),
+        createdById: author.id,
+        updatedById: author.id,
+      },
+    });
+    if (question.key) questionRows.set(question.key, row);
+  }
+
+  const hoa = userRows.get('hoa_far')!.id;
+  const samplePaper = async (data: {
+    title: string;
+    subject: string;
+    templateId: number;
+    header: object;
+    keys: string[];
+    section?: (i: number) => string;
+  }) => {
+    const paper = await tx.paper.create({
+      data: {
+        title: data.title,
+        subjectId: subjectRows.get(data.subject)!.id,
+        templateId: data.templateId,
+        status: 'FINAL',
+        header: JSON.stringify(data.header),
+        createdById: hoa,
+        updatedById: hoa,
+        items: {
+          create: data.keys.map((key, position) => ({
+            questionId: questionRows.get(key)!.id,
+            section: data.section?.(position) ?? '',
+            position,
+            marksOverride: null,
+            newPage: false,
+          })),
+        },
+      },
+    });
+    // Final papers print from a frozen snapshot, so each sample paper gets its first version.
+    const full = await tx.paper.findUniqueOrThrow({ where: { id: paper.id }, include: paperInclude });
+    const snapshot = buildSnapshot(full, parseTemplateConfig(full.template.config));
+    await tx.paperVersion.create({
+      data: { paperId: paper.id, version: 1, note: 'Sample paper (seed)', snapshot: JSON.stringify(snapshot), createdById: hoa },
+    });
+    await tx.paper.update({ where: { id: paper.id }, data: { currentVersion: 1 } });
+  };
+
+  // Only APPROVED questions may appear in a paper; the totals below equal maxMarks exactly.
+  await samplePaper({
+    title: 'FAR Spring 2026 Examination',
+    subject: 'FAR',
+    templateId: caf.id,
+    header: { session: 'Spring 2026', examDate: '2026-04-15', durationMinutes: 180, readingMinutes: 15, maxMarks: 30, batchNo: '', teacherName: '', testNo: '', titleOverride: '', instructionsOverride: null },
+    keys: ['far-group', 'far-alpha', 'far-fair-value', 'far-coal'],
+    section: (i) => (i < 2 ? 'SECTION A' : 'SECTION B'),
+  });
+  await samplePaper({
+    title: 'Tax Batch 1 Internal Test',
+    subject: 'TAX',
+    templateId: skans.id,
+    header: { session: 'Batch 1', examDate: '2026-05-01', durationMinutes: 120, readingMinutes: 10, maxMarks: 25, batchNo: '1', teacherName: 'Tax Faculty', testNo: '1', titleOverride: 'Taxation', instructionsOverride: null },
+    keys: ['tax-q1', 'tax-q2', 'tax-q3', 'tax-q4'],
+  });
+  return allQuestions.length;
+}
+
+async function main() {
+  if (RESET && process.env.NODE_ENV === 'production' && !FORCE) {
+    throw new Error('Refusing to reset a production database. Re-run with --reset --force if you really mean it.');
+  }
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
+
+  await prisma.$transaction(
+    async (tx) => {
+      if (RESET) await wipe(tx);
+      const ref = await ensureReferenceData(tx, passwordHash);
+      console.log(`[seed] ${subjects.length} CAF subjects and 2 templates present; ${ref.createdUsers} demo account(s) created.`);
+      if ((await tx.question.count()) === 0) {
+        const n = await seedDemoContent(tx, ref);
+        console.log(`[seed] Question bank was empty: added ${n} demo questions and 2 sample papers.`);
+      } else {
+        console.log('[seed] Question bank already has data: demo questions and papers were not added.');
+      }
+    },
+    { timeout: 120_000 },
+  );
+  if (RESET) console.log(`[seed] Database reset. Demo password for all demo accounts: ${DEMO_PASSWORD}`);
+}
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

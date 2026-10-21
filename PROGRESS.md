@@ -98,3 +98,17 @@ No application code was changed during the audit.
 7. **M7 Handover:** README, production env example, backups, PostgreSQL notes, final validation.
 
 No schema change is planned, so Prisma client regeneration (blocked by the running dev server's file lock) is not needed.
+
+## Milestone 1 — Stabilise foundation
+
+- [x] **Done.** The seed is non-destructive and idempotent. `npm run db:seed` and `npm run setup` create only missing templates, CAF subjects and demo accounts, and never modify existing rows (passwords and admin edits survive). Demo questions and papers are added only when the question bank is empty. Verified by seeding a fresh database twice: the second run created 0 rows.
+- [x] **Done.** Destructive reset is explicit: `npm run db:reset` (`seed.ts --reset`). It is refused when `NODE_ENV=production` unless `--force` is added.
+- [x] **Done.** Seed data corrected:
+  - Marks are computed with `computeQuestionMarks`.
+  - The FINAL FAR paper contains only APPROVED questions and totals 30/30.
+  - Both sample papers have a frozen version-1 snapshot.
+  - PRC subjects (CR, AAE) were removed (CAF only).
+  - MFA demo questions are assigned to MFA instead of FAR.
+- [x] **Done.** Server tests use a brand-new SQLite file in the OS temp directory per run (`server/vitest.config.ts`, `tests/global-setup.ts`) and delete it afterwards. They no longer modify `dev.db`. Prisma's AI-safety guard refused `db push --force-reset`. The design therefore needs no destructive command; the guard was not bypassed.
+- [x] **Done.** `BRANDING_DIR` is documented in `server/.env.example`.
+- Validation: server typecheck passes; server tests 5/5 pass.

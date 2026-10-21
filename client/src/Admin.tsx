@@ -20,6 +20,7 @@ import { api } from './api';
 import { useAuth } from './auth';
 import { Confirm } from './components/Confirm';
 import { Modal } from './components/Modal';
+import { PasswordInput } from './components/PasswordInput';
 import { actionLabel } from './Dashboard';
 
 const errorText = (error: unknown, fallback: string) => (error instanceof Error ? error.message : fallback);
@@ -174,7 +175,7 @@ export function AdminUsers() {
             <label className="label">Role<select className="field mt-1" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>{ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}</select></label>
             {!form.id && (
               <label className="label sm:col-span-2">Temporary password
-                <div className="mt-1 flex gap-2"><input className="field font-mono" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={10} /><button type="button" className="secondary shrink-0" onClick={() => setForm({ ...form, password: temporaryPassword() })}>Generate</button></div>
+                <div className="mt-1 flex gap-2"><PasswordInput initiallyVisible wrapperClassName="flex-1" autoComplete="new-password" className="field font-mono" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={10} /><button type="button" className="secondary shrink-0" onClick={() => setForm({ ...form, password: temporaryPassword() })}>Generate</button></div>
                 <span className="mt-1 block text-xs font-normal text-slate-500">At least 10 characters with a letter and a digit. The user must change it at first sign-in.</span>
               </label>
             )}
@@ -198,7 +199,7 @@ export function AdminUsers() {
         <Modal size="md" eyebrow="Reset password" title={reset.user.fullName} onClose={() => setReset(null)} footer={<><button className="secondary" onClick={() => setReset(null)}>Cancel</button><button className="primary" onClick={() => void doReset()} disabled={reset.password.length < 10}>Reset password</button></>}>
           <p className="text-sm text-slate-600">The account is unlocked, all its sessions are signed out, and the user must choose a new password at next sign-in.</p>
           <label className="label mt-4">Temporary password
-            <div className="mt-1 flex gap-2"><input className="field font-mono" value={reset.password} onChange={(e) => setReset({ ...reset, password: e.target.value })} /><button type="button" className="secondary shrink-0" onClick={() => void navigator.clipboard?.writeText(reset.password).then(() => toast.success('Copied'))} title="Copy"><Copy size={15} /></button></div>
+            <div className="mt-1 flex gap-2"><PasswordInput initiallyVisible wrapperClassName="flex-1" autoComplete="new-password" className="field font-mono" value={reset.password} onChange={(e) => setReset({ ...reset, password: e.target.value })} /><button type="button" className="secondary shrink-0" onClick={() => void navigator.clipboard?.writeText(reset.password).then(() => toast.success('Copied'))} title="Copy"><Copy size={15} /></button></div>
           </label>
           <p className="mt-2 text-xs text-slate-500">Share it with the user privately (in person or by phone).</p>
         </Modal>

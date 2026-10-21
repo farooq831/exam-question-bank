@@ -4,6 +4,7 @@ import { BookOpen, ClipboardCheck, FilePlus2, FileText, KeyRound, LayoutDashboar
 import { ROLE_LABELS, type Role } from '@skans/shared';
 import { toast } from 'sonner';
 import { useAuth } from './auth';
+import { PasswordInput } from './components/PasswordInput';
 import { QuestionBank } from './QuestionBank';
 import { PaperBuilder } from './PaperBuilder';
 import { AdminSubjects, AdminTemplates, AdminUsers, AuditLog } from './Admin';
@@ -47,7 +48,7 @@ function Login() {
           <h2 className="mt-10 text-2xl font-semibold text-ink md:mt-16">Sign in</h2>
           <p className="mt-2 text-sm text-slate-500">Use your school account to continue.</p>
           <label className="mt-8 block text-sm font-medium text-slate-700">Username<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none ring-navy/20 focus:ring-4" required /></label>
-          <label className="mt-5 block text-sm font-medium text-slate-700">Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none ring-navy/20 focus:ring-4" required /></label>
+          <label className="mt-5 block text-sm font-medium text-slate-700">Password<PasswordInput wrapperClassName="mt-2" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none ring-navy/20 focus:ring-4" required /></label>
           <button disabled={busy} className="mt-8 w-full rounded-xl bg-navy px-4 py-3.5 font-semibold text-white transition hover:bg-navy/90 disabled:cursor-not-allowed disabled:opacity-60">{busy ? 'Signing in…' : 'Sign in'}</button>
         </form>
       </div>
@@ -80,7 +81,7 @@ function ChangePassword() {
       <p className="mt-2 text-sm text-slate-500">Use at least 10 characters containing a letter and a number. Other devices are signed out.</p>
       <form onSubmit={submit} className="mt-6 space-y-4">
         {(Object.keys(labels) as (keyof typeof labels)[]).map((key) => (
-          <label key={key} className="label">{labels[key]}<input type="password" autoComplete={auto[key]} value={values[key]} onChange={(e) => setValues({ ...values, [key]: e.target.value })} className="field mt-1" required /></label>
+          <label key={key} className="label">{labels[key]}<PasswordInput wrapperClassName="mt-1" autoComplete={auto[key]} value={values[key]} onChange={(e) => setValues({ ...values, [key]: e.target.value })} className="field" required /></label>
         ))}
         <button disabled={busy} className="primary">{busy ? 'Saving…' : 'Save password'}</button>
       </form>

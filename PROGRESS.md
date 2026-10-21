@@ -393,3 +393,9 @@ Validation: shared 10/10, server 37/37, full typecheck passes. Sample PDFs were 
   - CAF logo width set to 46 mm so the header title stays on one line.
 - [x] Sign-in: the demo accounts (`teacher_far`, password `SkansDemo2026`) no longer exist since demo data was removed. In the local `dev.db`, the `admin` password was set with `npm run reset-admin`, and a `teacher` account (FAR, FAR1, FAR2, TAX) was created through the admin API. That account must change its password at first sign-in.
 - Tests: shared 11/11, server 40/40.
+
+## Follow-up — show/hide password (21 October 2026)
+
+- [x] New `client/src/components/PasswordInput.tsx`: a password field with an eye button (Show/Hide, keyboard and screen-reader accessible, 44 px touch target).
+- Used on the sign-in page, all three change-password fields (including the forced first sign-in change), and the administrator's **Add user** and **Reset password** dialogs. The two admin dialogs start visible so the generated temporary password can be read out, and the eye hides it.
+- Browser check on the running app: the field type switches password → text → password; sign-in still works; the Add-user dialog has the toggle. Client typecheck passes.

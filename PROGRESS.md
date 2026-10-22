@@ -494,3 +494,13 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 - [x] Font choices are only the three free, built-in fonts: Times New Roman style (Tinos, Apache 2.0), Arial style (Arimo, Apache 2.0), Calibri style (Carlito, SIL OFL). They are embedded in every PDF.
 - The running header line still uses the computer's own font of the chosen style (Calibri on Windows), because Chromium cannot use embedded fonts there (tried; the header disappears). If missing, the nearest font is used; nothing is shipped.
 - Verification: shared 11/11, server 45/45; generated sample PDF contains Tinos for all paper text and Calibri for the header line only.
+
+## Follow-up: CAF 8 AAE demo mock paper (22 October 2026)
+
+- [x] **Demo mock paper built in the app** (`npm run demo:paper`): CAF 8 Audit and Assurance Essentials, Autumn 2026, 160 marks, 4 hours.
+  - SECTION A: 100 MCQs (Q1 and Q4: 30 single MCQs each; Q2, Q3, Q5, Q6: MCQ sets of 10 with a scenario), including (I)/(II) statement MCQs and an amounts table.
+  - SECTION B: Q7-Q8 short (8 marks each), Q9-Q10 long with sub-parts (14 each), Q11 case study (16).
+  - All text is original; entity names are fictitious. Every question goes through the app's validation and sanitising, is approved, and the paper is saved FINAL with a version snapshot; PDFs are printed from that snapshot exactly like the download buttons.
+- [x] **Renderer fixes found with the long paper:** long answer-key tables may now continue onto the next page (the first page of the key was empty), and item lists of 17 or more get a wider hanging indent so labels like (xxviii) no longer touch the text.
+- `dev.db` backed up to `server/backups/skans-20261022-153538/` before the paper was added (paper #29, 69 questions). Trial runs used a temporary copy, since removed.
+- Verification: server 45/45; PDFs reviewed page by page (17-page paper, 8-page answer key).

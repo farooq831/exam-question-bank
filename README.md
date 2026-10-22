@@ -132,7 +132,12 @@ npm test               # shared unit tests + server API/PDF tests
 npm run build          # production client build (client/dist) + server typecheck
 npm start              # production server (serves client/dist and the API on PORT)
 npm run pdf:samples    # renders a built-in example through every paper format to output/
+npm run demo:paper     # builds the CAF 8 AAE demo mock paper in the app (100 MCQs, 160 marks) + PDFs in output/demo/
 ```
+
+The demo mock paper (`server/scripts/demo/aae-mock.ts`) is original content written for SKANS; nothing
+is copied from ICAP papers. Back up first (`npm run db:backup`). It is saved as a FINAL paper with
+approved questions tagged "SKANS demo mock paper"; `npm run demo:paper -- --replace` rebuilds it.
 
 ### Tests
 

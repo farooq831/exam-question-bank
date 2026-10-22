@@ -90,6 +90,9 @@ function cssContent(text: string): string {
  *  - moves leading all-<th> rows into <thead> so header rows repeat on every page
  *  - wraps tables so short tables never split across pages
  */
+/** Item lists of 17 or more reach long roman labels such as (xvii) and (xxviii), which need a wider indent. */
+const itemsClass = (count: number) => (count >= 17 ? 'items wide' : 'items');
+
 function richHtml(html: string): string {
   const clean = sanitizeRich(html);
   if (!clean.includes('<table')) return clean;
@@ -385,7 +388,7 @@ export function renderPaper(input: RenderInput): { html: string; runningHeader: 
           .map((it, i) => renderMcqItem(partLabel(i + 1, 'roman'), it.stem, it.options, it.layout, it.marks, mixed))
           .join('');
         const intro = htmlToText(q.body) ? richHtml(q.body) : cfg.mcq.groupIntro ? `<p>${inlineMd(cfg.mcq.groupIntro)}</p>` : '';
-        return `${intro}<div class="items">${items}</div>`;
+        return `${intro}<div class="${itemsClass((c.items ?? []).length)}">${items}</div>`;
       }
       case 'LONG':
       case 'CASE_STUDY': {
@@ -499,7 +502,7 @@ export function renderPaper(input: RenderInput): { html: string; runningHeader: 
           return renderMcqItem(partLabel(i + 1, 'roman'), it.question.body, c.options ?? [], c.layout ?? 'auto', it.marks, mixed);
         })
         .join('');
-      return wrapQuestion(n, `${cfg.mcq.groupIntro ? `<p>${inlineMd(cfg.mcq.groupIntro)}</p>` : ''}<div class="items">${items}</div>`, false);
+      return wrapQuestion(n, `${cfg.mcq.groupIntro ? `<p>${inlineMd(cfg.mcq.groupIntro)}</p>` : ''}<div class="${itemsClass(block.items.length)}">${items}</div>`, false);
     }
     // True / False set
     const items = block.items
@@ -510,7 +513,7 @@ export function renderPaper(input: RenderInput): { html: string; runningHeader: 
         return `<div class="item"><span class="lbl">${partLabel(i + 1, 'roman')}</span><div class="item-body">${tf}</div></div>`;
       })
       .join('');
-    return wrapQuestion(n, `${!isKey && cfg.mcq.trueFalseIntro ? `<p>${inlineMd(cfg.mcq.trueFalseIntro)}</p>` : ''}<div class="items">${items}</div>`, false);
+    return wrapQuestion(n, `${!isKey && cfg.mcq.trueFalseIntro ? `<p>${inlineMd(cfg.mcq.trueFalseIntro)}</p>` : ''}<div class="${itemsClass(block.items.length)}">${items}</div>`, false);
   };
 
   const body = sections
@@ -626,6 +629,8 @@ h1,h2{margin:0;font-weight:700;}
 .items{margin:0;}
 .item{position:relative;padding-left:9mm;}
 .item > .lbl{position:absolute;left:0;top:0;}
+/* long lists reach labels like (xxviii); give them a wider hanging indent so labels never touch the text */
+.items.wide > .item{padding-left:14mm;}
 .items > .item:not(.part){break-inside:avoid;page-break-inside:avoid;}
 
 /* MCQ options */
@@ -689,6 +694,8 @@ sub,sup{font-size:70%;line-height:0;}
 .tbl table.borderless{line-height:inherit;}
 .key-table td.c{text-align:center;}
 .key-table{min-width:120mm;}
+/* long answer tables (e.g. 30 MCQs) may continue on the next page; the header row repeats */
+.tbl:has(> table.key-table){break-inside:auto;page-break-inside:auto;}
 
 .advice{border-left:2pt solid #000;padding:1mm 3mm;margin:2mm 0 3mm;font-size:.95em;break-inside:avoid;}
 .advice-title{font-weight:700;font-style:italic;margin-bottom:1mm;}

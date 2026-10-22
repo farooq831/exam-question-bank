@@ -9,7 +9,7 @@ papers that are printed to PDF together with a separate answer key.
 
 Contents: [Setup](#setup) · [Environment](#environment-variables) · [Database](#database) ·
 [First sign-in](#first-sign-in) · [Roles](#role-permissions) · [Commands](#development-commands) ·
-[Templates](#adding-or-changing-a-paper-template) · [Branding](#authorised-branding-assets) ·
+[Subjects](#caf-subjects) · [Formats](#paper-formats) · [Branding](#authorised-branding-assets) ·
 [PostgreSQL](#migrating-from-sqlite-to-postgresql) · [Deployment](#local-school-server-deployment) ·
 [Backups](#backups) · [Browsers](#tablet-and-browser-support) · [Limitations](#current-limitations)
 
@@ -83,7 +83,7 @@ The system ships **without demo data**. The seed creates one administrator:
 - the password must be changed at first sign-in.
 
 Then, as `admin`: create teacher accounts and assign their subjects (**Users**), check subjects and
-default formats (**Subjects**), and review the paper formats (**Templates**).
+default formats (**Subjects**), and review the paper formats (**Paper formats**).
 
 Emergency administrator recovery on the server console:
 `npm run reset-admin -- <username> <new-password>`.
@@ -158,40 +158,69 @@ The server tests create a **fresh temporary SQLite database** for each run, boot
 test-only fixtures (`server/tests/fixtures/`, never loaded into a real database) and delete it
 afterwards. They never touch `dev.db`. Chromium must be installed (`npm run browsers -w server`).
 
-## Adding or changing a paper template
+## CAF subjects
+
+The system holds the eight CAF papers set by SKANS (official names as printed on the papers):
+
+| Group A | | Group B | |
+|---|---|---|---|
+| CAF 1 | FAR - Financial Accounting and Reporting | CAF 5 | MA - Management Accounting |
+| CAF 2 | TPC - Taxation Principles and Compliance | CAF 6 | CR - Corporate Reporting |
+| CAF 3 | DSR - Data, Systems and Risks | CAF 7 | BIA - Business Insights and Analysis |
+| CAF 4 | BLD - Business Law Dynamics | CAF 8 | AAE - Audit and Assurance Essentials |
+
+All eight use the **SKANS CAF Examination** format by default. Subjects from earlier versions
+(FAR1, FAR2, AUD, TAX, CMA, BL, CL, MFA) are deactivated by the seed, never deleted; reactivate
+them in **Subjects** if needed.
+
+## Paper formats
 
 Paper formats are data (`PaperTemplate.config`), validated by `templateConfigSchema` in
 `shared/src/template.ts`. Two formats ship:
 
-- **SKANS CAF Examination** (`SKANS_CAF`, layout `CAF`): formatting taken from the reference CAF
-  examination paper (title block, date/marks/duration lines, boxed instructions, section bars,
-  "QUESTION n" headings, right-aligned marks, "Page X of Y" header from page 2, "(THE END)"),
-  with the **SKANS logo at the top right**.
-- **SKANS Internal Test** (`SKANS_INTERNAL`, layout `SKANS`): the school's internal test layout
-  (logo top left, batch/teacher/test and time/marks/date block).
+- **SKANS CAF Examination** (`SKANS_CAF`): the standard. Formatting follows the CAF-8 *Audit
+  and Assurance Essentials* paper and the administration's formatting sheet
+  (`samples/Req_by _admin/Formatting Sheet.xlsx`), with the **SKANS logo at the top right**:
 
-Fonts, sizes, margins and spacing are **provisional** until the administration supplies the
-official guidelines (font family, size and weight, margins, line and paragraph spacing).
+  | Element | Value |
+  |---|---|
+  | Font | Calisto MT throughout; running header in Calibri |
+  | Exam title / paper name / date-marks-time lines | 15 pt bold / 18 pt bold / 12 pt |
+  | Instructions, SECTION bars, QUESTION headings, body, options, marks | 11 pt (marks bold, right-aligned) |
+  | Page | A4; left margin 2.14 cm; text to 560 pt (right margin 1.24 cm); bottom 1.2 cm |
+  | Running header | "Spring 2026 ▌ Paper name … Page **X** of **Y**", about 1.3 cm from the top, from page 2 |
+  | Spacing | single line spacing, justified body; 12 pt between paragraphs and sub-parts; 8 pt stem to options; 0 pt between options; 13 pt after QUESTION headings; 19 pt after SECTION bars |
+  | Tables | dotted rules, header row repeats on following pages |
 
-To change one: **Templates → Edit**.
+- **SKANS Internal Test** (`SKANS_INTERNAL`): the school's class-test layout (logo top left,
+  batch / teacher / test and time / marks / date block).
 
-- **Common settings** covers fonts, size, line height, margins, institute line, logo, date format, batch/teacher/test fields, instructions, heading pattern, marks format and position, sections, running header/footer, page numbers and end text.
-- **Advanced (JSON)** exposes every setting.
+To change a format: **Paper formats → Edit**. The form covers fonts, all sizes, spacing, margins,
+title line, logo, instructions, question heading, marks format, sections, running header and end
+text; **Advanced (JSON)** exposes everything. To add a format, **Duplicate** one and assign it
+to subjects. Finalised papers keep the layout they were printed with.
 
-Placeholders:
+### Calisto MT font
 
-- Headings and running header: `{n}`, `{session}`, `{subject}`, `{code}`, `{page}`, `{pages}`, `{batch}`, `{test}`, `{date}`
-- Marks: `{n}`, and `{nn}` (zero-padded)
-- Instructions: `{count}`, `{countWord}`, `**bold**`
+Calisto MT is a licensed Microsoft/Monotype font, so it is **not** stored in this repository.
+The server embeds it into each PDF from the fonts installed on the server (it ships with
+Microsoft Office: `CALIST.TTF`, `CALISTB.TTF`, `CALISTI.TTF`, `CALISTBI.TTF`). On a server
+without Office, copy those four files (from a licensed installation) into
+`client/public/branding/fonts/` or `<BRANDING_DIR>/fonts/`. If the font is missing, papers use a
+Times-compatible font and the server logs a warning.
 
-To add a format: **Templates → Duplicate** an existing one, adjust it, then assign it to subjects
-in **Subjects**. Check the result with **Paper builder → Review & output → Preview**.
+### Names, drafts and review
 
-To ship a new default format with the code, add a config constant next to `CAF_TEMPLATE_CONFIG` and
-an `ensureTemplate` call in `server/prisma/seed.ts`.
+- Each paper stores the **Teacher**, **Research Officer(s)** and **Admin** names (Paper →
+  Details → Prepared by). They are printed on the **answer key** only, never on the question
+  paper.
+- While a paper is a **draft**, every PDF download carries a "DRAFT - FOR REVIEW" watermark and a
+  `_DRAFT` file name, so drafts can be shared for review. **Finalise** the paper to print clean
+  copies.
 
-When the approved sample arrives, set each value from it. Then compare a generated PDF with the
-sample page by page before calling the format final.
+Placeholders: headings and running header `{n}`, `{session}`, `{subject}`, `{code}`, `{page}`,
+`{pages}`, `{batch}`, `{test}`, `{date}` (`┃` draws the header bar); marks `{n}`, `{nn}`;
+instructions `{count}`, `{countWord}`, `**bold**`.
 
 ## Authorised branding assets
 
@@ -287,7 +316,7 @@ persist; the server prints a warning at start-up.
 - **Supported browsers:** current Chrome, Edge, Firefox and Safari, including iPadOS Safari.
 - **Small screens:** below 1024 px wide (iPad portrait and landscape) the sidebar becomes a drawer. On desktop it collapses to an icon rail.
 - **Layout:** lists use cards rather than wide tables, and controls are at least 40–44 px for touch.
-- **Paper builder:** split into four steps, with arrow buttons for reordering on touch screens; drag-and-drop works with a mouse.
+- **Papers:** three tabs (Details, Questions, Download) with the main actions always visible; arrow buttons reorder questions on touch screens.
 - **Downloads:** PDF downloads are plain links, so they work without pop-up permission on iPad.
 
 ## Current limitations

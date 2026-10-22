@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  cafGroup,
   checkPaperMarks,
   effectiveItemMarks,
   hasStructuredMarks,
-  QUESTION_TYPE_LABELS,
   type PaperDTO,
   type PaperHeader,
   type PaperSummaryDTO,
@@ -13,26 +13,41 @@ import {
   type TemplateDTO,
 } from '@skans/shared';
 import { useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowUp, CheckCircle2, Copy, Download, Eye, FilePlus2, FileText, GripVertical, History, Lock, Plus, Save, Search, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, CheckCircle2, Copy, Download, Eye, FilePlus2, FileText, History, KeyRound, Plus, Save, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, apiText } from './api';
 import { Confirm } from './components/Confirm';
 import { Modal } from './components/Modal';
-import { QuestionContent } from './questions/QuestionPreview';
+import { Chips, EmptyState, IconButton, PageHeader, Pill, SearchBox } from './components/ui';
+import { ago } from './Dashboard';
+import { QuestionContent, TYPE_SHORT } from './questions/QuestionPreview';
 
 interface BuilderItem { question: QuestionDTO; section: string; marksOverride: number | null; newPage: boolean }
-type Step = 'setup' | 'details' | 'questions' | 'output';
-const STEPS: { key: Step; label: string }[] = [
-  { key: 'setup', label: '1. Subject & template' },
-  { key: 'details', label: '2. Paper details' },
-  { key: 'questions', label: '3. Questions' },
-  { key: 'output', label: '4. Review & output' },
-];
+type Tab = 'details' | 'questions' | 'download';
 
 const today = () => new Date().toISOString().slice(0, 10);
-const blankHeader = (): PaperHeader => ({ session: '', examDate: today(), durationMinutes: 180, readingMinutes: 15, maxMarks: 100, batchNo: '', teacherName: '', testNo: '', titleOverride: '', instructionsOverride: null });
+const blankHeader = (): PaperHeader => ({ session: '', examDate: today(), durationMinutes: 180, readingMinutes: 15, maxMarks: 100, batchNo: '', teacherName: '', researchOfficers: '', adminName: '', testNo: '', titleOverride: '', instructionsOverride: null });
 const plain = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 const itemMarks = (it: BuilderItem) => effectiveItemMarks(it.question, it.marksOverride);
+const subjectLabel = (s: SubjectDTO) => `${s.level && s.level !== 'CAF' ? `${s.level} · ` : ''}${s.code} — ${s.name}`;
+
+/** Subject picker grouped into CAF Group A (CAF 1-4) and Group B (CAF 5-8). */
+function SubjectSelect({ subjects, value, onChange }: { subjects: SubjectDTO[]; value: number; onChange(id: number): void }) {
+  const groups: [string, SubjectDTO[]][] = [
+    ['Group A', subjects.filter((s) => cafGroup(s.level) === 'A')],
+    ['Group B', subjects.filter((s) => cafGroup(s.level) === 'B')],
+    ['Other', subjects.filter((s) => !cafGroup(s.level))],
+  ];
+  return (
+    <select className="field mt-1.5" value={value} onChange={(e) => onChange(Number(e.target.value))}>
+      {groups.filter(([, list]) => list.length).map(([name, list]) => (
+        <optgroup key={name} label={name}>{list.map((s) => <option key={s.id} value={s.id}>{subjectLabel(s)}</option>)}</optgroup>
+      ))}
+    </select>
+  );
+}
+
+const STATUS_CHIPS = [{ value: '', label: 'All' }, { value: 'DRAFT', label: 'Drafts' }, { value: 'FINAL', label: 'Final' }];
 
 function PaperLibrary({ onOpen, onNew }: { onOpen(id: number): void; onNew(): void }) {
   const [papers, setPapers] = useState<PaperSummaryDTO[]>([]);
@@ -81,48 +96,34 @@ function PaperLibrary({ onOpen, onNew }: { onOpen(id: number): void; onNew(): vo
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm text-slate-500">Examinations</p>
-          <h2 className="text-3xl font-semibold text-ink">Papers</h2>
-          <p className="mt-1 text-sm text-slate-500">Saved papers, versions and downloads. Final papers print from their frozen version.</p>
-        </div>
-        <button className="primary" onClick={onNew}><FilePlus2 size={17} />New paper</button>
+    <div>
+      <PageHeader title="Papers" count={loading ? undefined : papers.length} actions={<button className="primary" onClick={onNew}><FilePlus2 size={16} />New paper</button>} />
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <SearchBox className="min-w-[200px] flex-1" value={q} onChange={setQ} placeholder="Search papers" />
+        <Chips options={STATUS_CHIPS} value={status} onChange={setStatus} />
       </div>
-      <div className="card mt-6 grid gap-3 p-4 sm:grid-cols-[1fr_200px]">
-        <label className="relative"><Search className="absolute left-3 top-3 text-slate-400" size={17} /><input className="field !pl-10" placeholder="Search by title…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search papers" /></label>
-        <select className="field" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status"><option value="">All statuses</option><option value="DRAFT">Draft</option><option value="FINAL">Final</option></select>
+      <div className="card overflow-hidden">
+        {loading && papers.length === 0 && <p className="p-10 text-center text-sm text-slate-400">Loading…</p>}
+        {!loading && papers.length === 0 && <EmptyState icon={FileText} title="No papers yet" action={<button className="secondary" onClick={onNew}><FilePlus2 size={16} />New paper</button>} />}
+        {papers.map((p) => (
+          <div key={p.id} className="list-row">
+            <button className="min-w-0 flex-1 text-left" onClick={() => onOpen(p.id)}>
+              <p className="truncate font-medium text-ink">{p.title}</p>
+              <p className="mt-0.5 truncate text-xs text-slate-400">{p.subjectCode} · {p.templateName} · {p.questionCount} question{p.questionCount === 1 ? '' : 's'} · {ago(p.updatedAt)}</p>
+            </button>
+            <span className={`hidden text-sm font-semibold sm:inline ${p.totalMarks === p.maxMarks ? 'text-emerald-700' : 'text-amber-600'}`} title="Total / maximum marks">{p.totalMarks}/{p.maxMarks}</span>
+            <Pill tone={p.status === 'FINAL' ? 'green' : 'slate'} dot>{p.status === 'FINAL' ? 'Final' : 'Draft'}</Pill>
+            <div className="flex shrink-0 items-center">
+              <IconButton label="Download question paper" icon={Download} href={`/api/papers/${p.id}/pdf`} download />
+              <IconButton label="Download answer key" icon={KeyRound} href={`/api/papers/${p.id}/answer-key.pdf`} download />
+              <IconButton label="Version history" icon={History} onClick={() => setHistory(p)} />
+              <IconButton label="Duplicate" icon={Copy} onClick={() => void duplicate(p)} />
+              <IconButton label="Delete" icon={Trash2} tone="danger" onClick={() => setConfirm(p)} />
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        {loading && <div className="card p-8 text-center text-sm text-slate-500 md:col-span-2">Loading papers…</div>}
-        {!loading && papers.length === 0 && <div className="card p-8 text-center text-sm text-slate-500 md:col-span-2">No papers yet. Start with “New paper”.</div>}
-        {papers.map((p) => {
-          const ok = p.totalMarks === p.maxMarks;
-          return (
-            <article key={p.id} className="card flex flex-col p-5">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="badge bg-slate-100 text-navy">{p.subjectCode}</span>
-                <span className={`badge ${p.status === 'FINAL' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{p.status === 'FINAL' ? 'Final' : 'Draft'}</span>
-                <span className="text-slate-500">{p.templateName}</span>
-              </div>
-              <button className="mt-2 text-left font-semibold text-ink hover:underline" onClick={() => onOpen(p.id)}>{p.title}</button>
-              <p className="mt-1 text-sm text-slate-500">
-                {p.questionCount} question{p.questionCount === 1 ? '' : 's'} · <span className={ok ? 'text-emerald-700' : 'font-semibold text-amber-700'}>{p.totalMarks}/{p.maxMarks} marks</span> · v{p.currentVersion} · {p.createdBy} · {new Date(p.updatedAt).toLocaleDateString()}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-                <button className="primary !min-h-9" onClick={() => onOpen(p.id)}>Open</button>
-                <a className="secondary !min-h-9" href={`/api/papers/${p.id}/pdf`} download><Download size={15} />Paper</a>
-                <a className="secondary !min-h-9" href={`/api/papers/${p.id}/answer-key.pdf`} download><Download size={15} />Answer key</a>
-                <button className="action" title="Version history" onClick={() => setHistory(p)}><History size={17} /></button>
-                <button className="action" title="Duplicate as a new draft" onClick={() => void duplicate(p)}><Copy size={17} /></button>
-                <button className="action text-red-600" title="Delete paper" onClick={() => setConfirm(p)}><Trash2 size={17} /></button>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-      <Confirm open={!!confirm} title="Delete this paper?" message="The paper and its versions are removed from the list. Questions in the bank are not affected." confirmLabel="Delete paper" onConfirm={() => confirm && void remove(confirm)} onCancel={() => setConfirm(null)} />
+      <Confirm open={!!confirm} danger title="Delete this paper?" message="The paper and its versions are removed. Questions are not affected." confirmLabel="Delete" onConfirm={() => confirm && void remove(confirm)} onCancel={() => setConfirm(null)} />
       {history && <VersionHistory paper={history} onClose={() => setHistory(null)} onRestored={(id) => { setHistory(null); onOpen(id); }} />}
     </div>
   );
@@ -136,34 +137,37 @@ function VersionHistory({ paper, onClose, onRestored }: { paper: { id: number; t
     setConfirm(null);
     try {
       const res = await api<{ skipped: number }>(`/papers/${paper.id}/versions/${version}/restore`, { method: 'POST' });
-      toast.success(res.skipped ? `Restored as a new draft; ${res.skipped} question(s) no longer approved were left out` : 'Restored as a new draft version');
+      toast.success(res.skipped ? `Restored; ${res.skipped} question(s) no longer approved were left out` : 'Restored as a new draft');
       onRestored(paper.id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to restore');
     }
   }
   return (
-    <Modal eyebrow="Version history" title={paper.title} size="md" onClose={onClose}>
-      {!versions ? <p className="text-sm text-slate-500">Loading…</p> : (
-        <ol className="space-y-2">
+    <Modal title="Version history" eyebrow={paper.title} size="md" onClose={onClose}>
+      {!versions ? <p className="text-sm text-slate-400">Loading…</p> : (
+        <ol className="-mx-1">
           {versions.map((v, i) => (
-            <li key={v.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-3">
-              <div>
-                <p className="text-sm font-semibold text-ink">Version {v.version} {i === 0 && <span className="badge ml-1 bg-blue-50 text-blue-700">Current</span>} <span className={`badge ml-1 ${v.status === 'FINAL' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{v.status === 'FINAL' ? 'Final' : 'Draft'}</span></p>
-                <p className="text-xs text-slate-500">{v.note || 'Saved'} · {v.questionCount} questions · {v.totalMarks} marks · {v.createdBy} · {new Date(v.createdAt).toLocaleString()}</p>
+            <li key={v.id} className="list-row !px-1">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-ink">Version {v.version}{i === 0 && <span className="ml-2 text-xs font-normal text-slate-400">current</span>}</p>
+                <p className="truncate text-xs text-slate-400">{v.note || 'Saved'} · {v.totalMarks} marks · {v.createdBy} · {ago(v.createdAt)}</p>
               </div>
-              {i > 0 && <button className="secondary !min-h-9" onClick={() => setConfirm(v.version)}>Restore</button>}
+              <Pill tone={v.status === 'FINAL' ? 'green' : 'slate'}>{v.status === 'FINAL' ? 'Final' : 'Draft'}</Pill>
+              {i > 0 && <button className="ghost !min-h-8 !px-2 text-sm" onClick={() => setConfirm(v.version)}>Restore</button>}
             </li>
           ))}
         </ol>
       )}
-      <Confirm open={confirm !== null} title={`Restore version ${confirm}?`} message="The paper is replaced by this version and saved as a new draft version. Nothing is deleted: the current version stays in the history." confirmLabel="Restore" onConfirm={() => confirm !== null && void restore(confirm)} onCancel={() => setConfirm(null)} />
+      <Confirm open={confirm !== null} title={`Restore version ${confirm}?`} message="It is saved as a new draft version; nothing is deleted." confirmLabel="Restore" onConfirm={() => confirm !== null && void restore(confirm)} onCancel={() => setConfirm(null)} />
     </Modal>
   );
 }
 
-function Builder({ paperId, initialStep, onBack, onSavedNew }: { paperId: number | null; initialStep: Step | null; onBack(): void; onSavedNew(id: number): void }) {
-  const [step, setStep] = useState<Step>(initialStep ?? 'setup');
+const Field = ({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }) => <label className={`label ${className}`}>{label}{children}</label>;
+
+function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number | null; initialTab: Tab | null; onBack(): void; onSavedNew(id: number): void }) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'details');
   const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
   const [templates, setTemplates] = useState<TemplateDTO[]>([]);
   const [subjectId, setSubjectId] = useState(0);
@@ -177,7 +181,6 @@ function Builder({ paperId, initialStep, onBack, onSavedNew }: { paperId: number
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [preview, setPreview] = useState<{ mode: 'paper' | 'key'; html: string } | null>(null);
   const [peek, setPeek] = useState<QuestionDTO | null>(null);
   const [confirmReopen, setConfirmReopen] = useState(false);
@@ -202,11 +205,11 @@ function Builder({ paperId, initialStep, onBack, onSavedNew }: { paperId: number
           setSubjectId(p.subjectId);
           setTemplateId(p.templateId);
           setTitle(p.title);
-          setHeader(p.header);
+          setHeader({ ...blankHeader(), ...p.header });
           setStatus(p.status);
           setVersion(p.currentVersion);
           setItems(p.items.map((i) => ({ question: i.question, section: i.section, marksOverride: i.marksOverride, newPage: i.newPage })));
-          if (!initialStep) setStep('questions');
+          if (!initialTab) setTab('questions');
         } else if (activeSubjects[0]) {
           setSubjectId(activeSubjects[0].id);
           setTemplateId(activeSubjects[0].templateId ?? t.find((x) => x.isActive)?.id ?? 0);
@@ -230,14 +233,15 @@ function Builder({ paperId, initialStep, onBack, onSavedNew }: { paperId: number
   }, [subjectId]);
 
   const template = templates.find((t) => t.id === templateId);
-  const sectionNames = template?.config.sections.enabled ? template.config.sections.names : [];
+  const fmt = template?.config;
+  const sectionNames = fmt?.sections.enabled ? fmt.sections.names : [];
   const marks = useMemo(() => checkPaperMarks(items.map(itemMarks), header.maxMarks), [items, header.maxMarks]);
   const filtered = available.filter((q) => !items.some((i) => i.question.id === q.id) && `${q.topic} ${q.source} ${plain(q.body)} ${q.type}`.toLowerCase().includes(search.toLowerCase()));
   const isFinal = status === 'FINAL';
 
-  const change = <T,>(fn: (v: T) => void) => (v: T) => { fn(v); setDirty(true); };
   const setH = <K extends keyof PaperHeader>(key: K, value: PaperHeader[K]) => { setHeader((h) => ({ ...h, [key]: value })); setDirty(true); };
   const setItemsDirty = (next: BuilderItem[]) => { setItems(next); setDirty(true); };
+  const patchItem = (index: number, patch: Partial<BuilderItem>) => setItemsDirty(items.map((x, i) => (i === index ? { ...x, ...patch } : x)));
   const move = (from: number, to: number) => {
     if (to < 0 || to >= items.length || from === to) return;
     const next = [...items];
@@ -273,8 +277,8 @@ function Builder({ paperId, initialStep, onBack, onSavedNew }: { paperId: number
   }
 
   async function save(nextStatus: 'DRAFT' | 'FINAL') {
-    if (!title.trim()) { setStep('setup'); return toast.error('Enter a paper title first.'); }
-    if (!items.length) { setStep('questions'); return toast.error('Add at least one approved question.'); }
+    if (!title.trim()) { setTab('details'); return toast.error('Enter a paper title first.'); }
+    if (!items.length) { setTab('questions'); return toast.error('Add at least one approved question.'); }
     if (nextStatus === 'FINAL' && marks.status !== 'match') return toast.error(marks.message);
     setBusy(true);
     try {
@@ -284,7 +288,7 @@ function Builder({ paperId, initialStep, onBack, onSavedNew }: { paperId: number
       setStatus(saved.status);
       setVersion(saved.currentVersion);
       setDirty(false);
-      toast.success(nextStatus === 'FINAL' ? `Paper finalised (version ${saved.currentVersion})` : `Draft saved (version ${saved.currentVersion})`);
+      toast.success(nextStatus === 'FINAL' ? 'Paper finalised' : 'Draft saved');
       if (!paperId) onSavedNew(saved.id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to save the paper');
@@ -294,239 +298,191 @@ function Builder({ paperId, initialStep, onBack, onSavedNew }: { paperId: number
     }
   }
 
-  const stepIndex = STEPS.findIndex((s) => s.key === step);
-  const marksTone = marks.status === 'match' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-800 bg-amber-50 border-amber-200';
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'details', label: 'Details' },
+    { key: 'questions', label: `Questions${items.length ? ` (${items.length})` : ''}` },
+    { key: 'download', label: 'Download' },
+  ];
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <button className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-ink" onClick={onBack}><ArrowLeft size={16} />All papers</button>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-sm text-slate-500">{paperId ? `Paper #${paperId} · version ${version}` : 'New paper'}{dirty && ' · unsaved changes'}</p>
-          <h2 className="truncate text-2xl font-semibold text-ink sm:text-3xl">{title || 'Untitled paper'}</h2>
+    <div>
+      {/* Top bar: always shows status, marks and the main actions */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <IconButton label="All papers" icon={ArrowLeft} onClick={onBack} />
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold tracking-tight text-ink">{title || 'Untitled paper'}</h1>
+          <p className="text-xs text-slate-400">{paperId ? `Version ${version}` : 'Not saved yet'}{dirty && ' · unsaved changes'}</p>
         </div>
-        <div className={`rounded-xl border px-4 py-2 text-sm font-semibold ${marksTone}`} role="status">{marks.status === 'empty' ? 'No questions yet' : marks.message}</div>
+        <Pill tone={isFinal ? 'green' : 'slate'} dot>{isFinal ? 'Final' : 'Draft'}</Pill>
+        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${marks.status === 'match' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`} title={marks.message}>{marks.total} / {header.maxMarks} marks</span>
+      </div>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200">
+        <nav className="-mb-px flex gap-1" aria-label="Paper sections">
+          {tabs.map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)} aria-current={tab === t.key ? 'page' : undefined} className={`min-h-11 border-b-2 px-3 text-sm font-semibold ${tab === t.key ? 'border-navy text-navy' : 'border-transparent text-slate-500 hover:text-ink'}`}>{t.label}</button>
+          ))}
+        </nav>
+        <div className="flex flex-wrap gap-2 pb-2">
+          <button className="ghost" onClick={() => void showPreview('paper')} disabled={!items.length}><Eye size={16} />Preview</button>
+          <button className="secondary" disabled={busy} onClick={() => (isFinal ? setConfirmReopen(true) : void save('DRAFT'))}><Save size={16} />{isFinal ? 'Reopen' : 'Save'}</button>
+          <button className="primary" disabled={busy || marks.status !== 'match'} title={marks.status !== 'match' ? marks.message : undefined} onClick={() => void save('FINAL')}><CheckCircle2 size={16} />Finalise</button>
+        </div>
       </div>
 
-      {isFinal && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-          <Lock size={18} /><span className="flex-1">This paper is <strong>final</strong>. Downloads print the frozen version {version}. Saving changes reopens it as a draft (the final version stays in the history).</span>
+      {tab === 'details' && (
+        <div className="space-y-4">
+          <section className="card grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+            <Field label="Title" className="sm:col-span-2 lg:col-span-3"><input className="field mt-1.5" value={title} maxLength={200} onChange={(e) => { setTitle(e.target.value); setDirty(true); }} /></Field>
+            <Field label="Subject" className="lg:col-span-2"><SubjectSelect subjects={subjects} value={subjectId} onChange={chooseSubject} /></Field>
+            <Field label="Format">
+              <select className="field mt-1.5" value={templateId} onChange={(e) => { setTemplateId(Number(e.target.value)); setDirty(true); }}>{templates.filter((t) => t.isActive || t.id === templateId).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
+            </Field>
+            <Field label="Session"><input className="field mt-1.5" value={header.session} maxLength={60} onChange={(e) => setH('session', e.target.value)} placeholder="Spring 2026" /></Field>
+            <Field label="Exam date"><input className="field mt-1.5" type="date" value={header.examDate} onChange={(e) => setH('examDate', e.target.value)} /></Field>
+            <Field label="Maximum marks"><input className="field mt-1.5" type="number" min={0} max={500} value={header.maxMarks} onChange={(e) => setH('maxMarks', Number(e.target.value))} /></Field>
+            <Field label="Duration (min)"><input className="field mt-1.5" type="number" min={0} max={600} value={header.durationMinutes} onChange={(e) => setH('durationMinutes', Number(e.target.value))} /></Field>
+            <Field label="Reading time (min)"><input className="field mt-1.5" type="number" min={0} max={120} value={header.readingMinutes} onChange={(e) => setH('readingMinutes', Number(e.target.value))} /></Field>
+            {fmt?.header.showBatch && <Field label="Batch"><input className="field mt-1.5" value={header.batchNo} maxLength={40} onChange={(e) => setH('batchNo', e.target.value)} /></Field>}
+            {fmt?.header.showTest && <Field label="Test number"><input className="field mt-1.5" value={header.testNo} maxLength={40} onChange={(e) => setH('testNo', e.target.value)} /></Field>}
+          </section>
+
+          <section className="card p-5">
+            <h2 className="text-sm font-semibold text-ink">Prepared by</h2>
+            <p className="field-hint !mt-0.5">Shown on the answer key{fmt?.header.showTeacher ? ' (the teacher also appears on this format’s paper header)' : ', never on the question paper'}.</p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-3">
+              <Field label="Teacher"><input className="field mt-1.5" value={header.teacherName} maxLength={120} onChange={(e) => setH('teacherName', e.target.value)} /></Field>
+              <Field label="Research Officer(s)"><input className="field mt-1.5" value={header.researchOfficers} maxLength={200} onChange={(e) => setH('researchOfficers', e.target.value)} placeholder="Separate names with commas" /></Field>
+              <Field label="Admin"><input className="field mt-1.5" value={header.adminName} maxLength={120} onChange={(e) => setH('adminName', e.target.value)} /></Field>
+            </div>
+          </section>
+
+          <section className="card p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-ink">Instructions</h2>
+              <button className="chip" aria-pressed={header.instructionsOverride !== null} onClick={() => setH('instructionsOverride', header.instructionsOverride === null ? [...(fmt?.instructions.lines ?? [])] : null)}>Custom for this paper</button>
+            </div>
+            {header.instructionsOverride === null ? (
+              <ol className="mt-2 list-[lower-roman] space-y-0.5 pl-6 text-sm text-slate-600">{(fmt?.instructions.lines ?? []).map((l) => <li key={l}>{l.replace(/\*\*/g, '').replace(/\{countWord\}|\{count\}/g, '[number of questions]')}</li>)}</ol>
+            ) : (
+              <>
+                <textarea className="field mt-3" rows={4} value={header.instructionsOverride.join('\n')} onChange={(e) => setH('instructionsOverride', e.target.value.split('\n').slice(0, 20))} />
+                <p className="field-hint">One per line. **bold**, {'{countWord}'} = number of questions in words.</p>
+              </>
+            )}
+            <details className="mt-3">
+              <summary className="cursor-pointer text-xs font-semibold text-slate-500">Heading override</summary>
+              <input className="field mt-2" value={header.titleOverride} maxLength={200} onChange={(e) => setH('titleOverride', e.target.value)} placeholder="Replaces the paper name in the header (optional)" />
+            </details>
+          </section>
         </div>
       )}
 
-      <nav className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Paper builder steps">
-        {STEPS.map((s, i) => (
-          <button key={s.key} onClick={() => setStep(s.key)} aria-current={step === s.key ? 'step' : undefined} className={`min-h-11 rounded-xl px-3 text-left text-sm font-semibold ${step === s.key ? 'bg-navy text-white' : i < stepIndex ? 'bg-white text-navy shadow-card' : 'bg-white text-slate-500 shadow-card'}`}>{s.label}</button>
-        ))}
-      </nav>
-
-      {step === 'setup' && (
-        <section className="card mt-5 grid gap-4 p-5 sm:grid-cols-2">
-          <label className="label sm:col-span-2">Paper title (printed as the main heading)<input className="field mt-1" value={title} maxLength={200} onChange={(e) => change(setTitle)(e.target.value)} placeholder="e.g. Financial Accounting and Reporting" /></label>
-          <label className="label">Subject (CAF)
-            <select className="field mt-1" value={subjectId} onChange={(e) => chooseSubject(Number(e.target.value))}>{subjects.map((s) => <option key={s.id} value={s.id}>{s.code} — {s.name}</option>)}</select>
-          </label>
-          <label className="label">Paper format
-            <select className="field mt-1" value={templateId} onChange={(e) => change(setTemplateId)(Number(e.target.value))}>{templates.filter((t) => t.isActive || t.id === templateId).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
-          </label>
-          {template && <p className="text-xs text-slate-500 sm:col-span-2">{template.description}</p>}
-          <div className="flex justify-end sm:col-span-2"><button className="primary" onClick={() => setStep('details')}>Next: paper details</button></div>
-        </section>
-      )}
-
-      {step === 'details' && (
-        <section className="card mt-5 p-5">
-          <div className="mb-4 rounded-xl bg-blue-50 p-3 text-xs leading-5 text-blue-900">These values are printed in the paper header. Batch, teacher and test number are printed by formats that show them (SKANS Internal Test).</div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <label className="label">Session<input className="field mt-1" value={header.session} maxLength={60} onChange={(e) => setH('session', e.target.value)} placeholder="e.g. Spring 2026" /></label>
-            <label className="label">Exam date<input className="field mt-1" type="date" value={header.examDate} onChange={(e) => setH('examDate', e.target.value)} /></label>
-            <label className="label">Maximum marks<input className="field mt-1" type="number" min={0} max={500} value={header.maxMarks} onChange={(e) => setH('maxMarks', Number(e.target.value))} /></label>
-            <label className="label">Duration (minutes)<input className="field mt-1" type="number" min={0} max={600} value={header.durationMinutes} onChange={(e) => setH('durationMinutes', Number(e.target.value))} /></label>
-            <label className="label">Reading time (minutes)<input className="field mt-1" type="number" min={0} max={120} value={header.readingMinutes} onChange={(e) => setH('readingMinutes', Number(e.target.value))} /></label>
-            <label className="label">Heading override<input className="field mt-1" value={header.titleOverride} maxLength={200} onChange={(e) => setH('titleOverride', e.target.value)} placeholder="Optional; replaces the title" /></label>
-            <label className="label">Batch number<input className="field mt-1" value={header.batchNo} maxLength={40} onChange={(e) => setH('batchNo', e.target.value)} /></label>
-            <label className="label">Teacher name<input className="field mt-1" value={header.teacherName} maxLength={120} onChange={(e) => setH('teacherName', e.target.value)} /></label>
-            <label className="label">Test number<input className="field mt-1" value={header.testNo} maxLength={40} onChange={(e) => setH('testNo', e.target.value)} /></label>
-          </div>
-          <div className="mt-5">
-            <label className="label flex flex-wrap items-center gap-3">
-              <input type="checkbox" className="h-4 w-4" checked={header.instructionsOverride !== null} onChange={(e) => setH('instructionsOverride', e.target.checked ? [...(template?.config.instructions.lines ?? [])] : null)} />
-              Use custom instructions for this paper
-            </label>
-            {header.instructionsOverride === null ? (
-              <div className="mt-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
-                <p className="text-xs font-semibold uppercase text-slate-400">Format default instructions</p>
-                <ol className="mt-1 list-[lower-roman] pl-6">{(template?.config.instructions.lines ?? []).map((l) => <li key={l}>{l.replace(/\*\*/g, '')}</li>)}</ol>
-              </div>
-            ) : (
-              <>
-                <textarea className="field mt-2" rows={5} value={header.instructionsOverride.join('\n')} onChange={(e) => setH('instructionsOverride', e.target.value.split('\n').slice(0, 20))} />
-                <p className="mt-1 text-xs text-slate-500">One instruction per line (max 20). Use **double asterisks** for bold, {'{count}'} / {'{countWord}'} for the number of questions.</p>
-              </>
-            )}
-          </div>
-          <div className="mt-5 flex justify-end"><button className="primary" onClick={() => setStep('questions')}>Next: questions</button></div>
-        </section>
-      )}
-
-      {step === 'questions' && (
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-          <section className="card p-4 sm:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div><h3 className="font-semibold">Approved questions</h3><p className="text-xs text-slate-500">Only approved questions of this subject can be added.</p></div>
-              <label className="relative w-full sm:w-56"><Search className="absolute left-3 top-3 text-slate-400" size={16} /><input className="field !pl-9" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search approved questions" /></label>
+      {tab === 'questions' && (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+          <section className="card flex max-h-[75vh] flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-2 p-4 pb-2">
+              <h2 className="text-sm font-semibold text-ink">Approved questions</h2>
+              <span className="text-xs text-slate-400">{filtered.length}</span>
             </div>
-            <div className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto pr-1">
-              {filtered.length === 0 && <p className="rounded-lg bg-slate-50 p-4 text-center text-sm text-slate-500">{available.length ? 'All matching questions are already in the paper.' : 'No approved questions for this subject yet.'}</p>}
+            <div className="px-4 pb-2"><SearchBox value={search} onChange={setSearch} placeholder="Search approved questions" /></div>
+            <div className="flex-1 overflow-y-auto">
+              {filtered.length === 0 && <p className="px-4 py-10 text-center text-sm text-slate-400">{available.length ? 'All added' : 'No approved questions for this subject yet'}</p>}
               {filtered.map((q) => (
-                <div key={q.id} className="flex items-start gap-2 rounded-xl border border-slate-200 p-3">
+                <div key={q.id} className="list-row">
                   <button className="min-w-0 flex-1 text-left" onClick={() => setPeek(q)}>
-                    <p className="text-sm font-semibold text-ink">{q.topic || 'Untitled'}</p>
-                    <p className="text-xs text-slate-500">{QUESTION_TYPE_LABELS[q.type]} · {q.marks} marks{q.usedInPapers ? ` · used in ${q.usedInPapers} paper(s)` : ''}</p>
-                    <p className="mt-1 line-clamp-2 text-xs text-slate-500">{plain(q.body)}</p>
+                    <p className="truncate text-sm font-medium text-ink">{q.topic || plain(q.body) || 'Untitled'}</p>
+                    <p className="truncate text-xs text-slate-400">{TYPE_SHORT[q.type]} · {q.marks} marks{q.usedInPapers ? ` · used ${q.usedInPapers}×` : ''}</p>
                   </button>
-                  <button className="secondary !min-h-10 shrink-0" onClick={() => add(q)} aria-label={`Add ${q.topic}`}><Plus size={16} />Add</button>
+                  <IconButton label="Add to paper" icon={Plus} tone="success" onClick={() => add(q)} />
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="card p-4 sm:p-5">
-            <h3 className="font-semibold">Paper order</h3>
-            <p className="text-xs text-slate-500">Use the arrows (or drag on a desktop) to reorder. Consecutive MCQs and true/false items print as one numbered question.</p>
-            <div className="mt-3 space-y-2">
-              {items.length === 0 && <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">Add approved questions from the list.</div>}
-              {items.map((it, index) => {
-                const structured = hasStructuredMarks(it.question.type, it.question.content);
-                return (
-                  <div
-                    key={it.question.id}
-                    draggable
-                    onDragStart={() => setDragIndex(index)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => { if (dragIndex !== null) move(dragIndex, index); setDragIndex(null); }}
-                    className="rounded-xl border border-slate-200 bg-white p-3"
-                  >
-                    <div className="flex items-start gap-2">
-                      <GripVertical className="mt-1 hidden shrink-0 cursor-grab text-slate-300 lg:block" size={17} />
-                      <button className="min-w-0 flex-1 text-left" onClick={() => setPeek(it.question)}>
-                        <p className="text-sm font-semibold">{index + 1}. {it.question.topic || QUESTION_TYPE_LABELS[it.question.type]}</p>
-                        <p className="text-xs text-slate-500">{QUESTION_TYPE_LABELS[it.question.type]} · #{it.question.id}</p>
-                      </button>
-                      <div className="flex shrink-0">
-                        <button onClick={() => move(index, index - 1)} disabled={index === 0} className="action disabled:opacity-30" title="Move up"><ArrowUp size={16} /></button>
-                        <button onClick={() => move(index, index + 1)} disabled={index === items.length - 1} className="action disabled:opacity-30" title="Move down"><ArrowDown size={16} /></button>
-                        <button onClick={() => setItemsDirty(items.filter((_, i) => i !== index))} className="action text-red-600" title="Remove from paper"><X size={16} /></button>
-                      </div>
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-end gap-3 pl-0 lg:pl-6">
-                      {sectionNames.length > 0 && (
-                        <label className="label text-xs">Section
-                          <select className="field mt-1 !min-h-10 !py-1.5 text-sm" value={it.section} onChange={(e) => setItemsDirty(items.map((x, i) => (i === index ? { ...x, section: e.target.value } : x)))}>
-                            <option value="">No section</option>{sectionNames.map((n) => <option key={n}>{n}</option>)}
-                          </select>
-                        </label>
-                      )}
-                      <label className="label text-xs">Marks
-                        <input
-                          className="field mt-1 w-24 !py-1.5 text-sm"
-                          type="number" min={0} max={200} step={0.5}
-                          value={itemMarks(it)}
-                          disabled={structured}
-                          title={structured ? 'Marks come from the question parts / MCQ items' : 'Override the marks for this paper only'}
-                          onChange={(e) => setItemsDirty(items.map((x, i) => (i === index ? { ...x, marksOverride: e.target.value === '' ? null : Number(e.target.value) } : x)))}
-                        />
-                      </label>
-                      {it.marksOverride !== null && !structured && it.marksOverride !== it.question.marks && (
-                        <button className="mb-2 text-xs font-semibold text-slate-500 underline" onClick={() => setItemsDirty(items.map((x, i) => (i === index ? { ...x, marksOverride: null } : x)))}>Reset to {it.question.marks}</button>
-                      )}
-                      <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-600"><input type="checkbox" className="h-4 w-4" checked={it.newPage} onChange={(e) => setItemsDirty(items.map((x, i) => (i === index ? { ...x, newPage: e.target.checked } : x)))} />Start on a new page</label>
-                    </div>
+          <section className="card overflow-hidden">
+            <h2 className="p-4 pb-2 text-sm font-semibold text-ink">In this paper</h2>
+            {items.length === 0 ? <EmptyState icon={FileText} title="Add approved questions from the list" /> : items.map((it, index) => {
+              const structured = hasStructuredMarks(it.question.type, it.question.content);
+              return (
+                <div key={it.question.id} className="list-row flex-wrap">
+                  <span className="w-6 shrink-0 text-sm font-semibold text-slate-400">{index + 1}</span>
+                  <button className="min-w-0 flex-1 text-left" onClick={() => setPeek(it.question)}>
+                    <p className="truncate text-sm font-medium text-ink">{it.question.topic || plain(it.question.body) || 'Untitled'}</p>
+                    <p className="truncate text-xs text-slate-400">{TYPE_SHORT[it.question.type]}{it.section ? ` · ${it.section}` : ''}{it.newPage ? ' · new page' : ''}</p>
+                  </button>
+                  <div className="flex w-full items-center gap-1.5 pl-8 sm:w-auto sm:pl-0">
+                    {sectionNames.length > 0 && (
+                      <select className="field !w-auto !py-1.5 text-sm" value={it.section} onChange={(e) => patchItem(index, { section: e.target.value })} aria-label="Section">
+                        <option value="">No section</option>{sectionNames.map((n) => <option key={n} value={n}>{n.replace('SECTION ', 'Sec. ')}</option>)}
+                      </select>
+                    )}
+                    <input className="field !w-16 !py-1.5 text-center text-sm" type="number" min={0} max={200} step={0.5} value={itemMarks(it)} disabled={structured} aria-label="Marks" title={structured ? 'Marks come from the parts' : 'Marks for this paper'} onChange={(e) => patchItem(index, { marksOverride: e.target.value === '' ? null : Number(e.target.value) })} />
+                    <button className="chip !min-h-8 !px-2.5 text-xs" aria-pressed={it.newPage} title="Start this question on a new page" onClick={() => patchItem(index, { newPage: !it.newPage })}>New page</button>
+                    <IconButton label="Move up" icon={ArrowUp} disabled={index === 0} onClick={() => move(index, index - 1)} />
+                    <IconButton label="Move down" icon={ArrowDown} disabled={index === items.length - 1} onClick={() => move(index, index + 1)} />
+                    <IconButton label="Remove" icon={X} tone="danger" onClick={() => setItemsDirty(items.filter((_, i) => i !== index))} />
                   </div>
-                );
-              })}
-            </div>
-            <div className="mt-4 flex justify-end"><button className="primary" onClick={() => setStep('output')}>Next: review & output</button></div>
+                </div>
+              );
+            })}
           </section>
         </div>
       )}
 
-      {step === 'output' && (
-        <section className="card mt-5 p-5">
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className={`rounded-xl border p-4 ${marksTone}`}>
-              <p className="text-xs font-bold uppercase">Marks check</p>
-              <p className="mt-1 text-2xl font-semibold">{marks.total} / {header.maxMarks}</p>
-              <p className="mt-1 text-xs">{marks.status === 'match' ? 'Ready to finalise.' : marks.status === 'empty' ? 'Add questions first.' : `${marks.message} Adjust marks or maximum marks before finalising.`}</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">
-              <p className="text-xs font-bold uppercase text-slate-400">What is printed</p>
-              <ul className="mt-1 space-y-1">
-                <li><strong>Question paper:</strong> questions, options, marks, header and instructions.</li>
-                <li><strong>Answer key:</strong> correct options, model answers and examiner advice.</li>
-                <li><strong>Never printed:</strong> internal comments, sources and review comments.</li>
-              </ul>
-            </div>
-            <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600">
-              <p className="text-xs font-bold uppercase text-slate-400">Status</p>
-              <p className="mt-1 font-semibold text-ink">{isFinal ? `Final — version ${version}` : paperId ? `Draft — version ${version}` : 'Not saved yet'}</p>
-              {dirty && <p className="mt-1 text-xs text-amber-700">You have unsaved changes. Downloads use the last saved version.</p>}
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button className="secondary" onClick={() => void showPreview('paper')} disabled={!items.length}><Eye size={16} />Preview paper</button>
-            <button className="secondary" onClick={() => void showPreview('key')} disabled={!items.length}><Eye size={16} />Preview answer key</button>
-            <span className="hidden flex-1 sm:block" />
-            <button className="secondary" disabled={busy} onClick={() => (isFinal ? setConfirmReopen(true) : void save('DRAFT'))}><Save size={16} />{isFinal ? 'Reopen as draft' : 'Save draft'}</button>
-            <button className="success" disabled={busy || marks.status !== 'match'} title={marks.status !== 'match' ? marks.message : undefined} onClick={() => void save('FINAL')}><CheckCircle2 size={16} />{isFinal ? 'Save final version' : 'Finalise paper'}</button>
-          </div>
-
-          <div className="mt-6 border-t border-slate-100 pt-5">
-            <h3 className="font-semibold">Downloads</h3>
-            {!paperId ? <p className="mt-1 text-sm text-slate-500">Save the paper to enable PDF downloads.</p> : (
-              <>
-                <label className="mt-2 flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" className="h-4 w-4" checked={watermark} onChange={(e) => setWatermark(e.target.checked)} />Add a CONFIDENTIAL watermark with my username and the time</label>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <a className="primary" href={`/api/papers/${paperId}/pdf?watermark=${watermark ? 1 : 0}`} download><FileText size={16} />Question paper PDF</a>
-                  <a className="primary" href={`/api/papers/${paperId}/answer-key.pdf?watermark=${watermark ? 1 : 0}`} download><FileText size={16} />Answer key PDF</a>
-                  <button className="secondary" onClick={() => setHistory(true)}><History size={16} />Version history</button>
+      {tab === 'download' && (
+        <section className="card p-5">
+          {!paperId ? <EmptyState icon={Download} title="Save the paper to download PDFs" action={<button className="primary" disabled={busy} onClick={() => void save('DRAFT')}><Save size={16} />Save draft</button>} /> : (
+            <div className="space-y-4">
+              {!isFinal && <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800">Draft downloads carry a <strong>DRAFT – FOR REVIEW</strong> watermark. Finalise to print clean copies.</p>}
+              {dirty && <p className="rounded-xl bg-slate-50 px-4 py-2.5 text-sm text-slate-600">You have unsaved changes — downloads use the last saved version.</p>}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <a className="card flex items-center gap-3 p-4 transition hover:border-slate-300" href={`/api/papers/${paperId}/pdf?watermark=${watermark ? 1 : 0}`} download>
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-navy/5 text-navy"><FileText size={20} /></span>
+                  <span><span className="block font-semibold text-ink">Question paper</span><span className="text-xs text-slate-400">PDF</span></span>
+                </a>
+                <a className="card flex items-center gap-3 p-4 transition hover:border-slate-300" href={`/api/papers/${paperId}/answer-key.pdf?watermark=${watermark ? 1 : 0}`} download>
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><KeyRound size={20} /></span>
+                  <span><span className="block font-semibold text-ink">Answer key</span><span className="text-xs text-slate-400">PDF · includes names</span></span>
+                </a>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" className="h-4 w-4" checked={watermark} onChange={(e) => setWatermark(e.target.checked)} />Add my name and time as a watermark</label>
+                <div className="flex gap-2">
+                  <button className="ghost" onClick={() => void showPreview('key')} disabled={!items.length}><Eye size={16} />Preview key</button>
+                  <button className="ghost" onClick={() => setHistory(true)}><History size={16} />History</button>
                 </div>
-                <p className="mt-2 text-xs text-slate-500">Every download is recorded in the audit log.</p>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
       {preview && (
-        <Modal size="xl" eyebrow="Live preview — same renderer as the PDF" title={preview.mode === 'paper' ? 'Question paper' : 'Answer key'} onClose={() => setPreview(null)} footer={<>
+        <Modal size="xl" title={preview.mode === 'paper' ? 'Question paper' : 'Answer key'} eyebrow="Preview — headers and page numbers appear in the PDF" onClose={() => setPreview(null)} footer={
           <button className="secondary" onClick={() => void showPreview(preview.mode === 'paper' ? 'key' : 'paper')}>Show {preview.mode === 'paper' ? 'answer key' : 'question paper'}</button>
-          <button className="primary" onClick={() => setPreview(null)}>Close</button>
-        </>}>
-          <p className="mb-3 text-xs text-slate-500">Page breaks, running headers and “Page X of Y” appear in the PDF only.</p>
-          <iframe title="Paper preview" srcDoc={preview.html} sandbox="" className="h-[70vh] w-full rounded-lg border border-slate-200 bg-white" />
+        }>
+          <iframe title="Paper preview" srcDoc={preview.html} sandbox="" className="h-[72vh] w-full rounded-lg border border-slate-200 bg-white" />
         </Modal>
       )}
       {peek && (
-        <Modal eyebrow={`Question #${peek.id}`} title={peek.topic || 'Untitled'} onClose={() => setPeek(null)} footer={<button className="primary" onClick={() => setPeek(null)}>Close</button>}>
+        <Modal title={peek.topic || 'Question'} eyebrow={`#${peek.id}`} onClose={() => setPeek(null)}>
           <QuestionContent question={peek} showPrivate={false} />
         </Modal>
       )}
       {history && paperId && <VersionHistory paper={{ id: paperId, title }} onClose={() => setHistory(false)} onRestored={() => { setHistory(false); setReload((n) => n + 1); }} />}
-      <Confirm open={confirmReopen} title="Reopen the final paper as a draft?" message="The paper becomes a draft again and the final version stays in the version history. Finalise again when you are done." confirmLabel="Reopen as draft" onConfirm={() => void save('DRAFT')} onCancel={() => setConfirmReopen(false)} />
-      <Confirm open={confirmSubject !== null} title="Change subject?" message="Questions belong to one subject, so the questions already in this paper will be removed." confirmLabel="Change subject" onConfirm={() => confirmSubject !== null && applySubject(confirmSubject)} onCancel={() => setConfirmSubject(null)} />
+      <Confirm open={confirmReopen} title="Reopen as draft?" message="The final version stays in the history." confirmLabel="Reopen" onConfirm={() => void save('DRAFT')} onCancel={() => setConfirmReopen(false)} />
+      <Confirm open={confirmSubject !== null} title="Change subject?" message="Questions already in this paper will be removed." confirmLabel="Change" onConfirm={() => confirmSubject !== null && applySubject(confirmSubject)} onCancel={() => setConfirmSubject(null)} />
     </div>
   );
 }
 
-/** Paper library and builder. The selected paper lives in the URL so tablets can go back and forth. */
+/** Paper library and builder. The open paper and tab live in the URL so tablets can go back and forth. */
 export function PaperBuilder() {
   const [params, setParams] = useSearchParams();
   const view = params.get('paper');
   const open = (id: number | 'new' | null) => setParams(id === null ? {} : { paper: String(id) });
   if (view === null) return <PaperLibrary onOpen={(id) => open(id)} onNew={() => open('new')} />;
   const paperId = view === 'new' ? null : Number(view);
-  const step = STEPS.find((s) => s.key === params.get('step'))?.key ?? null;
-  return <Builder key={view} paperId={paperId} initialStep={step} onBack={() => open(null)} onSavedNew={(id) => setParams({ paper: String(id), step: 'output' }, { replace: true })} />;
+  const tab = (['details', 'questions', 'download'] as Tab[]).find((t) => t === params.get('tab')) ?? null;
+  return <Builder key={view} paperId={paperId} initialTab={tab} onBack={() => open(null)} onSavedNew={(id) => setParams({ paper: String(id), tab: 'download' }, { replace: true })} />;
 }

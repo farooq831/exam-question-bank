@@ -207,6 +207,9 @@ export const paperHeaderSchema = z.object({
   maxMarks: z.number().min(0).max(500).default(100),
   batchNo: z.string().trim().max(40).default(''),
   teacherName: z.string().trim().max(120).default(''),
+  /** People responsible for the paper; printed on the answer key only, never on the question paper. */
+  researchOfficers: z.string().trim().max(200).default(''),
+  adminName: z.string().trim().max(120).default(''),
   testNo: z.string().trim().max(40).default(''),
   titleOverride: z.string().trim().max(200).default(''),
   instructionsOverride: z.array(z.string().trim().max(300)).max(20).nullable().default(null),

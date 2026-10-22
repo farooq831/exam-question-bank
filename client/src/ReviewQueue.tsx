@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { QUESTION_TYPE_LABELS, type Paged, type QuestionDTO, type SubjectDTO } from '@skans/shared';
-import { Check, ChevronDown, ChevronUp, Inbox, X } from 'lucide-react';
+import type { Paged, QuestionDTO, SubjectDTO } from '@skans/shared';
+import { Check, ChevronDown, CircleCheckBig, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from './api';
-import { QuestionContent } from './questions/QuestionPreview';
+import { EmptyState, IconButton, PageHeader } from './components/ui';
+import { ago } from './Dashboard';
+import { QuestionContent, TYPE_SHORT } from './questions/QuestionPreview';
 import { ReviewDialog } from './questions/ReviewDialog';
 
-/** Submitted questions waiting for the administrator's decision. */
+/** Submitted questions waiting for the administrator's decision, oldest first. */
 export function ReviewQueue() {
   const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
   const [subjectId, setSubjectId] = useState('');
   const [rows, setRows] = useState<QuestionDTO[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<number | null>(null);
   const [review, setReview] = useState<{ question: QuestionDTO; decision: 'APPROVE' | 'REJECT' } | null>(null);
@@ -23,9 +24,7 @@ export function ReviewQueue() {
       if (subjectId) query.set('subjectId', subjectId);
       const [s, page] = await Promise.all([api<SubjectDTO[]>('/subjects'), api<Paged<QuestionDTO>>(`/questions?${query}`)]);
       setSubjects(s);
-      // Oldest submissions first, so nothing waits forever.
       setRows([...page.items].reverse());
-      setTotal(page.total);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to load the review queue');
     } finally {
@@ -35,49 +34,37 @@ export function ReviewQueue() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm text-slate-500">Academic review</p>
-          <h2 className="text-3xl font-semibold text-ink">Review queue</h2>
-          <p className="mt-1 text-sm text-slate-500">Approve questions for paper building, or send them back with a comment for the author.</p>
-        </div>
-        <select className="field w-full sm:w-64" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} aria-label="Filter by subject">
-          <option value="">All subjects</option>
-          {subjects.map((s) => <option key={s.id} value={s.id}>{s.code} — {s.name}</option>)}
-        </select>
-      </div>
-
-      <p className="mt-5 text-sm font-semibold text-slate-600">{loading ? 'Loading…' : `${total} question${total === 1 ? '' : 's'} awaiting review`}</p>
-
-      <div className="mt-3 space-y-3">
-        {!loading && rows.length === 0 && (
-          <div className="card flex flex-col items-center gap-2 p-12 text-center text-sm text-slate-500"><Inbox className="text-slate-300" size={36} />Nothing is waiting for review.</div>
-        )}
+    <div>
+      <PageHeader
+        title="Review"
+        count={loading ? undefined : rows.length}
+        actions={
+          <select className="field !w-auto min-w-[150px]" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} aria-label="Subject">
+            <option value="">All subjects</option>
+            {subjects.map((s) => <option key={s.id} value={s.id}>{s.code}</option>)}
+          </select>
+        }
+      />
+      <div className="card overflow-hidden">
+        {!loading && rows.length === 0 && <EmptyState icon={CircleCheckBig} title="All caught up — nothing to review" />}
+        {loading && rows.length === 0 && <p className="p-10 text-center text-sm text-slate-400">Loading…</p>}
         {rows.map((q) => (
-          <article key={q.id} className="card overflow-hidden">
-            <div className="grid gap-3 p-4 sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="badge bg-slate-100 text-navy">{q.subjectCode}</span>
-                  <span className="text-slate-500">{QUESTION_TYPE_LABELS[q.type]}</span>
-                  <span className="font-semibold text-ink">{q.marks} marks</span>
-                </div>
-                <h3 className="mt-1.5 font-semibold text-ink">{q.topic || 'Untitled question'}</h3>
-                <dl className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                  <div><dt className="inline">Created by </dt><dd className="inline font-medium text-slate-700">{q.createdBy}</dd></div>
-                  <div><dt className="inline">Submitted </dt><dd className="inline font-medium text-slate-700">{new Date(q.updatedAt).toLocaleString()}</dd></div>
-                  <div><dt className="inline">#</dt><dd className="inline">{q.id}</dd></div>
-                </dl>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button className="secondary" onClick={() => setOpen(open === q.id ? null : q.id)} aria-expanded={open === q.id}>{open === q.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}Preview</button>
-                <button className="success" onClick={() => setReview({ question: q, decision: 'APPROVE' })}><Check size={16} />Approve</button>
-                <button className="danger" onClick={() => setReview({ question: q, decision: 'REJECT' })}><X size={16} />Reject</button>
+          <div key={q.id} className="border-b border-slate-100 last:border-0">
+            <div className="list-row !border-0">
+              <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(open === q.id ? null : q.id)} aria-expanded={open === q.id}>
+                <p className="flex items-center gap-1.5 truncate font-medium text-ink">
+                  <ChevronDown size={16} className={`shrink-0 text-slate-400 transition ${open === q.id ? 'rotate-180' : ''}`} />
+                  <span className="truncate">{q.topic || 'Untitled question'}</span>
+                </p>
+                <p className="mt-0.5 truncate pl-[22px] text-xs text-slate-400">{q.subjectCode} · {TYPE_SHORT[q.type]} · {q.marks} marks · {q.createdBy} · {ago(q.updatedAt)}</p>
+              </button>
+              <div className="flex shrink-0 gap-1">
+                <IconButton label="Approve" icon={Check} tone="success" onClick={() => setReview({ question: q, decision: 'APPROVE' })} />
+                <IconButton label="Return to author" icon={X} tone="danger" onClick={() => setReview({ question: q, decision: 'REJECT' })} />
               </div>
             </div>
-            {open === q.id && <div className="border-t border-slate-100 bg-slate-50/50 p-4 sm:p-5"><QuestionContent question={q} /></div>}
-          </article>
+            {open === q.id && <div className="bg-slate-50/60 px-5 pb-5 pt-2 sm:pl-10"><QuestionContent question={q} /></div>}
+          </div>
         ))}
       </div>
       {review && <ReviewDialog question={review.question} initialDecision={review.decision} onClose={() => setReview(null)} onDone={() => { setReview(null); void load(); }} />}

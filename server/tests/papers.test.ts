@@ -13,7 +13,7 @@ const PRIVATE = { comments: 'PRIVATE-INTERNAL-COMMENT', source: 'PRIVATE-SOURCE-
 
 beforeAll(async () => {
   [teacher, admin] = await Promise.all(['teacher_far', 'admin'].map((u) => login(u)));
-  [FAR, TAX] = await Promise.all(['FAR', 'TAX'].map(subjectId));
+  [FAR, TAX] = await Promise.all(['FAR', 'TPC'].map(subjectId));
   templateId = (await prisma.paperTemplate.findUniqueOrThrow({ where: { code: 'SKANS_CAF' } })).id;
 });
 
@@ -30,7 +30,7 @@ function paperBody(items: { questionId: number; marksOverride?: number | null }[
     subjectId: FAR,
     templateId,
     status: 'DRAFT',
-    header: { session: 'Autumn 2026', examDate: '2026-11-02', durationMinutes: 60, readingMinutes: 5, maxMarks, batchNo: '7', teacherName: 'Ms Test', testNo: '3', titleOverride: '', instructionsOverride: null },
+    header: { session: 'Autumn 2026', examDate: '2026-11-02', durationMinutes: 60, readingMinutes: 5, maxMarks, batchNo: '7', teacherName: 'Ms Test', testNo: '3', researchOfficers: 'RO-PERSON-ONE', adminName: 'ADMIN-PERSON', titleOverride: '', instructionsOverride: null },
     items: items.map((i) => ({ section: '', marksOverride: null, newPage: false, ...i })),
     ...extra,
   };
@@ -174,7 +174,8 @@ describe('preview and PDF output', () => {
     expect(text).toMatch(/2 November 2026/);
     expect(text).toContain('admin ·'); // watermark: username and timestamp
     for (const banned of [/https?:\/\//, /about:blank/, /file:\/\//, /localhost/, /\d{1,2}\/\d{1,2}\/\d{2},\s*\d{1,2}:\d{2}/]) expect(text).not.toMatch(banned);
-    for (const secret of ['MODEL-ANSWER-TEXT', 'EXAMINER-ADVICE-TEXT', ...Object.values(PRIVATE)]) expect(text).not.toContain(secret);
+    for (const secret of ['MODEL-ANSWER-TEXT', 'EXAMINER-ADVICE-TEXT', 'RO-PERSON-ONE', 'ADMIN-PERSON', ...Object.values(PRIVATE)]) expect(text).not.toContain(secret);
+    expect(text).not.toContain('DRAFT'); // final papers print clean
     expect(await prisma.auditLog.count({ where: { action: 'PAPER_PDF_DOWNLOAD', entityId: String(paperId) } })).toBe(1);
   });
 
@@ -185,6 +186,8 @@ describe('preview and PDF output', () => {
     expect(text).toContain('ANSWER KEY');
     expect(text).toContain('MODEL-ANSWER-TEXT');
     expect(text).toContain('EXAMINER-ADVICE-TEXT');
+    // People responsible for the paper are named on the answer key only.
+    for (const name of ['Ms Test', 'RO-PERSON-ONE', 'ADMIN-PERSON']) expect(text).toContain(name);
     for (const secret of Object.values(PRIVATE)) expect(text).not.toContain(secret);
     expect(await prisma.auditLog.count({ where: { action: 'ANSWER_KEY_PDF_DOWNLOAD', entityId: String(paperId) } })).toBe(1);
   });
@@ -197,7 +200,11 @@ describe('preview and PDF output', () => {
     const pages = await pdfText(res.body as Buffer);
     expect(pages.length).toBeGreaterThan(2);
     // The CAF template omits the running header on page 1, like the reference paper.
-    pages.slice(1).forEach((text, i) => expect(text).toContain(`Page ${i + 2} of ${pages.length}`));
+    pages.slice(1).forEach((text, i) => expect(text).toMatch(new RegExp(String.raw`Page\s+${i + 2}\s+of\s+${pages.length}`)));
+    expect(pages[0]).not.toMatch(/Page\s+1\s+of/);
+    // Drafts are for review: watermarked and named _DRAFT.
+    expect(res.headers['content-disposition']).toMatch(/_DRAFT\.pdf"/);
+    expect(pages.join(' ')).toContain('DRAFT');
   });
 });
 
@@ -227,7 +234,8 @@ describe('template rendering', () => {
     const caf = (await admin.post('/api/papers/preview?format=html', { ...paperBody([{ questionId: q.id }], 5), mode: 'paper' }).expect(200)).text;
     // SKANS logo at the top right of the CAF header; no examining-body branding anywhere.
     expect(caf).toMatch(/<div class="caf-logo"><img src="data:image\/png;base64,[^"]+" alt="SKANS"><\/div>/);
-    expect(caf).not.toMatch(/ICAP/);
+    // Ignore embedded font/logo data (base64 can contain any letters by chance).
+    expect(caf.replace(/data:[^"')]+/g, '')).not.toMatch(/ICAP/);
   });
 });
 

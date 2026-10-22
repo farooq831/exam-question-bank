@@ -399,3 +399,33 @@ Validation: shared 10/10, server 37/37, full typecheck passes. Sample PDFs were 
 - [x] New `client/src/components/PasswordInput.tsx`: a password field with an eye button (Show/Hide, keyboard and screen-reader accessible, 44 px touch target).
 - Used on the sign-in page, all three change-password fields (including the forced first sign-in change), and the administrator's **Add user** and **Reset password** dialogs. The two admin dialogs start visible so the generated temporary password can be read out, and the eye hides it.
 - Browser check on the running app: the field type switches password → text → password; sign-in still works; the Add-user dialog has the toggle. Client typecheck passes.
+
+## Follow-up: administration requirements for the CAF papers (22 October 2026)
+
+Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx`, and the eight attached Spring 2026 papers (CAF-8 Audit and Assurance Essentials is the standard). Agreed scope: build the format only; teachers enter the questions themselves.
+
+- [x] **Standard paper format.** "SKANS CAF Examination" follows the Audit paper and the formatting sheet:
+  - Calisto MT throughout (title 15 pt bold, paper name 18 pt bold, date/marks/time 12 pt, everything else 11 pt), single line spacing, justified body.
+  - Sheet spacing: 12 pt between paragraphs and sub-parts, 8 pt from stem to options, 0 pt between options, 13 pt after QUESTION headings, 19 pt after SECTION bars.
+  - Margins: left 2.14 cm, text to 560 pt.
+  - Boxed instructions, thick SECTION bars, dotted tables, "(01 mark)" right-aligned and bold, per-MCQ marks, "(THE END)".
+  - Running header "Spring 2026 ▌ Paper … Page **X** of **Y**" in Calibri, about 1.3 cm from the top, from page 2. It is rendered with Chromium's header template, because CSS margin boxes cannot bold only the numbers; page 1 is taken from a header-less render.
+  - SKANS logo at the top right, sized so the title stays on one line.
+  - All sizes and spacing values are editable in **Paper formats** (new typography settings; older saved formats get these defaults).
+- [x] **Calisto MT** is embedded from the server's installed fonts (or `branding/fonts/`); it is never committed (licensed font). It falls back to Tinos with a logged warning.
+- [x] **8 CAF subjects** under their official names with CAF numbers and groups: FAR, TPC, DSR, BLD (Group A); MA, CR, BIA, AAE (Group B). They are ordered CAF 1–8 everywhere and grouped in the paper and subject screens. Old subjects are deactivated by the seed, never deleted.
+- [x] **Names:** Teacher, Research Officer(s) and Admin fields on every paper (Details → Prepared by), printed on the **answer key only**.
+- [x] **Draft for review:** draft PDFs always carry a "DRAFT – FOR REVIEW" watermark and a `_DRAFT` file name; finalised papers print clean.
+- [x] **UI clean-up across every screen** (in progress before this request, now complete):
+  - Shared page header, chips, icon buttons with tooltips, pills and empty states; light cards.
+  - Sign-in is a single card; the sidebar groups navigation, and the redundant top bar is removed on desktop.
+  - Dashboard: greeting, 4 numbers, 2 lists.
+  - Questions and Review are single clean lists.
+  - The editor has short labels with folding Answer key and Private notes sections.
+  - Papers: library plus three tabs, with actions always visible.
+  - Users, Subjects (by CAF group), Paper formats (form with all sheet values) and Audit log are compact lists.
+- [x] Fixed: the editor numbered sub-questions (i) by default while the CAF format prints (a). Both now use (a), (b), with (i), (ii) for parts inside them.
+- Verification:
+  - Sample PDFs compared visually with the Audit paper. Tests: shared 11/11, server 40/40, including new tests for drafts, names, header page numbers and page 1 without a header.
+  - Browser walkthrough on an isolated instance: write question → submit → approve → CAF 8 paper with names → draft PDFs; no horizontal overflow on 8 screens at 768 px.
+  - `dev.db` was backed up to `server/backups/skans-20261022-092456/`, then upgraded with the non-destructive seed.

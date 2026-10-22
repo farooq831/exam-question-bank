@@ -68,7 +68,7 @@ describe('formatting helpers', () => {
   it('formats dates and durations', () => {
     expect(formatDate('2026-03-02', 'D MMMM YYYY')).toBe('2 March 2026');
     expect(formatDate('2025-10-20', 'MM/DD/YYYY')).toBe('10/20/2025');
-    expect(formatDurationCaf(180, 15)).toBe("3 hours and 15 minutes (including 15 minutes' reading time)");
+    expect(formatDurationCaf(180, 15)).toBe("3 hours and 15 minutes (including 15 minutes’ reading time)");
     expect(formatDurationSkans(60)).toBe('1 Hour(s)');
   });
 

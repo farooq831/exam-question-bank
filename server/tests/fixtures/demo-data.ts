@@ -17,9 +17,9 @@ type Ref = { caf: { id: number }; skans: { id: number }; subjectRows: Map<string
 
 const users = [
   { username: 'admin', fullName: 'SKANS IT Administrator', role: 'ADMIN', subjects: [] as string[] },
-  { username: 'teacher_far', fullName: 'FAR Teacher', role: 'TEACHER', subjects: ['FAR', 'FAR1', 'FAR2'] },
-  { username: 'teacher_tax', fullName: 'Tax Teacher', role: 'TEACHER', subjects: ['TAX', 'TPC'] },
-  { username: 'teacher_audit', fullName: 'Audit Teacher', role: 'TEACHER', subjects: ['AUD'] },
+  { username: 'teacher_far', fullName: 'FAR Teacher', role: 'TEACHER', subjects: ['FAR', 'CR'] },
+  { username: 'teacher_tax', fullName: 'Tax Teacher', role: 'TEACHER', subjects: ['TPC', 'BLD'] },
+  { username: 'teacher_audit', fullName: 'Audit Teacher', role: 'TEACHER', subjects: ['AAE'] },
 ];
 
 const questions: SeedQuestion[] = [
@@ -220,14 +220,14 @@ async function seedDemoContent(tx: Tx, ref: Ref) {
   const { caf, skans, subjectRows, userRows } = ref;
   const allQuestions = [
     ...questions,
-    ...extraQuestions('CMA', 'teacher_far', 10),
-    ...extraQuestions('BL', 'teacher_far', 8),
-    ...extraQuestions('AUD', 'teacher_audit', 6),
-    ...extraQuestions('MFA', 'admin', 4),
+    ...extraQuestions('CR', 'teacher_far', 10),
+    ...extraQuestions('MA', 'admin', 8),
+    ...extraQuestions('AAE', 'teacher_audit', 6),
+    ...extraQuestions('BIA', 'admin', 4),
   ];
   const questionRows = new Map<string, { id: number }>();
   for (const [index, question] of allQuestions.entries()) {
-    const subjectCode = question.subject ?? (question.source.startsWith('Tax') ? 'TAX' : question.source.toLowerCase().includes('audit') ? 'AUD' : 'FAR');
+    const subjectCode = question.subject ?? (question.source.startsWith('Tax') ? 'TPC' : question.source.toLowerCase().includes('audit') ? 'AAE' : 'FAR');
     const subject = subjectRows.get(subjectCode)!;
     const author = userRows.get(question.by)!;
     const content = question.content ?? {};
@@ -308,7 +308,7 @@ async function seedDemoContent(tx: Tx, ref: Ref) {
   });
   await samplePaper({
     title: 'Tax Batch 1 Internal Test',
-    subject: 'TAX',
+    subject: 'TPC',
     templateId: skans.id,
     header: { session: 'Batch 1', examDate: '2026-05-01', durationMinutes: 120, readingMinutes: 10, maxMarks: 25, batchNo: '1', teacherName: 'Tax Faculty', testNo: '1', titleOverride: 'Taxation', instructionsOverride: null },
     keys: ['tax-q1', 'tax-q2', 'tax-q3', 'tax-q4'],

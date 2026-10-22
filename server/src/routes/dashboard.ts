@@ -18,7 +18,7 @@ router.get(
     const user = req.user!;
     const subjects = await prisma.subject.findMany({
       where: user.role === 'ADMIN' ? { isActive: true } : { id: { in: user.subjectIds } },
-      orderBy: { code: 'asc' },
+      orderBy: [{ level: 'asc' }, { code: 'asc' }],
     });
     // Admin sees aggregate counts only (no question content).
     const where: Prisma.QuestionWhereInput =

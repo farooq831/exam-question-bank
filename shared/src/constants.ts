@@ -32,9 +32,10 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = { EASY: 'Easy', MED
 export const PAPER_STATUSES = ['DRAFT', 'FINAL'] as const;
 export type PaperStatus = (typeof PAPER_STATUSES)[number];
 
-export const FONT_KEYS = ['Times', 'Arial', 'Calibri'] as const;
+export const FONT_KEYS = ['Calisto', 'Times', 'Arial', 'Calibri'] as const;
 export type FontKey = (typeof FONT_KEYS)[number];
 export const FONT_LABELS: Record<FontKey, string> = {
+  Calisto: 'Calisto MT (serif)',
   Times: 'Times (serif)',
   Arial: 'Arial (sans-serif)',
   Calibri: 'Calibri (sans-serif)',
@@ -86,23 +87,27 @@ export const AUDIT_ACTIONS = [
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 /**
- * CAF papers taught at SKANS (seeded as subjects; the administration will confirm the final list
- * and full names). `layout` picks the default paper format: 'CAF' = SKANS CAF examination format,
- * 'SKANS' = SKANS internal test format.
+ * CAF papers set by SKANS (official names as printed on the papers). Group A = CAF 1-4,
+ * Group B = CAF 5-8. `level` stores the CAF number ("CAF 1" ... "CAF 8"); `layout` picks the
+ * default paper format ('CAF' = SKANS CAF examination format).
  */
-export const CA_PAPERS: { code: string; name: string; level: string; layout: 'CAF' | 'SKANS' }[] = [
-  { code: 'FAR', name: 'Financial Accounting and Reporting', level: 'CAF', layout: 'CAF' },
-  { code: 'FAR1', name: 'Financial Accounting and Reporting I', level: 'CAF', layout: 'CAF' },
-  { code: 'FAR2', name: 'Financial Accounting and Reporting II', level: 'CAF', layout: 'CAF' },
-  { code: 'AUD', name: 'Audit and Assurance Essentials', level: 'CAF', layout: 'CAF' },
-  { code: 'TAX', name: 'Taxation', level: 'CAF', layout: 'SKANS' },
-  { code: 'CMA', name: 'Cost and Management Accounting', level: 'CAF', layout: 'CAF' },
-  { code: 'BL', name: 'Business Law', level: 'CAF', layout: 'SKANS' },
-  { code: 'CL', name: 'Corporate Laws', level: 'CAF', layout: 'SKANS' },
-  { code: 'MFA', name: 'Management, Finance and Analytics', level: 'CAF', layout: 'CAF' },
-  { code: 'DSR', name: 'Data, Systems and Risks', level: 'CAF', layout: 'SKANS' },
-  { code: 'TPC', name: 'Tax Practices and Compliance', level: 'CAF', layout: 'SKANS' },
-  { code: 'BLD', name: 'Business Laws and Documentation', level: 'CAF', layout: 'SKANS' },
-  { code: 'MA', name: 'Management Accounting', level: 'CAF', layout: 'CAF' },
-  { code: 'BIA', name: 'Business Insights and Analytics', level: 'CAF', layout: 'CAF' },
+export const CA_PAPERS: { code: string; name: string; level: string; group: 'A' | 'B'; layout: 'CAF' | 'SKANS' }[] = [
+  { code: 'FAR', name: 'Financial Accounting and Reporting', level: 'CAF 1', group: 'A', layout: 'CAF' },
+  { code: 'TPC', name: 'Taxation Principles and Compliance', level: 'CAF 2', group: 'A', layout: 'CAF' },
+  { code: 'DSR', name: 'Data, Systems and Risks', level: 'CAF 3', group: 'A', layout: 'CAF' },
+  { code: 'BLD', name: 'Business Law Dynamics', level: 'CAF 4', group: 'A', layout: 'CAF' },
+  { code: 'MA', name: 'Management Accounting', level: 'CAF 5', group: 'B', layout: 'CAF' },
+  { code: 'CR', name: 'Corporate Reporting', level: 'CAF 6', group: 'B', layout: 'CAF' },
+  { code: 'BIA', name: 'Business Insights and Analysis', level: 'CAF 7', group: 'B', layout: 'CAF' },
+  { code: 'AAE', name: 'Audit and Assurance Essentials', level: 'CAF 8', group: 'B', layout: 'CAF' },
 ];
+
+/** CAF group of a subject level such as "CAF 3" (A = CAF 1-4, B = CAF 5-8). */
+export function cafGroup(level: string): 'A' | 'B' | null {
+  const m = /^CAF\s*(\d+)$/i.exec(level.trim());
+  if (!m) return null;
+  return Number(m[1]) <= 4 ? 'A' : 'B';
+}
+
+/** Subject codes seeded by earlier versions that are no longer part of the CAF list. */
+export const LEGACY_SUBJECT_CODES = ['FAR1', 'FAR2', 'AUD', 'TAX', 'CMA', 'BL', 'CL', 'MFA'];

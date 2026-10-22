@@ -10,7 +10,7 @@ let TAX = 0;
 
 beforeAll(async () => {
   [teacher, teacherTax, admin] = await Promise.all(['teacher_far', 'teacher_tax', 'admin'].map((u) => login(u)));
-  [FAR, TAX] = await Promise.all(['FAR', 'TAX'].map(subjectId));
+  [FAR, TAX] = await Promise.all(['FAR', 'TPC'].map(subjectId));
 });
 
 describe('TEACHER restrictions', () => {
@@ -31,11 +31,11 @@ describe('TEACHER restrictions', () => {
 
   it('only sees assigned subjects', async () => {
     const subjects = (await teacher.get('/api/subjects').expect(200)).body as { code: string }[];
-    expect(subjects.map((s) => s.code).sort()).toEqual(['FAR', 'FAR1', 'FAR2']);
+    expect(subjects.map((s) => s.code).sort()).toEqual(['CR', 'FAR']);
     await teacher.get(`/api/questions?subjectId=${TAX}`).expect(403);
     const all = (await teacher.get('/api/questions?pageSize=100').expect(200)).body.items as { subjectCode: string }[];
     expect(all.length).toBeGreaterThan(0);
-    expect(all.every((q) => ['FAR', 'FAR1', 'FAR2'].includes(q.subjectCode))).toBe(true);
+    expect(all.every((q) => ['FAR', 'CR'].includes(q.subjectCode))).toBe(true);
 
     const taxQuestion = await prisma.question.findFirstOrThrow({ where: { subjectId: TAX, status: 'APPROVED' } });
     await teacher.get(`/api/questions/${taxQuestion.id}`).expect(404);
@@ -111,7 +111,7 @@ describe('two-role model', () => {
     const approved = await prisma.question.findFirstOrThrow({ where: { subjectId: TAX, status: 'APPROVED' } });
     const full = (await admin.get(`/api/questions/${approved.id}`).expect(200)).body;
     expect(full.permissions.edit).toBe(true);
-    expect((await admin.get('/api/subjects').expect(200)).body.length).toBeGreaterThan(10);
+    expect((await admin.get('/api/subjects').expect(200)).body.map((s: { code: string }) => s.code).sort()).toEqual(['AAE', 'BIA', 'BLD', 'CR', 'DSR', 'FAR', 'MA', 'TPC']);
   });
 });
 

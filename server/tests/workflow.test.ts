@@ -3,7 +3,7 @@ import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import { createApp } from '../src/app';
 import { prisma } from '../src/db';
 import { buildSnapshot, paperInclude, parseTemplateConfig, snapshotToRenderInput } from '../src/lib/papers';
-import { renderPaperHtml } from '../src/render/paperHtml';
+import { renderPaper } from '../src/render/paperHtml';
 import { closeBrowser, htmlToPdf } from '../src/render/pdf';
 import { checkPaperMarks } from '@skans/shared';
 
@@ -25,7 +25,7 @@ describe('auth and RBAC workflow', () => {
 
   it('limits a teacher to assigned subjects', async () => {
     const teacher = await loggedIn('teacher_far');
-    const tax = await prisma.subject.findUniqueOrThrow({ where: { code: 'TAX' } });
+    const tax = await prisma.subject.findUniqueOrThrow({ where: { code: 'TPC' } });
     await teacher.get(`/api/questions?subjectId=${tax.id}`).expect(403);
     const far = await prisma.subject.findUniqueOrThrow({ where: { code: 'FAR' } });
     const response = await teacher.get(`/api/questions?subjectId=${far.id}`).expect(200);
@@ -61,12 +61,14 @@ describe('marks, template rendering, and PDF generation', () => {
   it('renders a seeded table paper and produces a clean PDF', async () => {
     const paper = await prisma.paper.findUniqueOrThrow({ where: { id: paperId }, include: paperInclude });
     const snapshot = buildSnapshot(paper, parseTemplateConfig(paper.template.config));
-    const html = renderPaperHtml(snapshotToRenderInput(snapshot, 'paper', null));
+    const { html, runningHeader } = renderPaper(snapshotToRenderInput(snapshot, 'paper', null));
     expect(html).toContain('table');
-    expect(html).toContain('counter(page)');
-    expect(html).toContain('counter(pages)');
     expect(html).not.toContain('http://');
-    const result = await htmlToPdf(html, 'workflow-test');
+    // Running header with bold page numbers, printed from page 2 (Chromium header template).
+    expect(runningHeader?.skipFirstPage).toBe(true);
+    expect(runningHeader?.template).toContain('<b class="pageNumber"></b>');
+    expect(runningHeader?.template).toContain('<b class="totalPages"></b>');
+    const result = await htmlToPdf(html, 'workflow-test', runningHeader);
     expect(result.pdf.length).toBeGreaterThan(10_000);
     expect(result.pageCount).toBeGreaterThan(0);
   });

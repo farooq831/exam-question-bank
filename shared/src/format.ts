@@ -102,7 +102,7 @@ export function formatDurationCaf(durationMinutes: number, readingMinutes: numbe
   if (h) parts.push(plural(h, 'hour'));
   if (m) parts.push(plural(m, 'minute'));
   const main = parts.join(' and ') || '0 minutes';
-  return readingMinutes > 0 ? `${main} (including ${plural(readingMinutes, 'minute')}' reading time)` : main;
+  return readingMinutes > 0 ? `${main} (including ${plural(readingMinutes, 'minute')}’ reading time)` : main;
 }
 
 /** SKANS internal style: "1 Hour(s)" / "1 Hour(s) 30 min". */

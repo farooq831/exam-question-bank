@@ -15,7 +15,7 @@
 import { randomInt } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { Prisma } from '@prisma/client';
-import { CA_PAPERS, CAF_TEMPLATE_CONFIG, passwordPolicy, SKANS_TEMPLATE_CONFIG, templateConfigSchema } from '@skans/shared';
+import { CA_PAPERS, CAF_TEMPLATE_CONFIG, LEGACY_SUBJECT_CODES, passwordPolicy, SKANS_TEMPLATE_CONFIG, templateConfigSchema } from '@skans/shared';
 import { prisma } from '../src/db';
 
 const RESET = process.argv.includes('--reset');
@@ -25,7 +25,7 @@ export const CAF_TEMPLATE = {
   code: 'SKANS_CAF',
   name: 'SKANS CAF Examination',
   description:
-    'SKANS CAF examination paper. Layout and formatting follow the reference CAF examination paper, with the SKANS logo at the top right. Fonts, sizes and margins are provisional until the administration confirms the official guidelines.',
+    'SKANS CAF examination paper. Standard format: the CAF-8 Audit and Assurance Essentials paper and the formatting sheet from the administration (Calisto MT, A4, approved sizes, margins and spacing), with the SKANS logo at the top right.',
 };
 export const SKANS_TEMPLATE = {
   code: 'SKANS_INTERNAL',
@@ -70,6 +70,27 @@ async function migrateLegacy(tx: Tx) {
     });
     console.log('[seed] Renamed the former ICAP_EXAM format to SKANS_CAF and switched it to the SKANS logo.');
   }
+
+  // Apply the approved Audit-paper specification to the CAF format if it still has the earlier defaults.
+  const caf = await tx.paperTemplate.findUnique({ where: { code: CAF_TEMPLATE.code } });
+  if (caf) {
+    const current = templateConfigSchema.safeParse(JSON.parse(caf.config));
+    if (current.success && current.data.fonts.body === 'Times' && current.data.page.marginLeftMm === 19) {
+      await tx.paperTemplate.update({ where: { id: caf.id }, data: { config: JSON.stringify(CAF_TEMPLATE_CONFIG), name: CAF_TEMPLATE.name, description: CAF_TEMPLATE.description } });
+      console.log('[seed] SKANS CAF Examination format updated to the approved specification (Calisto MT, sheet margins and spacing).');
+    }
+  }
+
+  // The 8 CAF papers: official names and CAF numbers for rows created by earlier versions.
+  for (const paper of CA_PAPERS) {
+    const row = await tx.subject.findUnique({ where: { code: paper.code } });
+    if (row && (row.level === 'CAF' || row.level === '')) {
+      await tx.subject.update({ where: { id: row.id }, data: { name: paper.name, level: paper.level, isActive: true } });
+    }
+  }
+  // Subjects from earlier versions that are not CAF papers any more are switched off (never deleted).
+  const oldSubjects = await tx.subject.updateMany({ where: { code: { in: LEGACY_SUBJECT_CODES }, isActive: true }, data: { isActive: false } });
+  if (oldSubjects.count) console.log(`[seed] ${oldSubjects.count} old subject(s) deactivated (not part of the 8 CAF papers). Reactivate them in Subjects if needed.`);
 }
 
 function initialPassword() {
@@ -125,7 +146,7 @@ async function main() {
     },
     { timeout: 60_000 },
   );
-  console.log(`[seed] ${CA_PAPERS.length} CAF subjects and 2 SKANS paper formats present.${RESET ? ' All previous data was deleted.' : ''}`);
+  console.log(`[seed] ${CA_PAPERS.length} CAF papers (CAF 1-8) and 2 SKANS paper formats present.${RESET ? ' All previous data was deleted.' : ''}`);
   if (admin) {
     console.log('[seed] Administrator account created:');
     console.log(`         username: ${admin.username}`);

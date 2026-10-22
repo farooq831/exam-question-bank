@@ -10,34 +10,36 @@ import { CAF_TEMPLATE_CONFIG, SKANS_TEMPLATE_CONFIG, paperHeaderSchema, type Tem
 import { prisma } from '../src/db';
 import { parseTemplateConfig } from '../src/lib/papers';
 import { closeBrowser, htmlToPdf } from '../src/render/pdf';
-import { renderPaperHtml, type RenderItem } from '../src/render/paperHtml';
+import { renderPaper, type RenderItem } from '../src/render/paperHtml';
 
 const outputDir = path.resolve(process.cwd(), '..', 'output');
 const opt = (texts: string[], correct: number) => texts.map((t, i) => ({ key: String.fromCharCode(97 + i), html: `<p>${t}</p>`, correct: i === correct }));
-const table = `<table><tbody><tr><th><p>Particulars</p></th><th><p>Rs.</p></th></tr><tr><td><p>Revenue</p></td><td><p style="text-align: right">8,500,000</p></td></tr><tr><td><p>Cost of sales</p></td><td><p style="text-align: right">(5,100,000)</p></td></tr><tr><td><p>Gross profit</p></td><td><p style="text-align: right">3,400,000</p></td></tr></tbody></table>`;
+const table = `<table><tbody><tr><th><p style="text-align: left">Item category</p></th><th><p>Quantity per records</p></th><th><p>Physical quantity</p></th></tr><tr><td><p>Component A - units</p></td><td><p style="text-align: center">120</p></td><td><p style="text-align: center">114</p></td></tr><tr><td><p>Fasteners - units</p></td><td><p style="text-align: center">48,000</p></td><td><p style="text-align: center">50,500</p></td></tr></tbody></table>`;
+const longOpt = 'A long option that wraps onto a second line so the hanging indent of the option text can be checked against the reference paper';
 
-/** Example content only — it is never saved to the database. */
+/** Example content only (invented text, structured like the reference paper). It is never saved. */
 const items: RenderItem[] = [
   {
-    section: 'SECTION A', newPage: false, marks: 2,
-    question: { id: 1, type: 'MCQ_GROUP', marks: 2, body: '', answer: '', advice: '', content: { items: [
-      { id: 'a', stem: '<p>Which qualitative characteristic makes financial information useful?</p>', options: opt(['Relevance', 'Secrecy', 'Complexity', 'Delay'], 0), layout: 'auto', marks: 1 },
-      { id: 'b', stem: '<p>Which measurement basis uses current entry price?</p>', options: opt(['Historical cost', 'Current cost', 'Fair value', 'Value in use'], 1), layout: 'auto', marks: 1 },
+    section: 'SECTION A', newPage: false, marks: 3,
+    question: { id: 1, type: 'MCQ_GROUP', marks: 3, body: '', answer: '', advice: '', content: { items: [
+      { id: 'a', stem: '<p>When an engagement team evaluates whether the criteria used in an assurance engagement are suitable, which of the following best describes the approach that should be followed?</p>', options: opt([longOpt, 'Criteria issued by a recognised body through a transparent process are presumed suitable', 'Criteria used by other entities in the same industry are always suitable', 'Criteria accepted by the intended users are presumed suitable'], 1), layout: '1', marks: 1 },
+      { id: 'b', stem: '<p>Which of the following procedures provides the most relevant evidence about the valuation of capitalised development costs?</p>', options: opt(['Inspecting project logs and technical documentation', 'Reviewing feasibility studies and resource plans', 'Examining licensing agreements', 'Tracing a sample of ledger entries to supporting documents'], 1), layout: '1', marks: 1 },
+      { id: 'c', stem: '<p>You are planning the audit of Example Traders Limited. During planning you note the following:</p><ul><li><p>A bank covenant requires a minimum net profit margin of 5%.</p></li><li><p>The company migrated to a new ERP system during the year.</p></li></ul><p>What is the most appropriate conclusion regarding materiality?</p>', options: opt(['Set performance materiality close to overall materiality', 'Revise overall materiality upward', 'Set performance materiality significantly lower', 'Apply a separate lower materiality'], 2), layout: '1', marks: 1 },
     ] } },
   },
   {
-    section: 'SECTION B', newPage: false, marks: 10,
-    question: { id: 2, type: 'LONG', marks: 10, body: `<p>The following information relates to Alpha Limited for the year ended 30 June 2026:</p>${table}`, answer: '<p>Model answer appears in the answer key only.</p>', advice: '<p>Award marks for clear workings.</p>', content: { partLabelStyle: null, parts: [
-      { id: 'a', html: '<p>Prepare the statement of profit or loss extract.</p>', marks: 6, answer: '<p>Gross profit Rs. 3,400,000.</p>', parts: [] },
-      { id: 'b', html: '<p>Explain two adjustments that may be required.</p>', marks: 4, answer: '', parts: [
-        { id: 'b1', html: '<p>Accruals.</p>', marks: 2, answer: '<p>Expenses incurred but not paid.</p>' },
-        { id: 'b2', html: '<p>Depreciation.</p>', marks: 2, answer: '<p>Systematic allocation of cost.</p>' },
+    section: 'SECTION A', newPage: false, marks: 9,
+    question: { id: 2, type: 'SHORT', marks: 9, body: '<p>Your firm is the external auditor of Example Apparel Limited (EAL) for the year ended 31 December 2025. During planning, the following matters were noted:</p><ol><li><p>The lender has imposed a covenant requiring a minimum net profit margin of 8%.</p></li><li><p>The finance director retains sole access to the year-end adjustments module of the accounting system.</p></li></ol><p><strong>Required:</strong><br>Identify and explain the fraud risk factors present in the above scenario.</p>', answer: '<p>Model answer appears in the answer key only.</p>', advice: '<p>Award one mark per well-explained factor.</p>', content: {} },
+  },
+  {
+    section: 'SECTION B', newPage: false, marks: 9,
+    question: { id: 3, type: 'LONG', marks: 9, body: `<p>Example Manufacturing Limited holds high-value components and a large volume of low-value items. The following differences were identified during the inventory count:</p>${table}`, answer: '', advice: '', content: { partLabelStyle: null, parts: [
+      { id: 'a', html: '<p>Discuss the weaknesses in the inventory count procedures and explain how they could affect the reliability of the count results.</p>', marks: 5, answer: '<p>Answer for part (a).</p>', parts: [] },
+      { id: 'b', html: '<p><strong>Required:</strong></p>', marks: 4, answer: '', parts: [
+        { id: 'b1', html: '<p>Describe any <strong>two</strong> audit procedures to investigate the differences.</p>', marks: 2, answer: '<p>Answer (b)(i).</p>' },
+        { id: 'b2', html: '<p>Discuss whether the pricing error should be projected.</p>', marks: 2, answer: '<p>Answer (b)(ii).</p>' },
       ] },
     ] } },
-  },
-  {
-    section: 'SECTION B', newPage: false, marks: 3,
-    question: { id: 3, type: 'SHORT', marks: 3, body: '<p>State the five steps for recognising revenue from contracts with customers.</p>', answer: '<p>Identify the contract, obligations, price, allocate, recognise.</p>', advice: '', content: {} },
   },
 ];
 
@@ -52,11 +54,11 @@ async function formats(): Promise<{ code: string; config: TemplateConfig }[]> {
 
 async function main() {
   await mkdir(outputDir, { recursive: true });
-  const header = paperHeaderSchema.parse({ session: 'Autumn 2026', examDate: '2026-11-02', durationMinutes: 60, readingMinutes: 10, maxMarks: 15, batchNo: '1', teacherName: 'Teacher Name', testNo: '1' });
+  const header = paperHeaderSchema.parse({ session: 'Spring 2026', examDate: '2026-03-03', durationMinutes: 180, readingMinutes: 15, maxMarks: 100, batchNo: '1', teacherName: 'Teacher Name', testNo: '1', researchOfficers: 'Research Officer Name', adminName: 'Admin Name' });
   for (const { code, config } of await formats()) {
     for (const mode of ['paper', 'key'] as const) {
-      const html = renderPaperHtml({ mode, config, subject: { code: 'FAR', name: 'Financial Accounting and Reporting' }, header, title: 'Financial Accounting and Reporting', items, watermark: null });
-      const { pdf, pageCount } = await htmlToPdf(html, `${code}-${mode}`);
+      const { html, runningHeader } = renderPaper({ mode, config, subject: { code: 'AAE', name: 'Audit and Assurance Essentials' }, header, title: 'Audit and Assurance Essentials', items, watermark: null });
+      const { pdf, pageCount } = await htmlToPdf(html, `${code}-${mode}`, runningHeader);
       const file = path.join(outputDir, `${code}-${mode === 'paper' ? 'paper' : 'answer-key'}.pdf`);
       await writeFile(file, pdf);
       console.log(`${file} (${pageCount} page${pageCount === 1 ? '' : 's'})`);

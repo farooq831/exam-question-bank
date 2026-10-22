@@ -76,6 +76,28 @@ export const templateConfigSchema = z.object({
     center: shortText(120),
     right: shortText(120),
   }),
+  /**
+   * Sizes (pt) and vertical spacing (pt) from the approved formatting sheet. Optional, so formats
+   * saved by earlier versions keep working with these defaults.
+   */
+  typography: z
+    .object({
+      titleSizePt: z.number().min(8).max(30).default(15),
+      paperNameSizePt: z.number().min(8).max(30).default(18),
+      metaSizePt: z.number().min(8).max(20).default(12),
+      instructionsSizePt: z.number().min(8).max(16).default(11),
+      sectionSizePt: z.number().min(8).max(16).default(11),
+      questionHeadingSizePt: z.number().min(8).max(16).default(11),
+      runningHeaderSizePt: z.number().min(7).max(14).default(9.5),
+      paragraphSpacingPt: z.number().min(0).max(30).default(12),
+      partSpacingPt: z.number().min(0).max(30).default(12),
+      stemToOptionsPt: z.number().min(0).max(30).default(8),
+      optionSpacingPt: z.number().min(0).max(20).default(0),
+      headingToTextPt: z.number().min(0).max(30).default(13),
+      sectionToQuestionPt: z.number().min(0).max(40).default(19),
+      justify: z.boolean().default(true),
+    })
+    .default({}),
   endText: shortText(60),
   filenames: z.object({
     paper: shortText(120).min(1),
@@ -84,12 +106,19 @@ export const templateConfigSchema = z.object({
 });
 export type TemplateConfig = z.infer<typeof templateConfigSchema>;
 
+/**
+ * SKANS CAF examination format. Standard reference: the CAF-8 Audit and Assurance Essentials paper
+ * and the administration's formatting sheet: Calisto MT; A4; left margin 2.1 cm, text to 560 pt
+ * (right margin about 1.2 cm); running header 1.3 cm from the top; single line spacing; 12 pt
+ * between paragraphs and sub-parts; 8 pt from stem to options; 13 pt after QUESTION headings;
+ * about 19 pt after SECTION bars.
+ */
 export const CAF_TEMPLATE_CONFIG: TemplateConfig = {
   layout: 'CAF',
-  fonts: { body: 'Times', heading: 'Times', runningHeader: 'Calibri', sizePt: 11, lineHeight: 1.15 },
-  page: { marginTopMm: 20, marginBottomMm: 16, marginLeftMm: 19, marginRightMm: 19 },
+  fonts: { body: 'Calisto', heading: 'Calisto', runningHeader: 'Calibri', sizePt: 11, lineHeight: 1.15 },
+  page: { marginTopMm: 22, marginBottomMm: 12, marginLeftMm: 21.4, marginRightMm: 12.4 },
   header: {
-    instituteLine: 'Certificate in Accounting and Finance (CAF) Examination',
+    instituteLine: 'Certificate in Accounting and Finance Stage Examination',
     logo: 'skans',
     dateFormat: 'D MMMM YYYY',
     showBatch: false,
@@ -111,20 +140,19 @@ export const CAF_TEMPLATE_CONFIG: TemplateConfig = {
     headingPattern: 'QUESTION {n}',
     style: 'block',
     startOnNewPage: false,
-    partLabelStyle: 'roman',
-    subPartLabelStyle: 'alpha',
-    gapMm: 6,
+    partLabelStyle: 'alpha',
+    subPartLabelStyle: 'roman',
+    gapMm: 7,
   },
   marks: {
     pattern: '({nn} marks)',
     singularPattern: '({nn} mark)',
     position: 'right',
-    showMcqItemMarks: false,
+    showMcqItemMarks: true,
   },
   mcq: {
     groupConsecutive: true,
-    groupIntro:
-      'Select the most appropriate answer from the options provided for each of the following Multiple-Choice Questions (MCQs). Each MCQ carries **ONE** mark.',
+    groupIntro: 'Select the most appropriate answer from the options provided for each of the following Multiple-Choice Questions.',
     trueFalseIntro: 'State whether each of the following statements is **True** or **False**.',
   },
   runningHeader: {
@@ -134,6 +162,22 @@ export const CAF_TEMPLATE_CONFIG: TemplateConfig = {
     left: '{session} ┃ {subject}',
     center: '',
     right: 'Page {page} of {pages}',
+  },
+  typography: {
+    titleSizePt: 15,
+    paperNameSizePt: 18,
+    metaSizePt: 12,
+    instructionsSizePt: 11,
+    sectionSizePt: 11,
+    questionHeadingSizePt: 11,
+    runningHeaderSizePt: 9.5,
+    paragraphSpacingPt: 12,
+    partSpacingPt: 12,
+    stemToOptionsPt: 8,
+    optionSpacingPt: 0,
+    headingToTextPt: 13,
+    sectionToQuestionPt: 19,
+    justify: true,
   },
   endText: '(THE END)',
   filenames: { paper: '{code}_{session}_Paper', answerKey: '{code}_{session}_AnswerKey' },
@@ -189,6 +233,22 @@ export const SKANS_TEMPLATE_CONFIG: TemplateConfig = {
     left: 'SKANS School of Accountancy · {subject}',
     center: '',
     right: 'Page {page} of {pages}',
+  },
+  typography: {
+    titleSizePt: 16,
+    paperNameSizePt: 16,
+    metaSizePt: 10.5,
+    instructionsSizePt: 10.5,
+    sectionSizePt: 10.5,
+    questionHeadingSizePt: 11.5,
+    runningHeaderSizePt: 9.5,
+    paragraphSpacingPt: 5,
+    partSpacingPt: 8,
+    stemToOptionsPt: 4,
+    optionSpacingPt: 1,
+    headingToTextPt: 6,
+    sectionToQuestionPt: 8,
+    justify: true,
   },
   endText: '',
   filenames: { paper: '{code}_Batch{batch}_Test{test}_Paper', answerKey: '{code}_Batch{batch}_Test{test}_AnswerKey' },

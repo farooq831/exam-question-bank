@@ -15,7 +15,8 @@ router.get(
     const subjects = await prisma.subject.findMany({
       where: u.role === 'ADMIN' ? {} : { id: { in: u.subjectIds } },
       include: { template: { select: { name: true } } },
-      orderBy: { code: 'asc' },
+      // CAF 1 ... CAF 8 first, in paper order; anything else after, by code.
+      orderBy: [{ level: 'asc' }, { code: 'asc' }],
     });
     res.json(
       subjects.map(

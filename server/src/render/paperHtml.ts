@@ -17,7 +17,7 @@ import {
   type TemplateConfig,
 } from '@skans/shared';
 import { escapeHtml, htmlToText, sanitizeRich } from '../lib/sanitize';
-import { fontFacesFor, fontStack, logoDataUri } from './assets';
+import { fontFacesFor, fontStack, logoDataUri, systemFontStack } from './assets';
 
 /**
  * Renders a paper (or its answer key) to a single self-contained HTML document.
@@ -50,6 +50,13 @@ export interface RenderInput {
   items: RenderItem[];
   title?: string;
   watermark?: string | null;
+}
+
+/** Running header/footer printed by Chromium on every page (optionally not on page 1). */
+export interface RunningHeader {
+  position: 'top' | 'bottom';
+  template: string;
+  skipFirstPage: boolean;
 }
 
 type Block =
@@ -149,6 +156,39 @@ function optionColumns(options: McqOption[], layout: string): number {
 // ---------------------------------------------------------------- renderer
 
 export function renderPaperHtml(input: RenderInput): string {
+  return renderPaper(input).html;
+}
+
+/** Builds the Chromium header/footer template: tokens filled, {page}/{pages} bold, ┃ as a solid bar. */
+function runningHeaderTemplate(cfg: TemplateConfig, tokens: Record<string, string | number>): RunningHeader | null {
+  const rh = cfg.runningHeader;
+  if (!rh.enabled || !(rh.left + rh.center + rh.right).trim()) return null;
+  const part = (text: string) =>
+    text
+      .split(/(\{page\}|\{pages\}|┃)/g)
+      .map((piece) => {
+        if (piece === '{page}') return '<b class="pageNumber"></b>';
+        if (piece === '{pages}') return '<b class="totalPages"></b>';
+        if (piece === '┃') return '<span class="bar"></span>';
+        return escapeHtml(fillTokens(piece, tokens));
+      })
+      .join('');
+  const p = cfg.page;
+  const size = cfg.typography.runningHeaderSizePt;
+  // Chromium draws the template inside the page margin; the offset puts the text about 1.3 cm
+  // from the top edge (formatting sheet) when the top margin leaves room for it.
+  const offset = rh.position === 'top' ? `padding-top:${Math.max(0, Math.min(6, p.marginTopMm - 14))}mm;` : `padding-bottom:${Math.max(0, Math.min(5, p.marginBottomMm - 9))}mm;`;
+  const template = `<style>
+.rh{font-family:${systemFontStack(cfg.fonts.runningHeader)};font-size:${size}pt;color:#000;width:100%;margin:0 ${p.marginRightMm}mm 0 ${p.marginLeftMm}mm;display:flex;align-items:center;${offset}-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.rh .l,.rh .c,.rh .r{display:block;flex:1;white-space:nowrap;}
+.rh .c{text-align:center;}.rh .r{text-align:right;}
+.rh .bar{display:inline-block;width:${(size * 0.34).toFixed(2)}pt;height:${(size * 1.15).toFixed(2)}pt;background:#000;margin:0 ${(size * 0.4).toFixed(2)}pt;vertical-align:-${(size * 0.22).toFixed(2)}pt;}
+</style><div class="rh"><span class="l">${part(rh.left)}</span><span class="c">${part(rh.center)}</span><span class="r">${part(rh.right)}</span></div>`;
+  return { position: rh.position, template, skipFirstPage: rh.skipFirstPage };
+}
+
+/** Renders a paper (or answer key) to self-contained HTML plus its running header. */
+export function renderPaper(input: RenderInput): { html: string; runningHeader: RunningHeader | null } {
   const { config: cfg, header, subject, mode } = input;
   const isKey = mode === 'key';
 
@@ -254,7 +294,15 @@ export function renderPaperHtml(input: RenderInput): string {
   let instructionsHtml = '';
   const lines = header.instructionsOverride ?? cfg.instructions.lines;
   if (isKey) {
-    instructionsHtml = `<div class="key-banner">ANSWER KEY &amp; MARKING SCHEME</div>`;
+    const people = [
+      ['Teacher', header.teacherName],
+      ['Research Officer(s)', header.researchOfficers],
+      ['Admin', header.adminName],
+    ].filter(([, v]) => v);
+    const peopleHtml = people.length
+      ? `<div class="key-people">${people.map(([k, v]) => `<span><span class="k">${escapeHtml(k)}:</span> ${escapeHtml(v)}</span>`).join('')}</div>`
+      : '';
+    instructionsHtml = `<div class="key-banner">ANSWER KEY &amp; MARKING SCHEME</div>${peopleHtml}`;
   } else if (lines.length) {
     const label = (i: number) =>
       cfg.instructions.numbering === 'roman'
@@ -336,7 +384,8 @@ export function renderPaperHtml(input: RenderInput): string {
         const items = (c.items ?? [])
           .map((it, i) => renderMcqItem(partLabel(i + 1, 'roman'), it.stem, it.options, it.layout, it.marks, mixed))
           .join('');
-        return `${richHtml(q.body)}<div class="items">${items}</div>`;
+        const intro = htmlToText(q.body) ? richHtml(q.body) : cfg.mcq.groupIntro ? `<p>${inlineMd(cfg.mcq.groupIntro)}</p>` : '';
+        return `${intro}<div class="items">${items}</div>`;
       }
       case 'LONG':
       case 'CASE_STUDY': {
@@ -474,41 +523,31 @@ export function renderPaperHtml(input: RenderInput): string {
   const empty = input.items.length === 0 ? `<p class="empty">No questions have been added to this paper yet.</p>` : '';
   const endText = cfg.endText ? `<div class="the-end">${escapeHtml(cfg.endText)}</div>` : '';
   const watermark = input.watermark ? `<div class="watermark"><span>${escapeHtml(input.watermark)}</span></div>` : '';
-  // Chromium only downloads a web font that page content uses. When the running header has its
-  // own font (e.g. Carlito on the CAF template) and nothing else uses it, the @page margin boxes
-  // would stay invisible, so an invisible text run in that font forces it to load.
-  const headerFontLoader = cfg.runningHeader.enabled
-    ? `<div class="font-loader" aria-hidden="true">${escapeHtml(`${cfg.runningHeader.left} ${cfg.runningHeader.center} ${cfg.runningHeader.right} Page 0123456789 of`)}</div>`
-    : '';
-
-  // ---- styles
-  const rh = cfg.runningHeader;
-  const pos = rh.position;
-  const marginBoxes = rh.enabled
-    ? `@${pos}-left{content:${cssContent(fillTokens(rh.left, { ...tokens, page: '{page}', pages: '{pages}' }))};}
-       @${pos}-center{content:${cssContent(fillTokens(rh.center, { ...tokens, page: '{page}', pages: '{pages}' }))};}
-       @${pos}-right{content:${cssContent(fillTokens(rh.right, { ...tokens, page: '{page}', pages: '{pages}' }))};}`
-    : '';
-  const firstPage =
-    rh.enabled && rh.skipFirstPage
-      ? `@page:first{@${pos}-left{content:none;}@${pos}-center{content:none;}@${pos}-right{content:none;}}`
-      : '';
-  const marginBoxStyle = `font-family:${fontStack(cfg.fonts.runningHeader)};font-size:9.5pt;color:#000;vertical-align:${pos === 'top' ? 'bottom' : 'top'};padding-${pos === 'top' ? 'bottom' : 'top'}:5mm;`;
-
+  const ty = cfg.typography;
   const p = cfg.page;
   const css = `
-${fontFacesFor([cfg.fonts.body, cfg.fonts.heading, cfg.fonts.runningHeader])}
-@page{size:A4;margin:${p.marginTopMm}mm ${p.marginRightMm}mm ${p.marginBottomMm}mm ${p.marginLeftMm}mm;${marginBoxes}}
-${firstPage}
-@page{@${pos}-left{${marginBoxStyle}text-align:left;}@${pos}-center{${marginBoxStyle}text-align:center;}@${pos}-right{${marginBoxStyle}text-align:right;}}
+${fontFacesFor([cfg.fonts.body, cfg.fonts.heading])}
+@page{size:A4;margin:${p.marginTopMm}mm ${p.marginRightMm}mm ${p.marginBottomMm}mm ${p.marginLeftMm}mm;}
 ${BASE_CSS}
 body{font-family:${fontStack(cfg.fonts.body)};font-size:${cfg.fonts.sizePt}pt;line-height:${cfg.fonts.lineHeight};}
+p{margin:0 0 ${ty.paragraphSpacingPt}pt;text-align:${ty.justify ? 'justify' : 'left'};}
 .q-head,.q-num,.caf-head,.skans-head,.section-div,.instructions,.the-end,.key-banner{font-family:${fontStack(cfg.fonts.heading)};}
+.caf-head .inst{font-size:${ty.titleSizePt}pt;}
+.caf-head .subj{font-size:${ty.paperNameSizePt}pt;}
+.caf-head .meta{font-size:${ty.metaSizePt}pt;}
+.instructions{font-size:${ty.instructionsSizePt}pt;}
+.section-div{font-size:${ty.sectionSizePt}pt;margin-bottom:${ty.sectionToQuestionPt}pt;}
+.q-head{font-size:${ty.questionHeadingSizePt}pt;margin-bottom:${ty.headingToTextPt}pt;}
 .q{margin-top:${cfg.questions.gapMm}mm;}
-.font-loader{font-family:${fontStack(cfg.fonts.runningHeader)};position:absolute;left:0;top:0;height:0;overflow:hidden;visibility:hidden;white-space:nowrap;}
+.section-div + .q{margin-top:0;}
+.item{margin-bottom:${ty.partSpacingPt}pt;}
+.item.part{margin-bottom:${ty.partSpacingPt}pt;}
+.item.sub{margin:${ty.partSpacingPt / 2}pt 0 ${ty.partSpacingPt / 2}pt;}
+.opts{margin-top:${ty.stemToOptionsPt}pt;row-gap:${ty.optionSpacingPt}pt;}
+p:has(+ .opts){margin-bottom:0;}
 `;
 
-  return `<!doctype html>
+  const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -517,7 +556,6 @@ body{font-family:${fontStack(cfg.fonts.body)};font-size:${cfg.fonts.sizePt}pt;li
 </head>
 <body class="layout-${cfg.layout.toLowerCase()} mode-${mode}">
 ${watermark}
-${headerFontLoader}
 ${headerHtml}
 ${instructionsHtml}
 <main>
@@ -527,26 +565,28 @@ ${empty}
 ${endText}
 </body>
 </html>`;
+  return { html, runningHeader: runningHeaderTemplate(cfg, tokens) };
 }
 
 const BASE_CSS = `
 *{box-sizing:border-box;}
 html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 body{margin:0;color:#000;background:#fff;}
-p{margin:0 0 5pt;text-align:justify;orphans:2;widows:2;}
+p{orphans:2;widows:2;}
 strong{font-weight:700;}
 h1,h2{margin:0;font-weight:700;}
 .muted{color:#555;font-style:italic;}
 .empty{color:#666;font-style:italic;text-align:center;margin-top:20mm;}
 
 /* CAF examination header: title block left, SKANS logo top right (as on the reference paper) */
-.caf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:3mm;margin:2mm 0 4mm;}
-.caf-head .inst{font-size:13pt;font-weight:700;margin-bottom:3.5mm;}
-.caf-head .subj{font-size:17pt;margin-bottom:3.5mm;}
-.caf-head .key-tag{font-size:13pt;color:#000;}
-.caf-head .meta{font-size:11pt;line-height:1.15;}
-.caf-logo{flex:0 0 46mm;text-align:right;}
-.caf-logo img{width:46mm;height:auto;}
+.caf-head{display:flex;justify-content:space-between;align-items:flex-start;gap:3mm;margin:0 0 5mm;}
+.caf-head-text{flex:1;min-width:0;}
+.caf-head .inst{font-weight:700;margin:0 0 3mm;line-height:1.15;white-space:nowrap;}
+.caf-head .subj{margin:0 0 3.5mm;line-height:1.15;}
+.caf-head .key-tag{font-size:.7em;color:#000;}
+.caf-head .meta{line-height:1.2;}
+.caf-logo{flex:0 0 40mm;text-align:right;margin-top:-1mm;}
+.caf-logo img{width:40mm;height:auto;}
 
 /* SKANS header */
 .skans-head{margin-bottom:2mm;}
@@ -559,8 +599,8 @@ h1,h2{margin:0;font-weight:700;}
 .skans-title{text-align:center;font-size:16pt;padding:5mm 0;}
 
 /* instructions */
-.instructions{margin:0 0 4mm;font-size:10.5pt;}
-.instructions.boxed{border:0.9pt solid #000;padding:1.5mm 2mm 1.5mm;line-height:1.1;}
+.instructions{margin:0 0 5mm;}
+.instructions.boxed{border:0.75pt solid #000;padding:1.2mm 2mm 1.4mm;line-height:1.15;}
 .instructions.boxed .instr-title{font-weight:700;text-decoration:underline;}
 .instructions.plain{padding:5mm 2mm 3mm;font-weight:700;}
 .instructions.plain .instr-title{font-size:13pt;text-decoration:underline;margin-bottom:5mm;}
@@ -569,28 +609,27 @@ h1,h2{margin:0;font-weight:700;}
 .instr-lbl{flex:0 0 9mm;}
 .instructions.plain .instr-lbl{flex:0 0 auto;margin-right:1.2mm;}
 .instr-txt{flex:1;}
-.key-banner{text-align:center;font-weight:700;font-size:12pt;letter-spacing:.5pt;border-top:2.2pt solid #000;border-bottom:.75pt solid #000;padding:1.5mm 0;margin:0 0 5mm;}
+.key-banner{text-align:center;font-weight:700;font-size:12pt;letter-spacing:.5pt;border-top:2.2pt solid #000;border-bottom:.75pt solid #000;padding:1.5mm 0;margin:0 0 3mm;}
+.key-people{display:flex;flex-wrap:wrap;gap:1mm 8mm;font-size:.9em;margin:0 0 5mm;}
+.key-people .k{font-weight:700;}
 
 /* sections & questions */
-.section-div{border-top:2.4pt solid #000;border-bottom:.75pt solid #000;text-align:center;font-weight:700;font-size:10.5pt;padding:1.2mm 0;margin:4mm 0 2mm;break-after:avoid;page-break-after:avoid;}
-.section-div + .q{margin-top:3mm;}
+.section-div{border-top:3pt solid #000;border-bottom:2.25pt solid #000;text-align:center;font-weight:700;padding:1.3mm 0;margin:6mm 0 0;break-after:avoid;page-break-after:avoid;}
 .page-break{break-before:page;page-break-before:always;}
 .q.keep{break-inside:avoid;page-break-inside:avoid;}
-.q-head{font-size:11pt;margin:0 0 3.5mm;break-after:avoid;page-break-after:avoid;}
+.q-head{margin-top:0;break-after:avoid;page-break-after:avoid;}
 .q.hanging{position:relative;padding-left:9mm;}
 .q.hanging .q-num{position:absolute;left:0;top:0;font-weight:700;font-size:11.5pt;line-height:1.25;}
 .layout-skans .q-content{font-family:inherit;}
 .q-content > p:first-child, .q-content > .items:first-child{break-before:avoid;}
 
-.items{margin:2mm 0 0;}
-.item{position:relative;padding-left:9mm;margin:0 0 4mm;}
+.items{margin:0;}
+.item{position:relative;padding-left:9mm;}
 .item > .lbl{position:absolute;left:0;top:0;}
-.item.part{margin-bottom:3mm;}
-.item.sub{margin:1.5mm 0 2mm;}
 .items > .item:not(.part){break-inside:avoid;page-break-inside:avoid;}
 
 /* MCQ options */
-.opts{display:grid;column-gap:5mm;row-gap:.4mm;margin:1.5mm 0 1mm;}
+.opts{display:grid;column-gap:5mm;margin-bottom:0;}
 .opts.c1{grid-template-columns:1fr;}
 .opts.c2{grid-template-columns:1fr 1fr;}
 .opts.c4{grid-template-columns:repeat(4,1fr);}
@@ -624,7 +663,7 @@ h1,h2{margin:0;font-weight:700;}
 .q-content hr{border:0;border-top:.6pt solid #000;}
 sub,sup{font-size:70%;line-height:0;}
 
-/* tables: solid outer border, dashed inner rules (reference paper style); never split short tables */
+/* tables: never split short tables; CAF format uses dotted rules like the reference paper */
 .tbl{break-inside:avoid;page-break-inside:avoid;margin:2mm 0 3mm;display:flex;justify-content:center;}
 .tbl table{border-collapse:collapse;border:.8pt solid #000;font-size:inherit;line-height:1.1;max-width:100%;}
 .tbl th,.tbl td{border:.6pt dashed #333;padding:.3mm 2mm;vertical-align:top;}
@@ -634,6 +673,8 @@ sub,sup{font-size:70%;line-height:0;}
 .tbl th p:not([style]){text-align:center;}
 .tbl thead{display:table-header-group;}
 .tbl tr{break-inside:avoid;page-break-inside:avoid;}
+.layout-caf .tbl table,.layout-caf .tbl th,.layout-caf .tbl td{border:.6pt dotted #555;}
+.layout-caf .tbl th{border-bottom:.6pt dotted #555;}
 /* borderless tables: used to lay out short lists in columns (e.g. "(i) ... (ii) ...") */
 .tbl:has(> table.borderless){justify-content:flex-start;margin:1mm 0 2mm;}
 .tbl table.borderless,.tbl table.borderless th,.tbl table.borderless td{border:0;}

@@ -1,12 +1,9 @@
-import { QUESTION_STATUS_LABELS, type QuestionStatus } from '@skans/shared';
+import type { QuestionStatus } from '@skans/shared';
+import { Pill, type Tone } from '../components/ui';
 
-const STYLES: Record<QuestionStatus, string> = {
-  DRAFT: 'bg-slate-100 text-slate-600',
-  SUBMITTED: 'bg-amber-50 text-amber-700',
-  APPROVED: 'bg-emerald-50 text-emerald-700',
-  REJECTED: 'bg-red-50 text-red-700',
-};
+export const STATUS_TEXT: Record<QuestionStatus, string> = { DRAFT: 'Draft', SUBMITTED: 'In review', APPROVED: 'Approved', REJECTED: 'Returned' };
+const TONE: Record<QuestionStatus, Tone> = { DRAFT: 'slate', SUBMITTED: 'amber', APPROVED: 'green', REJECTED: 'red' };
 
 export function StatusBadge({ status }: { status: QuestionStatus }) {
-  return <span className={`badge ${STYLES[status]}`}>{status === 'SUBMITTED' ? 'Awaiting review' : QUESTION_STATUS_LABELS[status]}</span>;
+  return <Pill tone={TONE[status]} dot>{STATUS_TEXT[status]}</Pill>;
 }

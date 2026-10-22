@@ -29,7 +29,7 @@ import {
 } from '../lib/papers';
 import { parseJson, questionInclude, toQuestionDTO } from '../lib/questions';
 import { assertSubject, requireRole } from '../middleware/auth';
-import { renderPaperHtml } from '../render/paperHtml';
+import { renderPaper } from '../render/paperHtml';
 import { htmlToPdf } from '../render/pdf';
 
 const router = Router();
@@ -331,13 +331,17 @@ async function sendPdf(req: Request, res: Response, mode: 'paper' | 'key') {
   const p = await loadPaper(req, idParam(req));
   const { watermark } = parse(downloadQuerySchema, req.query);
   const snap = await snapshotFor(p);
-  const html = renderPaperHtml(snapshotToRenderInput(snap, mode, watermark === '1' ? watermarkText(req) : null));
-  const fileName = downloadFileName(snap.templateConfig, mode === 'paper' ? 'paper' : 'answerKey', snap);
-  const { pdf, pageCount } = await htmlToPdf(html, fileName.replace(/\.pdf$/, ''));
+  // Drafts are for review only: they always carry a DRAFT watermark and a _DRAFT file name.
+  const draft = p.status !== 'FINAL';
+  const marks = [draft ? 'DRAFT – FOR REVIEW' : '', watermark === '1' ? watermarkText(req) : ''].filter(Boolean);
+  const { html, runningHeader } = renderPaper(snapshotToRenderInput(snap, mode, marks.length ? marks.join(' · ') : null));
+  const fileName = downloadFileName(snap.templateConfig, mode === 'paper' ? 'paper' : 'answerKey', snap).replace(/\.pdf$/, draft ? '_DRAFT.pdf' : '.pdf');
+  const { pdf, pageCount } = await htmlToPdf(html, fileName.replace(/\.pdf$/, ''), runningHeader);
   await audit(req, mode === 'paper' ? 'PAPER_PDF_DOWNLOAD' : 'ANSWER_KEY_PDF_DOWNLOAD', 'Paper', p.id, {
     file: fileName,
     pages: pageCount,
     watermark: watermark === '1',
+    draft,
     version: p.currentVersion,
   });
   res.setHeader('Content-Type', 'application/pdf');
@@ -357,7 +361,7 @@ router.post(
     const input = parse(paperPreviewSchema, req.body);
     const { template, byId } = await validatePaperInput(req, input);
     const subject = await prisma.subject.findUniqueOrThrow({ where: { id: input.subjectId } });
-    const html = renderPaperHtml({
+    const { html, runningHeader } = renderPaper({
       mode: input.mode,
       config: parseTemplateConfig(template.config),
       subject: { code: subject.code, name: subject.name },
@@ -380,7 +384,7 @@ router.post(
       res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:");
       return res.send(html);
     }
-    const { pdf, pageCount } = await htmlToPdf(html, input.title);
+    const { pdf, pageCount } = await htmlToPdf(html, input.title, runningHeader);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('X-Page-Count', String(pageCount));
     res.setHeader('Cache-Control', 'no-store');

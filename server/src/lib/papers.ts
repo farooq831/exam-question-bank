@@ -125,9 +125,11 @@ export function buildSnapshot(p: PaperRow, templateConfig: TemplateConfig): Pape
 }
 
 export function snapshotToRenderInput(s: PaperSnapshot, mode: 'paper' | 'key', watermark: string | null): RenderInput {
+  // Snapshots saved by older versions lack newer format fields; re-validating fills the defaults.
+  const parsed = templateConfigSchema.safeParse(s.templateConfig);
   return {
     mode,
-    config: s.templateConfig,
+    config: parsed.success ? parsed.data : s.templateConfig,
     subject: s.subject,
     header: s.header,
     title: s.title,

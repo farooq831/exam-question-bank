@@ -2,51 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { font-family: 'Segoe UI', ui-sans-serif, system-ui, sans-serif; }
-body { margin: 0; }
-button, input { font: inherit; }
-.field { display: block; color: #475569; font-size: .875rem; font-weight: 600; }
-.field input, .field select, .field textarea { display: block; width: 100%; margin-top: .5rem; border: 1px solid #e2e8f0; border-radius: .6rem; padding: .65rem .75rem; font-weight: 400; outline: none; }
-.field input:focus, .field select:focus, .field textarea:focus { box-shadow: 0 0 0 4px rgba(27,42,75,.12); border-color: #1b2a4b; }
-.filter, .page-btn { border: 1px solid #e2e8f0; border-radius: .6rem; background: white; padding: .65rem .75rem; font-size: .875rem; }
-.page-btn { font-weight: 600; color: #475569; }
-.page-btn:disabled { cursor: not-allowed; opacity: .45; }
-.action { border-radius: .5rem; padding: .5rem; color: #64748b; }
-.action:hover { background: #f1f5f9; }
-.tool { display: inline-flex; align-items: center; gap: .4rem; border-radius: .6rem; background: #1b2a4b; color: white; padding: .55rem .75rem; font-size: .8rem; font-weight: 700; }
-.tool:hover { background: #27406b; }
-/* Buttons: at least 40px high so they are comfortable to tap on a tablet. */
-.primary, .secondary, .danger, .success { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-height: 2.5rem; border-radius: .65rem; padding: .55rem 1rem; font-size: .875rem; font-weight: 600; transition: background-color .15s; }
+:root { font-family: 'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif; color: #1f2937; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: #f6f7f9; }
+button, input, select, textarea { font: inherit; }
+
+/* ---------- Surfaces ---------- */
+.card { border-radius: 1rem; background: white; border: 1px solid #e8ebf0; }
+
+/* ---------- Buttons (min 40px tall for touch) ---------- */
+.primary, .secondary, .danger, .success, .ghost { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-height: 2.5rem; border-radius: .7rem; padding: .5rem 1rem; font-size: .875rem; font-weight: 600; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s; }
 .primary { background: #1b2a4b; color: white; }
 .primary:hover { background: #27406b; }
-.secondary { border: 1px solid #e2e8f0; background: white; color: #334155; }
-.secondary:hover { background: #f8fafc; }
-.danger { background: #b91c1c; color: white; }
-.danger:hover { background: #991b1b; }
-.success { background: #047857; color: white; }
-.success:hover { background: #065f46; }
-.primary:disabled, .secondary:disabled, .danger:disabled, .success:disabled { cursor: not-allowed; opacity: .5; }
-.label { display: block; color: #475569; font-size: .875rem; font-weight: 600; }
-input.field, select.field, textarea.field { display: block; width: 100%; border: 1px solid #e2e8f0; border-radius: .6rem; padding: .65rem .75rem; font-weight: 400; outline: none; background: white; }
-input.field:focus, select.field:focus, textarea.field:focus { box-shadow: 0 0 0 4px rgba(27,42,75,.12); border-color: #1b2a4b; }
-.badge { display: inline-flex; align-items: center; border-radius: .375rem; padding: .2rem .5rem; font-size: 11px; font-weight: 700; }
-.card { border-radius: 1rem; background: white; box-shadow: 0 12px 35px rgba(23, 32, 51, .08); }
-@media (pointer: coarse) { .action { min-width: 2.75rem; min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; } }
+.secondary { border: 1px solid #e2e6ec; background: white; color: #334155; }
+.secondary:hover { background: #f8fafc; border-color: #cfd6df; }
+.ghost { color: #475569; }
+.ghost:hover { background: #f1f4f8; }
+.danger { background: #b42318; color: white; }
+.danger:hover { background: #912018; }
+.success { background: #067647; color: white; }
+.success:hover { background: #05603a; }
+.primary:disabled, .secondary:disabled, .danger:disabled, .success:disabled, .ghost:disabled { cursor: not-allowed; opacity: .45; }
 
-.rich-editor .ProseMirror { min-height: 10rem; outline: none; }
-.rich-editor.compact .ProseMirror { min-height: 2.25rem; }
+/* Icon-only button: the label lives in title/aria-label */
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: .6rem; color: #64748b; transition: background-color .15s, color .15s; }
+.icon-btn:hover { background: #f1f4f8; color: #1b2a4b; }
+.icon-btn:disabled { opacity: .35; cursor: not-allowed; background: transparent; }
+.icon-btn.tone-danger:hover { background: #fef3f2; color: #b42318; }
+.icon-btn.tone-success:hover { background: #ecfdf3; color: #067647; }
+@media (pointer: coarse) { .icon-btn { width: 2.75rem; height: 2.75rem; } }
+/* Kept for older markup */
+.action { display: inline-flex; align-items: center; justify-content: center; border-radius: .6rem; padding: .5rem; color: #64748b; }
+.action:hover { background: #f1f4f8; }
+
+/* ---------- Form fields ---------- */
+.label { display: block; color: #475467; font-size: .8125rem; font-weight: 600; }
+input.field, select.field, textarea.field { display: block; width: 100%; border: 1px solid #e2e6ec; border-radius: .7rem; padding: .6rem .75rem; font-weight: 400; font-size: .9rem; color: #1f2937; outline: none; background: white; transition: border-color .15s, box-shadow .15s; }
+input.field:focus, select.field:focus, textarea.field:focus { box-shadow: 0 0 0 4px rgba(27,42,75,.08); border-color: #1b2a4b; }
+input.field:disabled { background: #f6f7f9; color: #667085; }
+.field-hint { margin-top: .3rem; font-size: .75rem; color: #8a94a6; font-weight: 400; }
+
+/* ---------- Pills & chips ---------- */
+.badge, .pill { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .15rem .6rem; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.pill-dot::before { content: ''; width: .4rem; height: .4rem; border-radius: 999px; background: currentColor; }
+.chip { display: inline-flex; align-items: center; gap: .35rem; min-height: 2.25rem; border-radius: 999px; border: 1px solid #e2e6ec; background: white; padding: .3rem .85rem; font-size: .8125rem; font-weight: 600; color: #475467; white-space: nowrap; }
+.chip:hover { border-color: #cfd6df; }
+.chip[aria-pressed='true'] { background: #1b2a4b; border-color: #1b2a4b; color: white; }
+
+/* ---------- Lists ---------- */
+.list-row { display: flex; align-items: center; gap: .75rem; padding: .85rem 1rem; }
+.list-row + .list-row { border-top: 1px solid #f0f2f5; }
+.list-row:hover { background: #fafbfc; }
+
+/* ---------- Rich text ---------- */
+.rich-editor .ProseMirror { min-height: 8rem; outline: none; }
+.rich-editor.compact .ProseMirror { min-height: 2rem; }
 .rich-editor p { margin: 0 0 .4rem; }
 .rich-editor ul { list-style: disc; padding-left: 1.5rem; }
 .rich-editor ol { list-style: decimal; padding-left: 1.5rem; }
-.rich-editor .selectedCell { background: rgba(201, 164, 92, .25); }
+.rich-editor .selectedCell { background: rgba(192, 138, 46, .2); }
 .rich-editor .tableWrapper { overflow-x: auto; }
-.rich-editor .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #c9a45c; pointer-events: none; }
+.rich-editor .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #c08a2e; pointer-events: none; }
 .rich-editor td, .rich-editor th { position: relative; }
+.rich-editor table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
+.rich-editor th, .rich-editor td { border: 1px solid #d0d5dd; min-width: 5rem; padding: .4rem; vertical-align: top; }
+.rich-editor th { background: #f6f7f9; font-weight: 700; }
 .prose p { margin: 0 0 .5rem; }
 .prose ul { list-style: disc; padding-left: 1.5rem; }
 .prose ol { list-style: decimal; padding-left: 1.5rem; }
-.rich-editor table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
-.rich-editor th, .rich-editor td { border: 1px solid #cbd5e1; min-width: 5rem; padding: .4rem; vertical-align: top; }
-.rich-editor th { background: #f1f5f9; font-weight: 700; }
 .prose table { width: 100%; border-collapse: collapse; }
-.prose th, .prose td { border: 1px solid #cbd5e1; padding: .4rem; }
+.prose th, .prose td { border: 1px solid #d0d5dd; padding: .4rem; }

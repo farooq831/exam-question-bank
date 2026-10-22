@@ -479,3 +479,10 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 - [x] **No border** button for any selected cell(s) (stored as `class="nb"`; the server keeps only this class). The editor shows such cells with a faint dashed outline; the paper prints no lines for them. The table's outer frame now comes from the cells, so an open corner really is open.
 - Line style unchanged: the sample PDFs (FAR, TPC, AAE) all draw table rules as very fine dotted lines, which the CAF format already uses.
 - Verification: shared 11/11, server 45/45 (new test for no-border cells); editor and printed layout checked on an isolated instance (temporary database, since removed).
+
+## Follow-up: reset to standard, Calisto MT check (22 October 2026)
+
+- [x] **Reset in Paper format → Edit:** every number that differs from the SKANS standard (formatting-sheet values in `CAF_TEMPLATE_CONFIG`) is highlighted with a ↺ button showing the standard value; **Reset to standard** restores every setting at once (with confirmation; name and code kept; saved only on Save).
+- [x] **Calisto MT check:** the format editor shows whether the licensed font is installed on the server (`GET /api/templates/font-status`, admin only, with test). If missing, papers print in Tinos (Times-compatible) and the editor says which four files to copy where. Installing the font later now works without a server restart.
+- [x] `.gitignore` now excludes `*.ttf` / `*.otf` so a licensed font copy can never be committed.
+- Verification: shared 11/11, server 46/46; browser check on an isolated instance (temporary database, since removed).

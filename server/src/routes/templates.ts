@@ -6,6 +6,7 @@ import { audit } from '../lib/audit';
 import { ah, conflict, idParam, notFound, parse } from '../lib/http';
 import { parseJson } from '../lib/questions';
 import { requireRole } from '../middleware/auth';
+import { calistoStatus } from '../render/assets';
 
 const router = Router();
 // Paper formats are managed by administrators only.
@@ -34,6 +35,14 @@ router.get(
   ah(async (_req, res) => {
     const rows = await prisma.paperTemplate.findMany({ include, orderBy: { name: 'asc' } });
     res.json(rows.map(toTemplateDTO));
+  }),
+);
+
+/** Whether the licensed Calisto MT font is available to the PDF renderer on this server. */
+router.get(
+  '/font-status',
+  ah(async (_req, res) => {
+    res.json({ calisto: calistoStatus() });
   }),
 );
 

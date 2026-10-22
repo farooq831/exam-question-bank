@@ -203,7 +203,19 @@ The server embeds it into each PDF from the fonts installed on the server (it sh
 Microsoft Office: `CALIST.TTF`, `CALISTB.TTF`, `CALISTI.TTF`, `CALISTBI.TTF`). On a server
 without Office, copy those four files (from a licensed installation) into
 `client/public/branding/fonts/` or `<BRANDING_DIR>/fonts/`. If the font is missing, papers use a
-Times-compatible font and the server logs a warning.
+Times-compatible font (Tinos) and the server logs a warning. Installing the
+font later takes effect without a restart.
+
+**Paper format → Edit** shows whether Calisto MT is installed on the server (green) or missing
+(amber, with what to copy where). The `*.ttf` files are git-ignored, so a licensed copy is never
+committed.
+
+### Resetting the paper format
+
+Every number in **Paper format → Edit** that differs from the SKANS standard (the formatting
+sheet values) is highlighted with a small ↺ button that puts that one value back.
+**Reset to standard** (bottom left) puts every setting back at once; name and code stay, and
+nothing is saved until you press **Save**.
 
 ### Names, drafts and review
 

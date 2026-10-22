@@ -18,7 +18,11 @@ import {
   type TemplateDTO,
   type UserDTO,
 } from '@skans/shared';
-import { BookOpen, ChevronDown, Copy, KeyRound, Pencil, Plus, Power, ScrollText, Unlock, Users } from 'lucide-react';
+import { CAF_TEMPLATE_CONFIG } from '@skans/shared';
+
+/** The SKANS standard format (formatting sheet values); used by the reset buttons. */
+const STANDARD = CAF_TEMPLATE_CONFIG;
+import { AlertTriangle, BookOpen, CheckCircle2, ChevronDown, Copy, KeyRound, Pencil, Plus, Power, RotateCcw, ScrollText, Unlock, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from './api';
 import { useAuth } from './auth';
@@ -302,10 +306,24 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
   const [busy, setBusy] = useState(false);
   const cfg = d.config;
   const set = <K extends keyof TemplateConfig>(key: K, patch: Partial<TemplateConfig[K]>) => setD({ ...d, config: { ...cfg, [key]: { ...(cfg[key] as object), ...patch } } });
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [calisto, setCalisto] = useState<{ installed: boolean; styles: string[] } | null>(null);
+  useEffect(() => { api<{ calisto: { installed: boolean; styles: string[] } }>('/templates/font-status').then((r) => setCalisto(r.calisto)).catch(() => setCalisto(null)); }, []);
   const num = (v: string) => Number(v);
-  const n = (label: string, value: number, onChange: (v: number) => void, step = 0.5) => (
-    <Field label={label}><input className="field mt-1.5" type="number" step={step} min={0} value={value} onChange={(e) => onChange(num(e.target.value))} /></Field>
-  );
+  /** Number field with a one-click reset to the SKANS standard (formatting sheet) value. */
+  const n = (label: string, value: number, onChange: (v: number) => void, standard: number, step = 0.5) => {
+    const changed = value !== standard;
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="label">{label}</span>
+          {changed && <button type="button" className="inline-flex items-center gap-1 text-xs font-medium text-gold hover:underline" onClick={() => onChange(standard)} title={`Back to the standard value (${standard})`}><RotateCcw size={12} />{standard}</button>}
+        </div>
+        <input className={`field mt-1.5 ${changed ? '!border-gold/60 !bg-amber-50/40' : ''}`} type="number" step={step} min={0} value={value} onChange={(e) => onChange(num(e.target.value))} aria-label={label} />
+      </div>
+    );
+  };
+  const D = STANDARD;
   const ty = cfg.typography;
   const setTy = (patch: Partial<TemplateConfig['typography']>) => set('typography', patch);
 
@@ -330,6 +348,7 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
   return (
     <Modal size="xl" title={d.id ? d.name || 'Paper format' : 'New paper format'} eyebrow="Finalised papers keep the layout they were printed with" onClose={onClose} footer={
       <>
+        <button className="ghost" onClick={() => setConfirmReset(true)} title="Put every setting back to the SKANS standard from the formatting sheet"><RotateCcw size={15} />Reset to standard</button>
         <button className="ghost mr-auto" onClick={() => { if (json === null) setJson(JSON.stringify(cfg, null, 2)); else { try { setD({ ...d, config: JSON.parse(json) }); setJson(null); } catch { toast.error('Fix the JSON first.'); } } }}>{json === null ? 'Advanced (JSON)' : 'Back to form'}</button>
         <button className="ghost" onClick={onClose}>Cancel</button>
         <button className="primary" disabled={busy} onClick={() => void save()}>{busy ? 'Saving…' : 'Save'}</button>
@@ -344,33 +363,36 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
             <Field label="Code"><input className="field mt-1.5" value={d.code} onChange={(e) => setD({ ...d, code: e.target.value.toUpperCase() })} /></Field>
             <label className="flex items-end gap-2 pb-3 text-sm text-slate-600"><input type="checkbox" className="h-4 w-4" checked={d.isActive} onChange={(e) => setD({ ...d, isActive: e.target.checked })} />Active</label>
           </div>
+          {calisto && (calisto.installed
+            ? <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800"><CheckCircle2 size={16} />Calisto MT is installed on this server ({calisto.styles.join(', ')}).</p>
+            : <p className="flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-900"><AlertTriangle size={16} className="mt-0.5 shrink-0" /><span><strong>Calisto MT is not installed on this server.</strong> Papers print in Tinos (looks like Times New Roman) until you install it: copy CALIST.TTF, CALISTB.TTF, CALISTI.TTF and CALISTBI.TTF from a PC with Microsoft Office into the server&apos;s Windows Fonts folder or <code>branding/fonts</code>.</span></p>)}
           <Group title="Fonts & sizes (pt)" open>
             <Field label="Body font"><select className="field mt-1.5" value={cfg.fonts.body} onChange={(e) => set('fonts', { body: e.target.value as TemplateConfig['fonts']['body'] })}>{FONT_KEYS.map((f) => <option key={f} value={f}>{FONT_LABELS[f]}</option>)}</select></Field>
             <Field label="Heading font"><select className="field mt-1.5" value={cfg.fonts.heading} onChange={(e) => set('fonts', { heading: e.target.value as TemplateConfig['fonts']['heading'] })}>{FONT_KEYS.map((f) => <option key={f} value={f}>{FONT_LABELS[f]}</option>)}</select></Field>
             <Field label="Header font"><select className="field mt-1.5" value={cfg.fonts.runningHeader} onChange={(e) => set('fonts', { runningHeader: e.target.value as TemplateConfig['fonts']['runningHeader'] })}>{FONT_KEYS.map((f) => <option key={f} value={f}>{FONT_LABELS[f]}</option>)}</select></Field>
-            {n('Line height', cfg.fonts.lineHeight, (v) => set('fonts', { lineHeight: v }), 0.05)}
-            {n('Exam title', ty.titleSizePt, (v) => setTy({ titleSizePt: v }))}
-            {n('Paper name', ty.paperNameSizePt, (v) => setTy({ paperNameSizePt: v }))}
-            {n('Date, marks, time', ty.metaSizePt, (v) => setTy({ metaSizePt: v }))}
-            {n('Body text', cfg.fonts.sizePt, (v) => set('fonts', { sizePt: v }))}
-            {n('Instructions', ty.instructionsSizePt, (v) => setTy({ instructionsSizePt: v }))}
-            {n('SECTION bars', ty.sectionSizePt, (v) => setTy({ sectionSizePt: v }))}
-            {n('QUESTION headings', ty.questionHeadingSizePt, (v) => setTy({ questionHeadingSizePt: v }))}
-            {n('Running header', ty.runningHeaderSizePt, (v) => setTy({ runningHeaderSizePt: v }))}
+            {n('Line height', cfg.fonts.lineHeight, (v) => set('fonts', { lineHeight: v }), D.fonts.lineHeight, 0.05)}
+            {n('Exam title', ty.titleSizePt, (v) => setTy({ titleSizePt: v }), D.typography.titleSizePt)}
+            {n('Paper name', ty.paperNameSizePt, (v) => setTy({ paperNameSizePt: v }), D.typography.paperNameSizePt)}
+            {n('Date, marks, time', ty.metaSizePt, (v) => setTy({ metaSizePt: v }), D.typography.metaSizePt)}
+            {n('Body text', cfg.fonts.sizePt, (v) => set('fonts', { sizePt: v }), D.fonts.sizePt)}
+            {n('Instructions', ty.instructionsSizePt, (v) => setTy({ instructionsSizePt: v }), D.typography.instructionsSizePt)}
+            {n('SECTION bars', ty.sectionSizePt, (v) => setTy({ sectionSizePt: v }), D.typography.sectionSizePt)}
+            {n('QUESTION headings', ty.questionHeadingSizePt, (v) => setTy({ questionHeadingSizePt: v }), D.typography.questionHeadingSizePt)}
+            {n('Running header', ty.runningHeaderSizePt, (v) => setTy({ runningHeaderSizePt: v }), D.typography.runningHeaderSizePt)}
           </Group>
           <Group title="Spacing (pt) & page margins (mm)">
-            {n('Between paragraphs', ty.paragraphSpacingPt, (v) => setTy({ paragraphSpacingPt: v }))}
-            {n('Between sub-parts', ty.partSpacingPt, (v) => setTy({ partSpacingPt: v }))}
-            {n('Stem to options', ty.stemToOptionsPt, (v) => setTy({ stemToOptionsPt: v }))}
-            {n('Between options', ty.optionSpacingPt, (v) => setTy({ optionSpacingPt: v }))}
-            {n('QUESTION heading to text', ty.headingToTextPt, (v) => setTy({ headingToTextPt: v }))}
-            {n('SECTION bar to question', ty.sectionToQuestionPt, (v) => setTy({ sectionToQuestionPt: v }))}
-            {n('Gap between questions (mm)', cfg.questions.gapMm, (v) => set('questions', { gapMm: v }))}
+            {n('Between paragraphs', ty.paragraphSpacingPt, (v) => setTy({ paragraphSpacingPt: v }), D.typography.paragraphSpacingPt)}
+            {n('Between sub-parts', ty.partSpacingPt, (v) => setTy({ partSpacingPt: v }), D.typography.partSpacingPt)}
+            {n('Stem to options', ty.stemToOptionsPt, (v) => setTy({ stemToOptionsPt: v }), D.typography.stemToOptionsPt)}
+            {n('Between options', ty.optionSpacingPt, (v) => setTy({ optionSpacingPt: v }), D.typography.optionSpacingPt)}
+            {n('QUESTION heading to text', ty.headingToTextPt, (v) => setTy({ headingToTextPt: v }), D.typography.headingToTextPt)}
+            {n('SECTION bar to question', ty.sectionToQuestionPt, (v) => setTy({ sectionToQuestionPt: v }), D.typography.sectionToQuestionPt)}
+            {n('Gap between questions (mm)', cfg.questions.gapMm, (v) => set('questions', { gapMm: v }), D.questions.gapMm)}
             <label className="flex items-end gap-2 pb-3 text-sm text-slate-600"><input type="checkbox" className="h-4 w-4" checked={ty.justify} onChange={(e) => setTy({ justify: e.target.checked })} />Justify body text</label>
-            {n('Top margin', cfg.page.marginTopMm, (v) => set('page', { marginTopMm: v }))}
-            {n('Bottom margin', cfg.page.marginBottomMm, (v) => set('page', { marginBottomMm: v }))}
-            {n('Left margin', cfg.page.marginLeftMm, (v) => set('page', { marginLeftMm: v }))}
-            {n('Right margin', cfg.page.marginRightMm, (v) => set('page', { marginRightMm: v }))}
+            {n('Top margin', cfg.page.marginTopMm, (v) => set('page', { marginTopMm: v }), D.page.marginTopMm)}
+            {n('Bottom margin', cfg.page.marginBottomMm, (v) => set('page', { marginBottomMm: v }), D.page.marginBottomMm)}
+            {n('Left margin', cfg.page.marginLeftMm, (v) => set('page', { marginLeftMm: v }), D.page.marginLeftMm)}
+            {n('Right margin', cfg.page.marginRightMm, (v) => set('page', { marginRightMm: v }), D.page.marginRightMm)}
           </Group>
           <Group title="Header & instructions">
             <Field label="Exam title line" className="sm:col-span-2"><input className="field mt-1.5" value={cfg.header.instituteLine} onChange={(e) => set('header', { instituteLine: e.target.value })} /></Field>
@@ -393,6 +415,7 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
           </Group>
         </div>
       )}
+      <Confirm open={confirmReset} title="Reset to the SKANS standard?" message="Every setting goes back to the values from the formatting sheet. Name and code stay. Nothing is saved until you press Save." confirmLabel="Reset" onConfirm={() => { setD({ ...d, config: structuredClone(STANDARD) }); setJson(null); setConfirmReset(false); toast.success('Standard values restored. Press Save to keep them.'); }} onCancel={() => setConfirmReset(false)} />
     </Modal>
   );
 }

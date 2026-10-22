@@ -65,8 +65,16 @@ function calistoFaceCss(): string {
 `;
   }
   if (!css) console.warn('[render] Calisto MT is not installed on this server; papers use Tinos (Times-compatible) instead. Install Calisto MT or copy CALIST*.TTF into the branding/fonts folder.');
-  calistoCss = css;
+  // Only remember a successful lookup, so installing the font later works without a restart.
+  if (css) calistoCss = css;
   return css;
+}
+
+/** Which Calisto MT styles this server can embed (regular, bold, italic, bold italic). */
+export function calistoStatus(): { installed: boolean; styles: string[] } {
+  const names: Record<string, string> = { 'CALIST.TTF': 'regular', 'CALISTB.TTF': 'bold', 'CALISTI.TTF': 'italic', 'CALISTBI.TTF': 'bold italic' };
+  const styles = CALISTO_FILES.filter((f) => findFontFile(f.file)).map((f) => names[f.file]);
+  return { installed: styles.includes('regular'), styles };
 }
 
 export function calistoAvailable(): boolean {

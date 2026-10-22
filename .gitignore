@@ -7,3 +7,9 @@ server/dist/
 output/
 .DS_Store
 server/backups/
+
+# Licensed fonts (e.g. Calisto MT) must never be committed
+*.ttf
+*.TTF
+*.otf
+*.OTF

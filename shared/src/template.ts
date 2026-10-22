@@ -13,14 +13,17 @@ const shortText = (max = 200) => z.string().trim().max(max);
  * Marks placeholders: {n} raw marks · {nn} zero padded to 2 digits.
  * Instruction placeholders: {count} number of questions · {countWord} e.g. "NINE" · **bold**.
  */
+/** Older formats named the licensed Calisto MT font; it was removed and maps to the free Times style. */
+const fontKey = z.preprocess((v) => (v === 'Calisto' ? 'Times' : v), z.enum(FONT_KEYS));
+
 export const templateConfigSchema = z.object({
   // 'CAF' = SKANS CAF examination layout (formatting modelled on the reference exam paper);
   // 'SKANS' = SKANS internal test layout. Older saved configs used 'ICAP' for the CAF layout.
   layout: z.preprocess((v) => (v === 'ICAP' ? 'CAF' : v), z.enum(['CAF', 'SKANS'])),
   fonts: z.object({
-    body: z.enum(FONT_KEYS),
-    heading: z.enum(FONT_KEYS),
-    runningHeader: z.enum(FONT_KEYS),
+    body: fontKey,
+    heading: fontKey,
+    runningHeader: fontKey,
     sizePt: z.number().min(8).max(14),
     lineHeight: z.number().min(1).max(2),
   }),
@@ -108,14 +111,15 @@ export type TemplateConfig = z.infer<typeof templateConfigSchema>;
 
 /**
  * SKANS CAF examination format. Standard reference: the CAF-8 Audit and Assurance Essentials paper
- * and the administration's formatting sheet: Calisto MT; A4; left margin 2.1 cm, text to 560 pt
+ * and the administration's formatting sheet (which names Calisto MT; SKANS prints in the free,
+ * bundled Times New Roman style font instead, so no licensed font is needed); A4; left margin 2.1 cm, text to 560 pt
  * (right margin about 1.2 cm); running header 1.3 cm from the top; single line spacing; 12 pt
  * between paragraphs and sub-parts; 8 pt from stem to options; 13 pt after QUESTION headings;
  * about 19 pt after SECTION bars.
  */
 export const CAF_TEMPLATE_CONFIG: TemplateConfig = {
   layout: 'CAF',
-  fonts: { body: 'Calisto', heading: 'Calisto', runningHeader: 'Calibri', sizePt: 11, lineHeight: 1.15 },
+  fonts: { body: 'Times', heading: 'Times', runningHeader: 'Calibri', sizePt: 11, lineHeight: 1.15 },
   page: { marginTopMm: 22, marginBottomMm: 12, marginLeftMm: 21.4, marginRightMm: 12.4 },
   header: {
     instituteLine: 'Certificate in Accounting and Finance Stage Examination',

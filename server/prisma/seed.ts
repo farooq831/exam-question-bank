@@ -25,7 +25,7 @@ export const CAF_TEMPLATE = {
   code: 'SKANS_CAF',
   name: 'SKANS CAF Examination',
   description:
-    'SKANS CAF examination paper. Standard format: the CAF-8 Audit and Assurance Essentials paper and the formatting sheet from the administration (Calisto MT, A4, approved sizes, margins and spacing), with the SKANS logo at the top right.',
+    'SKANS CAF examination paper. Standard format: the CAF-8 Audit and Assurance Essentials paper and the formatting sheet from the administration (A4, approved sizes, margins and spacing; free Times New Roman style font), with the SKANS logo at the top right.',
 };
 type Tx = Prisma.TransactionClient;
 
@@ -71,7 +71,7 @@ async function migrateLegacy(tx: Tx) {
     const current = templateConfigSchema.safeParse(JSON.parse(caf.config));
     if (current.success && current.data.fonts.body === 'Times' && current.data.page.marginLeftMm === 19) {
       await tx.paperTemplate.update({ where: { id: caf.id }, data: { config: JSON.stringify(CAF_TEMPLATE_CONFIG), name: CAF_TEMPLATE.name, description: CAF_TEMPLATE.description } });
-      console.log('[seed] SKANS CAF Examination format updated to the approved specification (Calisto MT, sheet margins and spacing).');
+      console.log('[seed] SKANS CAF Examination format updated to the approved specification (sheet sizes, margins and spacing).');
     }
   }
 

@@ -37,13 +37,18 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = { EASY: 'Easy', MED
 export const PAPER_STATUSES = ['DRAFT', 'FINAL'] as const;
 export type PaperStatus = (typeof PAPER_STATUSES)[number];
 
-export const FONT_KEYS = ['Calisto', 'Times', 'Arial', 'Calibri'] as const;
+/**
+ * Paper fonts. All three are free, open-licence fonts bundled with the app (Tinos and Arimo:
+ * Apache 2.0; Carlito: SIL Open Font License) and embedded into every PDF, so papers look the
+ * same on any server or printer and no licensed font is needed. Each has the same letter widths
+ * as the Microsoft font it is named after, so line breaks match.
+ */
+export const FONT_KEYS = ['Times', 'Arial', 'Calibri'] as const;
 export type FontKey = (typeof FONT_KEYS)[number];
 export const FONT_LABELS: Record<FontKey, string> = {
-  Calisto: 'Calisto MT (serif)',
-  Times: 'Times (serif)',
-  Arial: 'Arial (sans-serif)',
-  Calibri: 'Calibri (sans-serif)',
+  Times: 'Times New Roman style (serif)',
+  Arial: 'Arial style (sans-serif)',
+  Calibri: 'Calibri style (sans-serif)',
 };
 
 export const DATE_FORMATS = ['D MMMM YYYY', 'MM/DD/YYYY', 'DD/MM/YYYY', 'DD-MMM-YYYY'] as const;

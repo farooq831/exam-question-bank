@@ -86,10 +86,13 @@ describe('schemas', () => {
   });
 
   it('reads formats saved by earlier versions as SKANS formats', () => {
-    const legacy = { ...CAF_TEMPLATE_CONFIG, layout: 'ICAP', header: { ...CAF_TEMPLATE_CONFIG.header, logo: 'exam-body' } };
+    const legacy = { ...CAF_TEMPLATE_CONFIG, layout: 'ICAP', header: { ...CAF_TEMPLATE_CONFIG.header, logo: 'exam-body' }, fonts: { ...CAF_TEMPLATE_CONFIG.fonts, body: 'Calisto', heading: 'Calisto' } };
     const parsed = templateConfigSchema.parse(legacy);
     expect(parsed.layout).toBe('CAF');
     expect(parsed.header.logo).toBe('skans');
+    // the licensed Calisto MT font was removed; old formats print in the free Times style
+    expect(parsed.fonts.body).toBe('Times');
+    expect(parsed.fonts.heading).toBe('Times');
   });
 
   it('requires exactly one correct MCQ option', () => {

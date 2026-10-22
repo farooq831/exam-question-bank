@@ -22,7 +22,7 @@ import { CAF_TEMPLATE_CONFIG } from '@skans/shared';
 
 /** The SKANS standard format (formatting sheet values); used by the reset buttons. */
 const STANDARD = CAF_TEMPLATE_CONFIG;
-import { AlertTriangle, BookOpen, CheckCircle2, ChevronDown, Copy, KeyRound, Pencil, Plus, Power, RotateCcw, ScrollText, Unlock, Users } from 'lucide-react';
+import { BookOpen, CheckCircle2, ChevronDown, Copy, KeyRound, Pencil, Plus, Power, RotateCcw, ScrollText, Unlock, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from './api';
 import { useAuth } from './auth';
@@ -307,8 +307,6 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
   const cfg = d.config;
   const set = <K extends keyof TemplateConfig>(key: K, patch: Partial<TemplateConfig[K]>) => setD({ ...d, config: { ...cfg, [key]: { ...(cfg[key] as object), ...patch } } });
   const [confirmReset, setConfirmReset] = useState(false);
-  const [calisto, setCalisto] = useState<{ installed: boolean; styles: string[] } | null>(null);
-  useEffect(() => { api<{ calisto: { installed: boolean; styles: string[] } }>('/templates/font-status').then((r) => setCalisto(r.calisto)).catch(() => setCalisto(null)); }, []);
   const num = (v: string) => Number(v);
   /** Number field with a one-click reset to the SKANS standard (formatting sheet) value. */
   const n = (label: string, value: number, onChange: (v: number) => void, standard: number, step = 0.5) => {
@@ -363,9 +361,7 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
             <Field label="Code"><input className="field mt-1.5" value={d.code} onChange={(e) => setD({ ...d, code: e.target.value.toUpperCase() })} /></Field>
             <label className="flex items-end gap-2 pb-3 text-sm text-slate-600"><input type="checkbox" className="h-4 w-4" checked={d.isActive} onChange={(e) => setD({ ...d, isActive: e.target.checked })} />Active</label>
           </div>
-          {calisto && (calisto.installed
-            ? <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800"><CheckCircle2 size={16} />Calisto MT is installed on this server ({calisto.styles.join(', ')}).</p>
-            : <p className="flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-900"><AlertTriangle size={16} className="mt-0.5 shrink-0" /><span><strong>Calisto MT is not installed on this server.</strong> Papers print in Tinos (looks like Times New Roman) until you install it: copy CALIST.TTF, CALISTB.TTF, CALISTI.TTF and CALISTBI.TTF from a PC with Microsoft Office into the server&apos;s Windows Fonts folder or <code>branding/fonts</code>.</span></p>)}
+          <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800"><CheckCircle2 size={16} className="shrink-0" />All fonts are free and built into the app, so papers look the same on every computer and printer.</p>
           <Group title="Fonts & sizes (pt)" open>
             <Field label="Body font"><select className="field mt-1.5" value={cfg.fonts.body} onChange={(e) => set('fonts', { body: e.target.value as TemplateConfig['fonts']['body'] })}>{FONT_KEYS.map((f) => <option key={f} value={f}>{FONT_LABELS[f]}</option>)}</select></Field>
             <Field label="Heading font"><select className="field mt-1.5" value={cfg.fonts.heading} onChange={(e) => set('fonts', { heading: e.target.value as TemplateConfig['fonts']['heading'] })}>{FONT_KEYS.map((f) => <option key={f} value={f}>{FONT_LABELS[f]}</option>)}</select></Field>

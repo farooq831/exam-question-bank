@@ -486,3 +486,11 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 - [x] **Calisto MT check:** the format editor shows whether the licensed font is installed on the server (`GET /api/templates/font-status`, admin only, with test). If missing, papers print in Tinos (Times-compatible) and the editor says which four files to copy where. Installing the font later now works without a server restart.
 - [x] `.gitignore` now excludes `*.ttf` / `*.otf` so a licensed font copy can never be committed.
 - Verification: shared 11/11, server 46/46; browser check on an isolated instance (temporary database, since removed).
+
+## Follow-up: Calisto MT removed; free built-in fonts only (22 October 2026)
+
+- [x] **Calisto MT removed from the project** (SKANS decision: no licensed-font risk). No code reads it from the server any more; the font-status check and banner are gone.
+- [x] **Default paper font is now the Times New Roman style (Tinos)**. Formats saved earlier with Calisto MT are read as Times style automatically (schema mapping, test added), so existing formats and finalised-paper snapshots keep working and the database needs no change.
+- [x] Font choices are only the three free, built-in fonts: Times New Roman style (Tinos, Apache 2.0), Arial style (Arimo, Apache 2.0), Calibri style (Carlito, SIL OFL). They are embedded in every PDF.
+- The running header line still uses the computer's own font of the chosen style (Calibri on Windows), because Chromium cannot use embedded fonts there (tried; the header disappears). If missing, the nearest font is used; nothing is shipped.
+- Verification: shared 11/11, server 45/45; generated sample PDF contains Tinos for all paper text and Calibri for the header line only.

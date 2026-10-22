@@ -182,7 +182,7 @@ SKANS uses **one paper format**, stored as data (`PaperTemplate.config`) and val
 
   | Element | Value |
   |---|---|
-  | Font | Calisto MT throughout; running header in Calibri |
+  | Font | Times New Roman style (Tinos, free and built in) throughout; running header in Calibri |
   | Exam title / paper name / date-marks-time lines | 15 pt bold / 18 pt bold / 12 pt |
   | Instructions, SECTION bars, QUESTION headings, body, options, marks | 11 pt (marks bold, right-aligned) |
   | Page | A4; left margin 2.14 cm; text to 560 pt (right margin 1.24 cm); bottom 1.2 cm |
@@ -196,19 +196,26 @@ line, instructions, question heading, marks format, sections, running header and
 **Advanced (JSON)** exposes everything. Every subject uses this format automatically. Finalised
 papers keep the layout they were printed with.
 
-### Calisto MT font
+### Fonts
 
-Calisto MT is a licensed Microsoft/Monotype font, so it is **not** stored in this repository.
-The server embeds it into each PDF from the fonts installed on the server (it ships with
-Microsoft Office: `CALIST.TTF`, `CALISTB.TTF`, `CALISTI.TTF`, `CALISTBI.TTF`). On a server
-without Office, copy those four files (from a licensed installation) into
-`client/public/branding/fonts/` or `<BRANDING_DIR>/fonts/`. If the font is missing, papers use a
-Times-compatible font (Tinos) and the server logs a warning. Installing the
-font later takes effect without a restart.
+Only free, open-licence fonts are used, and they are **built into the app** (npm packages
+`@fontsource/tinos`, `@fontsource/arimo`, `@fontsource/carlito`) and embedded into every PDF, so
+papers look the same on any server, computer or printer:
 
-**Paper format → Edit** shows whether Calisto MT is installed on the server (green) or missing
-(amber, with what to copy where). The `*.ttf` files are git-ignored, so a licensed copy is never
-committed.
+| Choice in Paper format | Font used | Licence | Same letter widths as |
+|---|---|---|---|
+| Times New Roman style (default) | Tinos | Apache 2.0 | Times New Roman |
+| Arial style | Arimo | Apache 2.0 | Arial |
+| Calibri style | Carlito | SIL Open Font License | Calibri |
+
+The formatting sheet names Calisto MT, a licensed Microsoft/Monotype font. SKANS decided not to
+use it, so it was removed from the project; formats saved earlier with Calisto MT now print in the
+Times New Roman style automatically.
+
+The one-line running header ("CAF 1 ┃ Page 1 of 4") is drawn by Chromium outside the page, where
+embedded fonts cannot be used, so it takes the computer's own font of the chosen style (Calibri
+comes with Windows). If that font is missing, the nearest one (Arial, Liberation Sans) is used;
+nothing is shipped with the app and nothing fails.
 
 ### Resetting the paper format
 

@@ -199,13 +199,6 @@ describe('preview and PDF output', () => {
     expect(html).toContain('.tbl th.nb,.tbl td.nb');
   });
 
-  it('reports to admins whether Calisto MT is available for printing', async () => {
-    const res = (await admin.get('/api/templates/font-status').expect(200)).body;
-    expect(typeof res.calisto.installed).toBe('boolean');
-    expect(Array.isArray(res.calisto.styles)).toBe(true);
-    await teacher.get('/api/templates/font-status').expect(403);
-  });
-
   it('downloads a clean question-paper PDF and records the download', async () => {
     const res = await admin.get(`/api/papers/${paperId}/pdf?watermark=1`).buffer(true).parse(binaryParser).expect(200);
     expect(res.headers['content-type']).toBe('application/pdf');

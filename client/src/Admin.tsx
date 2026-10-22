@@ -45,7 +45,7 @@ function temporaryPassword() {
 // ------------------------------------------------------------------ Users
 
 type UserForm = { id?: number; username: string; fullName: string; email: string; role: Role; password: string; subjectIds: number[]; isActive: boolean };
-const ROLE_CHIPS = [{ value: '', label: 'All' }, { value: 'ADMIN', label: 'Admins' }, { value: 'TEACHER', label: 'Teachers' }, { value: 'inactive', label: 'Inactive' }];
+const ROLE_CHIPS = [{ value: '', label: 'All' }, { value: 'ADMIN', label: 'Admins' }, { value: 'TEACHER', label: 'Teachers' }, { value: 'RESEARCH_OFFICER', label: 'Research officers' }, { value: 'inactive', label: 'Inactive' }];
 
 export function AdminUsers() {
   const { user: me } = useAuth();
@@ -146,7 +146,7 @@ export function AdminUsers() {
             </div>
             {u.lockedUntil && <Pill tone="red">Locked</Pill>}
             {!u.isActive && <Pill>Inactive</Pill>}
-            <Pill tone={u.role === 'ADMIN' ? 'blue' : 'slate'}>{ROLE_LABELS[u.role]}</Pill>
+            <Pill tone={u.role === 'ADMIN' ? 'blue' : u.role === 'RESEARCH_OFFICER' ? 'amber' : 'slate'}>{ROLE_LABELS[u.role]}</Pill>
             <div className="flex shrink-0 items-center">
               <IconButton label="Edit" icon={Pencil} onClick={() => setForm({ id: u.id, username: u.username, fullName: u.fullName, email: u.email ?? '', role: u.role, password: '', subjectIds: u.subjectIds, isActive: u.isActive })} />
               <IconButton label="Reset password" icon={KeyRound} onClick={() => setReset({ user: u, password: temporaryPassword() })} />
@@ -172,7 +172,7 @@ export function AdminUsers() {
                 </div>
               </Field>
             )}
-            {form.role === 'TEACHER' && (
+            {form.role !== 'ADMIN' && (
               <fieldset className="sm:col-span-2">
                 <legend className="label">Subjects</legend>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -244,10 +244,6 @@ export function AdminSubjects() {
     <div key={s.id} className="list-row">
       <span className="w-14 shrink-0 text-xs font-semibold text-slate-400">{s.level}</span>
       <div className="min-w-0 flex-1"><p className="truncate font-medium text-ink">{s.name}</p><p className="text-xs text-slate-400">{s.code}</p></div>
-      <select className="field hidden !w-auto !py-1.5 text-sm sm:block" value={s.templateId ?? ''} onChange={(e) => void save({ ...s, templateId: e.target.value ? Number(e.target.value) : null })} aria-label="Paper format">
-        <option value="">No format</option>
-        {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-      </select>
       <IconButton label="Edit" icon={Pencil} onClick={() => setForm({ id: s.id, code: s.code, name: s.name, level: s.level, templateId: s.templateId, isActive: s.isActive })} />
     </div>
   );
@@ -272,12 +268,11 @@ export function AdminSubjects() {
       </div>
       {form && (
         <Modal size="md" title={form.id ? 'Edit subject' : 'Add subject'} onClose={() => setForm(null)} footer={<><button className="ghost" onClick={() => setForm(null)}>Cancel</button><button className="primary" form="subject-form">Save</button></>}>
-          <form id="subject-form" className="grid gap-4 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); void save(form); }}>
-            <Field label="Name" className="sm:col-span-3"><input className="field mt-1.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={2} autoFocus /></Field>
+          <form id="subject-form" className="grid gap-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); void save(form); }}>
+            <Field label="Name" className="sm:col-span-2"><input className="field mt-1.5" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required minLength={2} autoFocus /></Field>
             <Field label="Code"><input className="field mt-1.5 uppercase" value={form.code} maxLength={12} pattern="[A-Za-z0-9]+" title="Letters and digits only" onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} required /></Field>
             <Field label="CAF number" hint="e.g. CAF 1"><input className="field mt-1.5" value={form.level} maxLength={20} onChange={(e) => setForm({ ...form, level: e.target.value })} /></Field>
-            <Field label="Paper format"><select className="field mt-1.5" value={form.templateId ?? ''} onChange={(e) => setForm({ ...form, templateId: e.target.value ? Number(e.target.value) : null })}><option value="">None</option>{templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></Field>
-            <label className="flex items-center gap-2 text-sm text-slate-600 sm:col-span-3"><input type="checkbox" className="h-4 w-4" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />Active</label>
+            <label className="flex items-center gap-2 text-sm text-slate-600 sm:col-span-2"><input type="checkbox" className="h-4 w-4" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />Active</label>
           </form>
         </Modal>
       )}
@@ -376,11 +371,9 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
           </Group>
           <Group title="Header & instructions">
             <Field label="Exam title line" className="sm:col-span-2"><input className="field mt-1.5" value={cfg.header.instituteLine} onChange={(e) => set('header', { instituteLine: e.target.value })} /></Field>
-            <Field label="Logo"><select className="field mt-1.5" value={cfg.header.logo} onChange={(e) => set('header', { logo: e.target.value as TemplateConfig['header']['logo'] })}><option value="skans">SKANS logo</option><option value="none">No logo</option></select></Field>
             <Field label="Date format"><select className="field mt-1.5" value={cfg.header.dateFormat} onChange={(e) => set('header', { dateFormat: e.target.value as TemplateConfig['header']['dateFormat'] })}>{DATE_FORMATS.map((f) => <option key={f}>{f}</option>)}</select></Field>
             <Field label="Instructions title" className="sm:col-span-2"><input className="field mt-1.5" value={cfg.instructions.title} onChange={(e) => set('instructions', { title: e.target.value })} /></Field>
             <label className="flex items-end gap-2 pb-3 text-sm text-slate-600"><input type="checkbox" className="h-4 w-4" checked={cfg.instructions.boxed} onChange={(e) => set('instructions', { boxed: e.target.checked })} />Boxed</label>
-            <div className="flex flex-wrap items-end gap-3 pb-3 text-sm text-slate-600">{(['showBatch', 'showTeacher', 'showTest'] as const).map((k) => <label key={k} className="flex items-center gap-1.5"><input type="checkbox" className="h-4 w-4" checked={cfg.header[k]} onChange={(e) => set('header', { [k]: e.target.checked })} />{k.replace('show', '')}</label>)}</div>
             <Field label="Default instructions (one per line)" className="sm:col-span-2 lg:col-span-4"><textarea className="field mt-1.5" rows={3} value={cfg.instructions.lines.join('\n')} onChange={(e) => set('instructions', { lines: e.target.value.split('\n').slice(0, 20) })} /></Field>
           </Group>
           <Group title="Questions, marks & page header">
@@ -410,7 +403,7 @@ export function AdminTemplates() {
 
   return (
     <div>
-      <PageHeader title="Paper formats" count={templates.length} />
+      <PageHeader title="Paper format" />
       <div className="card overflow-hidden">
         {templates.map((t) => (
           <div key={t.id} className={`list-row ${t.isActive ? '' : 'opacity-60'}`}>
@@ -420,7 +413,6 @@ export function AdminTemplates() {
             </div>
             {!t.isActive && <Pill>Inactive</Pill>}
             <IconButton label="Edit" icon={Pencil} onClick={() => setEditing(draftOf(t))} />
-            <IconButton label="Duplicate" icon={Copy} onClick={() => setEditing({ ...draftOf(t), id: undefined, code: `${t.code}_COPY`.slice(0, 40), name: `${t.name} (copy)` })} />
           </div>
         ))}
       </div>

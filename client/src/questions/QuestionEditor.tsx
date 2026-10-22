@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { DIFFICULTIES, DIFFICULTY_LABELS, partLabel, QUESTION_TYPE_LABELS, QUESTION_TYPES, type LabelStyle, type McqLayout, type QuestionDTO, type SubjectDTO } from '@skans/shared';
-import { ChevronDown, KeyRound, ListTree, Lock, Plus, Send, Trash2 } from 'lucide-react';
+import { DIFFICULTIES, DIFFICULTY_LABELS, partLabel, type LabelStyle, type McqLayout, type QuestionDTO, type QuestionType, type SubjectDTO } from '@skans/shared';
+import { AlignLeft, BookOpen, ChevronDown, CircleDot, KeyRound, Layers, ListTree, Lock, Plus, Send, ToggleLeft, Trash2, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api';
 import { Modal } from '../components/Modal';
@@ -14,6 +14,34 @@ const LAYOUTS: { value: McqLayout; label: string }[] = [
   { value: '2', label: '2 columns' },
   { value: '4', label: '4 columns' },
 ];
+
+/** Question types as picture tiles: easier to recognise than a drop-down list. */
+const TYPE_TILES: { type: QuestionType; label: string; hint: string; icon: LucideIcon }[] = [
+  { type: 'MCQ', label: 'MCQ', hint: 'One question, options (a)–(d)', icon: CircleDot },
+  { type: 'MCQ_GROUP', label: 'MCQ set', hint: 'Several MCQs (i), (ii)…', icon: Layers },
+  { type: 'TRUE_FALSE', label: 'True / False', hint: 'One statement', icon: ToggleLeft },
+  { type: 'SHORT', label: 'Short', hint: 'One written answer', icon: AlignLeft },
+  { type: 'LONG', label: 'Long', hint: 'With sub-questions (a), (b)…', icon: ListTree },
+  { type: 'CASE_STUDY', label: 'Case study', hint: 'Scenario with sub-questions', icon: BookOpen },
+];
+
+function TypePicker({ value, onChange }: { value: QuestionType; onChange(t: QuestionType): void }) {
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6" role="radiogroup" aria-label="Question type">
+      {TYPE_TILES.map(({ type, label, hint, icon: Icon }) => {
+        const on = value === type;
+        return (
+          <button key={type} type="button" role="radio" aria-checked={on} onClick={() => onChange(type)} title={hint}
+            className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center transition ${on ? 'border-navy bg-navy text-white shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}`}>
+            <Icon size={20} className={on ? 'text-gold' : 'text-slate-400'} />
+            <span className="text-sm font-semibold">{label}</span>
+            <span className={`hidden text-[11px] leading-tight sm:block ${on ? 'text-blue-100/80' : 'text-slate-400'}`}>{hint}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 const Heading = ({ children, aside }: { children: ReactNode; aside?: ReactNode }) => (
   <div className="mb-2 flex items-center justify-between gap-3"><h3 className="text-sm font-semibold text-ink">{children}</h3>{aside}</div>
@@ -140,17 +168,16 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
           <ul className="list-disc rounded-xl bg-red-50 py-3 pl-8 pr-4 text-sm text-red-800">{errors.map((e) => <li key={e}>{e}</li>)}</ul>
         )}
 
+        <TypePicker value={d.type} onChange={(t) => set('type', t)} />
+
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <label className="label lg:col-span-2">Subject
+          <label className="label lg:col-span-3">Subject
             <select className="field mt-1.5" value={d.subjectId} onChange={(e) => set('subjectId', Number(e.target.value))}>{subjects.map((s) => <option key={s.id} value={s.id}>{s.code} — {s.name}</option>)}</select>
-          </label>
-          <label className="label lg:col-span-2">Type
-            <select className="field mt-1.5" value={d.type} onChange={(e) => set('type', e.target.value as QuestionDraft['type'])}>{QUESTION_TYPES.map((t) => <option key={t} value={t}>{QUESTION_TYPE_LABELS[t]}</option>)}</select>
           </label>
           <label className="label">Difficulty
             <select className="field mt-1.5" value={d.difficulty} onChange={(e) => set('difficulty', e.target.value as QuestionDraft['difficulty'])}>{DIFFICULTIES.map((x) => <option key={x} value={x}>{DIFFICULTY_LABELS[x]}</option>)}</select>
           </label>
-          <label className="label">Marks
+          <label className="label lg:col-span-2">Marks
             <input className="field mt-1.5" type="number" min={0} max={200} step={0.5} value={structured ? draftMarks(d) : d.marks} disabled={structured} title={structured ? 'Sum of the parts' : undefined} onChange={(e) => set('marks', Number(e.target.value))} />
           </label>
           <label className="label sm:col-span-2 lg:col-span-6">Topic

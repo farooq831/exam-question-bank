@@ -15,7 +15,7 @@
 import { randomInt } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { Prisma } from '@prisma/client';
-import { CA_PAPERS, CAF_TEMPLATE_CONFIG, LEGACY_SUBJECT_CODES, passwordPolicy, SKANS_TEMPLATE_CONFIG, templateConfigSchema } from '@skans/shared';
+import { CA_PAPERS, CAF_TEMPLATE_CONFIG, LEGACY_SUBJECT_CODES, passwordPolicy, templateConfigSchema } from '@skans/shared';
 import { prisma } from '../src/db';
 
 const RESET = process.argv.includes('--reset');
@@ -27,12 +27,6 @@ export const CAF_TEMPLATE = {
   description:
     'SKANS CAF examination paper. Standard format: the CAF-8 Audit and Assurance Essentials paper and the formatting sheet from the administration (Calisto MT, A4, approved sizes, margins and spacing), with the SKANS logo at the top right.',
 };
-export const SKANS_TEMPLATE = {
-  code: 'SKANS_INTERNAL',
-  name: 'SKANS Internal Test',
-  description: 'SKANS internal (class) test layout with batch, teacher and test number. Values are provisional until the administration confirms the guidelines.',
-};
-
 type Tx = Prisma.TransactionClient;
 
 async function wipe(tx: Tx) {
@@ -89,8 +83,17 @@ async function migrateLegacy(tx: Tx) {
     }
   }
   // Subjects from earlier versions that are not CAF papers any more are switched off (never deleted).
-  const oldSubjects = await tx.subject.updateMany({ where: { code: { in: LEGACY_SUBJECT_CODES }, isActive: true }, data: { isActive: false } });
-  if (oldSubjects.count) console.log(`[seed] ${oldSubjects.count} old subject(s) deactivated (not part of the 8 CAF papers). Reactivate them in Subjects if needed.`);
+  // Subjects from earlier versions that are not CAF papers any more are removed. One that still
+  // holds questions or papers is only hidden, so no question or paper is ever lost.
+  for (const old of await tx.subject.findMany({ where: { code: { in: LEGACY_SUBJECT_CODES } }, include: { _count: { select: { questions: true, papers: true } } } })) {
+    if (old._count.questions === 0 && old._count.papers === 0) {
+      await tx.subject.delete({ where: { id: old.id } });
+      console.log(`[seed] Removed old subject ${old.code} (not one of the 8 CAF papers).`);
+    } else if (old.isActive) {
+      await tx.subject.update({ where: { id: old.id }, data: { isActive: false } });
+      console.log(`[seed] Old subject ${old.code} still has questions or papers, so it was hidden instead of removed.`);
+    }
+  }
 }
 
 function initialPassword() {
@@ -105,17 +108,34 @@ function initialPassword() {
   return { password: `${body}${digits[randomInt(digits.length)]}${digits[randomInt(digits.length)]}`, generated: true };
 }
 
+/**
+ * SKANS uses one paper format: SKANS CAF Examination. Every subject points to it; any other format
+ * is removed, or only hidden when a saved paper still uses it.
+ */
+async function useSingleFormat(tx: Tx) {
+  const caf = await tx.paperTemplate.findUniqueOrThrow({ where: { code: CAF_TEMPLATE.code } });
+  await tx.subject.updateMany({ where: { OR: [{ templateId: null }, { templateId: { not: caf.id } }] }, data: { templateId: caf.id } });
+  for (const other of await tx.paperTemplate.findMany({ where: { id: { not: caf.id } }, include: { _count: { select: { papers: true } } } })) {
+    if (other._count.papers === 0) {
+      await tx.paperTemplate.delete({ where: { id: other.id } });
+      console.log(`[seed] Removed paper format "${other.name}" (SKANS uses one format).`);
+    } else if (other.isActive) {
+      await tx.paperTemplate.update({ where: { id: other.id }, data: { isActive: false } });
+      console.log(`[seed] Paper format "${other.name}" is used by saved papers, so it was hidden instead of removed.`);
+    }
+  }
+}
+
 async function bootstrap(tx: Tx) {
   const ensureTemplate = (t: typeof CAF_TEMPLATE, config: unknown) =>
     tx.paperTemplate.upsert({ where: { code: t.code }, update: {}, create: { ...t, config: JSON.stringify(config) } });
   const caf = await ensureTemplate(CAF_TEMPLATE, CAF_TEMPLATE_CONFIG);
-  const skans = await ensureTemplate(SKANS_TEMPLATE, SKANS_TEMPLATE_CONFIG);
 
   for (const subject of CA_PAPERS) {
     await tx.subject.upsert({
       where: { code: subject.code },
       update: {},
-      create: { code: subject.code, name: subject.name, level: subject.level, templateId: subject.layout === 'CAF' ? caf.id : skans.id },
+      create: { code: subject.code, name: subject.name, level: subject.level, templateId: caf.id },
     });
   }
 
@@ -142,11 +162,13 @@ async function main() {
     async (tx) => {
       if (RESET) await wipe(tx);
       await migrateLegacy(tx);
-      return bootstrap(tx);
+      const admin = await bootstrap(tx);
+      await useSingleFormat(tx);
+      return admin;
     },
     { timeout: 60_000 },
   );
-  console.log(`[seed] ${CA_PAPERS.length} CAF papers (CAF 1-8) and 2 SKANS paper formats present.${RESET ? ' All previous data was deleted.' : ''}`);
+  console.log(`[seed] ${CA_PAPERS.length} CAF papers (CAF 1-8) and the SKANS CAF Examination format present.${RESET ? ' All previous data was deleted.' : ''}`);
   if (admin) {
     console.log('[seed] Administrator account created:');
     console.log(`         username: ${admin.username}`);

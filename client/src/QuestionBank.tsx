@@ -162,7 +162,7 @@ export function QuestionBank() {
         {loading && result.items.length === 0 ? (
           <p className="p-10 text-center text-sm text-slate-400">Loading…</p>
         ) : result.items.length === 0 ? (
-          <EmptyState icon={inBin ? Trash : Library} title={inBin ? 'The recycle bin is empty' : 'No questions found'} action={!inBin && ownSubjects.length ? <button className="secondary" onClick={() => void openEditor()}><Plus size={16} />New question</button> : undefined} />
+          <EmptyState icon={inBin ? Trash : Library} title={inBin ? 'The recycle bin is empty' : 'No questions here yet'} action={!inBin && ownSubjects.length ? <button className="primary !min-h-11 !px-5" onClick={() => void openEditor()}><Plus size={17} />Write a question</button> : undefined} />
         ) : (
           result.items.map((q) => {
             const can = questionActions(user, q);
@@ -185,9 +185,9 @@ export function QuestionBank() {
                     </>
                   ) : (
                     <>
-                      {can.review && <IconButton label="Review" icon={Check} tone="success" onClick={() => setReview(q)} />}
-                      {can.submit && <IconButton label="Submit for review" icon={Send} onClick={() => void post(q, '/submit', 'Submitted for review')} />}
-                      {can.edit && <IconButton label="Edit" icon={Pencil} onClick={() => void openEditor(q)} />}
+                      {can.review && <button className="success mr-1 !min-h-9 !px-3" title="Review" onClick={() => setReview(q)}><Check size={16} /><span className="hidden sm:inline">Review</span></button>}
+                      {can.submit && <button className="primary mr-1 !min-h-9 !px-3" title="Submit for review" onClick={() => void post(q, '/submit', 'Submitted for review')}><Send size={15} /><span className="hidden sm:inline">Submit</span></button>}
+                      {can.edit && <button className="secondary mr-1 !min-h-9 !px-3" title="Edit" onClick={() => void openEditor(q)}><Pencil size={15} /><span className="hidden sm:inline">Edit</span></button>}
                       {can.duplicate && <IconButton label="Duplicate" icon={Copy} onClick={() => void post(q, '/duplicate', 'Copied as a new draft')} />}
                       {can.remove && <IconButton label="Move to recycle bin" icon={Trash2} tone="danger" onClick={() => setConfirmDelete(q)} />}
                     </>

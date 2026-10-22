@@ -1,18 +1,18 @@
 import type { Prisma } from '@prisma/client';
-import type { SessionUser } from '@skans/shared';
+import { isAuthorRole, type SessionUser } from '@skans/shared';
 
 /**
- * Two roles:
+ * Roles:
  *  - ADMIN: runs the system. Sees every question (including drafts), reviews submissions, builds
  *    and downloads papers, manages users, subjects and templates.
- *  - TEACHER: works only in assigned subjects. Writes questions, edits own drafts/rejected
+ *  - TEACHER and RESEARCH_OFFICER (same rights): work only in assigned subjects. Writes questions, edits own drafts/rejected
  *    questions, submits them for review and can see approved questions of those subjects.
  *
  * Row-level visibility is applied in every question query.
  */
 export function questionVisibility(user: SessionUser): Prisma.QuestionWhereInput {
   if (user.role === 'ADMIN') return {};
-  if (user.role === 'TEACHER') {
+  if (isAuthorRole(user.role)) {
     return {
       subjectId: { in: user.subjectIds },
       OR: [{ createdById: user.id }, { status: 'APPROVED' }],
@@ -30,7 +30,7 @@ type Q = { subjectId: number; createdById: number; status: string; deletedAt: Da
 export function canEditQuestion(user: SessionUser, q: Q): boolean {
   if (user.role === 'ADMIN') return true;
   if (!user.subjectIds.includes(q.subjectId)) return false;
-  return user.role === 'TEACHER' && q.createdById === user.id && (q.status === 'DRAFT' || q.status === 'REJECTED');
+  return isAuthorRole(user.role) && q.createdById === user.id && (q.status === 'DRAFT' || q.status === 'REJECTED');
 }
 
 /**
@@ -51,5 +51,5 @@ export function canPurgeQuestion(user: SessionUser, q: Q): boolean {
 export function canDeleteQuestion(user: SessionUser, q: Q): boolean {
   if (user.role === 'ADMIN') return true;
   if (!user.subjectIds.includes(q.subjectId)) return false;
-  return user.role === 'TEACHER' && q.createdById === user.id && q.status !== 'APPROVED';
+  return isAuthorRole(user.role) && q.createdById === user.id && q.status !== 'APPROVED';
 }

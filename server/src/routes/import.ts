@@ -10,7 +10,7 @@ import { escapeHtml } from '../lib/sanitize';
 import { requireRole } from '../middleware/auth';
 
 const router = Router();
-router.use(requireRole('ADMIN', 'TEACHER'));
+router.use(requireRole('ADMIN', 'TEACHER', 'RESEARCH_OFFICER'));
 
 const upload = multer({
   storage: multer.memoryStorage(),

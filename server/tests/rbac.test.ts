@@ -101,6 +101,20 @@ describe('two-role model', () => {
     await legacy.get('/api/templates').expect(403);
   });
 
+  it('gives a Research Officer exactly the rights of a teacher', async () => {
+    const username = unique('ro_').toLowerCase();
+    const created = (await admin.post('/api/users', { username, fullName: 'Research Officer', role: 'RESEARCH_OFFICER', password: 'Welcome2026xx', subjectIds: [FAR] }).expect(201)).body;
+    expect(created.role).toBe('RESEARCH_OFFICER');
+    await prisma.user.update({ where: { username }, data: { mustChangePassword: false } });
+    const ro = await login(username, 'Welcome2026xx');
+    const q = (await ro.post('/api/questions?submit=1', shortQuestion(FAR)).expect(201)).body;
+    await ro.post(`/api/questions/${q.id}/review`, { decision: 'APPROVE', comment: '' }).expect(403);
+    await ro.post('/api/questions', shortQuestion(TAX)).expect(403);
+    for (const url of ['/api/papers', '/api/templates', '/api/users', '/api/audit']) await ro.get(url).expect(403);
+    const subjects = (await ro.get('/api/subjects').expect(200)).body as { code: string }[];
+    expect(subjects.map((s) => s.code)).toEqual(['FAR']);
+  });
+
   it("ADMIN cannot approve someone else's draft before it is submitted", async () => {
     const draft = (await teacher.post('/api/questions', shortQuestion(FAR)).expect(201)).body;
     await admin.get(`/api/questions/${draft.id}`).expect(200);

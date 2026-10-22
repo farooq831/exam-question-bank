@@ -11,7 +11,6 @@ import {
   partLabel,
   questionInputSchema,
   safeFileName,
-  SKANS_TEMPLATE_CONFIG,
   templateConfigSchema,
 } from '../src';
 
@@ -83,7 +82,6 @@ describe('formatting helpers', () => {
 describe('schemas', () => {
   it('accepts the seeded default templates', () => {
     expect(templateConfigSchema.safeParse(CAF_TEMPLATE_CONFIG).success).toBe(true);
-    expect(templateConfigSchema.safeParse(SKANS_TEMPLATE_CONFIG).success).toBe(true);
   });
 
   it('reads formats saved by earlier versions as SKANS formats', () => {

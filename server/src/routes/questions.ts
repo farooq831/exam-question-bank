@@ -10,7 +10,7 @@ import { questionInclude, sanitizeQuestionInput, toQuestionDTO } from '../lib/qu
 import { assertSubject, requireRole } from '../middleware/auth';
 
 const router = Router();
-router.use(requireRole('ADMIN', 'TEACHER'));
+router.use(requireRole('ADMIN', 'TEACHER', 'RESEARCH_OFFICER'));
 
 async function loadVisible(user: Express.Request['user'], id: number, includeDeleted = false) {
   const q = await prisma.question.findFirst({

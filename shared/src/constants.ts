@@ -1,8 +1,13 @@
-export const ROLES = ['ADMIN', 'TEACHER'] as const;
+export const ROLES = ['ADMIN', 'TEACHER', 'RESEARCH_OFFICER'] as const;
 export type Role = (typeof ROLES)[number];
+
+/** Roles that work like a teacher: write questions in assigned subjects and submit them for review. */
+export const AUTHOR_ROLES: readonly Role[] = ['TEACHER', 'RESEARCH_OFFICER'];
+export const isAuthorRole = (role: Role) => AUTHOR_ROLES.includes(role);
 export const ROLE_LABELS: Record<Role, string> = {
   ADMIN: 'Administrator',
   TEACHER: 'Teacher',
+  RESEARCH_OFFICER: 'Research Officer',
 };
 
 export const QUESTION_TYPES = ['MCQ', 'MCQ_GROUP', 'TRUE_FALSE', 'SHORT', 'LONG', 'CASE_STUDY'] as const;

@@ -11,6 +11,7 @@ import {
   type QuestionDTO,
   type SubjectDTO,
   type TemplateDTO,
+  type UserDTO,
 } from '@skans/shared';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowDown, ArrowLeft, ArrowUp, CheckCircle2, Copy, Download, Eye, FilePlus2, FileText, History, KeyRound, Plus, Save, Trash2, X } from 'lucide-react';
@@ -170,6 +171,7 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
   const [tab, setTab] = useState<Tab>(initialTab ?? 'details');
   const [subjects, setSubjects] = useState<SubjectDTO[]>([]);
   const [templates, setTemplates] = useState<TemplateDTO[]>([]);
+  const [people, setPeople] = useState<UserDTO[]>([]);
   const [subjectId, setSubjectId] = useState(0);
   const [templateId, setTemplateId] = useState(0);
   const [title, setTitle] = useState('');
@@ -194,11 +196,12 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
     let cancelled = false;
     (async () => {
       try {
-        const [s, t] = await Promise.all([api<SubjectDTO[]>('/subjects'), api<TemplateDTO[]>('/templates')]);
+        const [s, t, u] = await Promise.all([api<SubjectDTO[]>('/subjects'), api<TemplateDTO[]>('/templates'), api<UserDTO[]>('/users').catch(() => [] as UserDTO[])]);
         if (cancelled) return;
         const activeSubjects = s.filter((x) => x.isActive);
         setSubjects(activeSubjects);
         setTemplates(t);
+        setPeople(u.filter((x) => x.isActive));
         if (paperId) {
           const p = await api<PaperDTO>(`/papers/${paperId}`);
           if (cancelled) return;
@@ -333,10 +336,7 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
         <div className="space-y-4">
           <section className="card grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
             <Field label="Title" className="sm:col-span-2 lg:col-span-3"><input className="field mt-1.5" value={title} maxLength={200} onChange={(e) => { setTitle(e.target.value); setDirty(true); }} /></Field>
-            <Field label="Subject" className="lg:col-span-2"><SubjectSelect subjects={subjects} value={subjectId} onChange={chooseSubject} /></Field>
-            <Field label="Format">
-              <select className="field mt-1.5" value={templateId} onChange={(e) => { setTemplateId(Number(e.target.value)); setDirty(true); }}>{templates.filter((t) => t.isActive || t.id === templateId).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
-            </Field>
+            <Field label="Subject" className="sm:col-span-2 lg:col-span-3"><SubjectSelect subjects={subjects} value={subjectId} onChange={chooseSubject} /></Field>
             <Field label="Session"><input className="field mt-1.5" value={header.session} maxLength={60} onChange={(e) => setH('session', e.target.value)} placeholder="Spring 2026" /></Field>
             <Field label="Exam date"><input className="field mt-1.5" type="date" value={header.examDate} onChange={(e) => setH('examDate', e.target.value)} /></Field>
             <Field label="Maximum marks"><input className="field mt-1.5" type="number" min={0} max={500} value={header.maxMarks} onChange={(e) => setH('maxMarks', Number(e.target.value))} /></Field>
@@ -350,10 +350,22 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
             <h2 className="text-sm font-semibold text-ink">Prepared by</h2>
             <p className="field-hint !mt-0.5">Shown on the answer key{fmt?.header.showTeacher ? ' (the teacher also appears on this format’s paper header)' : ', never on the question paper'}.</p>
             <div className="mt-3 grid gap-4 sm:grid-cols-3">
-              <Field label="Teacher"><input className="field mt-1.5" value={header.teacherName} maxLength={120} onChange={(e) => setH('teacherName', e.target.value)} /></Field>
-              <Field label="Research Officer(s)"><input className="field mt-1.5" value={header.researchOfficers} maxLength={200} onChange={(e) => setH('researchOfficers', e.target.value)} placeholder="Separate names with commas" /></Field>
-              <Field label="Admin"><input className="field mt-1.5" value={header.adminName} maxLength={120} onChange={(e) => setH('adminName', e.target.value)} /></Field>
+              <Field label="Teacher"><input className="field mt-1.5" list="pb-teachers" value={header.teacherName} maxLength={120} onChange={(e) => setH('teacherName', e.target.value)} placeholder="Pick or type a name" /></Field>
+              <Field label="Research Officer(s)"><input className="field mt-1.5" value={header.researchOfficers} maxLength={200} onChange={(e) => setH('researchOfficers', e.target.value)} placeholder="Tap names below or type" /></Field>
+              <Field label="Admin"><input className="field mt-1.5" list="pb-admins" value={header.adminName} maxLength={120} onChange={(e) => setH('adminName', e.target.value)} placeholder="Pick or type a name" /></Field>
             </div>
+            <datalist id="pb-teachers">{people.filter((p) => p.role !== 'ADMIN').map((p) => <option key={p.id} value={p.fullName} />)}</datalist>
+            <datalist id="pb-admins">{people.filter((p) => p.role === 'ADMIN').map((p) => <option key={p.id} value={p.fullName} />)}</datalist>
+            {people.some((p) => p.role === 'RESEARCH_OFFICER') && (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="mr-1 text-xs font-semibold text-slate-400">Research officers</span>
+                {people.filter((p) => p.role === 'RESEARCH_OFFICER').map((p) => {
+                  const names = header.researchOfficers.split(',').map((x) => x.trim()).filter(Boolean);
+                  const on = names.includes(p.fullName);
+                  return <button key={p.id} type="button" className="chip" aria-pressed={on} onClick={() => setH('researchOfficers', (on ? names.filter((n) => n !== p.fullName) : [...names, p.fullName]).join(', '))}>{p.fullName}</button>;
+                })}
+              </div>
+            )}
           </section>
 
           <section className="card p-5">

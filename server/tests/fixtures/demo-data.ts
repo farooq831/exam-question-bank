@@ -13,7 +13,7 @@ import { ol, opts, p, table, type SeedQuestion } from './helpers';
 
 export const DEMO_PASSWORD = 'SkansDemo2026';
 type Tx = Prisma.TransactionClient;
-type Ref = { caf: { id: number }; skans: { id: number }; subjectRows: Map<string, { id: number }>; userRows: Map<string, { id: number }> };
+type Ref = { caf: { id: number }; subjectRows: Map<string, { id: number }>; userRows: Map<string, { id: number }> };
 
 const users = [
   { username: 'admin', fullName: 'SKANS IT Administrator', role: 'ADMIN', subjects: [] as string[] },
@@ -217,7 +217,7 @@ function extraQuestions(subjectCode: string, author: string, count: number): See
 }
 
 async function seedDemoContent(tx: Tx, ref: Ref) {
-  const { caf, skans, subjectRows, userRows } = ref;
+  const { caf, subjectRows, userRows } = ref;
   const allQuestions = [
     ...questions,
     ...extraQuestions('CR', 'teacher_far', 10),
@@ -309,7 +309,7 @@ async function seedDemoContent(tx: Tx, ref: Ref) {
   await samplePaper({
     title: 'Tax Batch 1 Internal Test',
     subject: 'TPC',
-    templateId: skans.id,
+    templateId: caf.id,
     header: { session: 'Batch 1', examDate: '2026-05-01', durationMinutes: 120, readingMinutes: 10, maxMarks: 25, batchNo: '1', teacherName: 'Tax Faculty', testNo: '1', titleOverride: 'Taxation', instructionsOverride: null },
     keys: ['tax-q1', 'tax-q2', 'tax-q3', 'tax-q4'],
   });
@@ -320,10 +320,7 @@ async function main() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
   await prisma.$transaction(
     async (tx) => {
-      const [caf, skans] = await Promise.all([
-        tx.paperTemplate.findUniqueOrThrow({ where: { code: 'SKANS_CAF' } }),
-        tx.paperTemplate.findUniqueOrThrow({ where: { code: 'SKANS_INTERNAL' } }),
-      ]);
+      const caf = await tx.paperTemplate.findUniqueOrThrow({ where: { code: 'SKANS_CAF' } });
       const subjectRows = new Map((await tx.subject.findMany()).map((s) => [s.code, s]));
       const userRows = new Map<string, { id: number }>();
       for (const u of users) {
@@ -335,7 +332,7 @@ async function main() {
         });
         userRows.set(u.username, row);
       }
-      await seedDemoContent(tx, { caf, skans, subjectRows, userRows });
+      await seedDemoContent(tx, { caf, subjectRows, userRows });
     },
     { timeout: 120_000 },
   );

@@ -99,15 +99,15 @@ function ForcedPasswordChange() {
 
 interface NavItem { to: string; label: string; icon: LucideIcon; roles: Role[] }
 const MAIN_NAV: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: LayoutGrid, roles: ['ADMIN', 'TEACHER'] },
+  { to: '/', label: 'Dashboard', icon: LayoutGrid, roles: ['ADMIN', 'TEACHER', 'RESEARCH_OFFICER'] },
   { to: '/review', label: 'Review', icon: ClipboardCheck, roles: ['ADMIN'] },
-  { to: '/questions', label: 'Questions', icon: Library, roles: ['ADMIN', 'TEACHER'] },
+  { to: '/questions', label: 'Questions', icon: Library, roles: ['ADMIN', 'TEACHER', 'RESEARCH_OFFICER'] },
   { to: '/papers', label: 'Papers', icon: FileText, roles: ['ADMIN'] },
 ];
 const ADMIN_NAV: NavItem[] = [
   { to: '/admin/users', label: 'Users', icon: Users, roles: ['ADMIN'] },
   { to: '/admin/subjects', label: 'Subjects', icon: BookOpen, roles: ['ADMIN'] },
-  { to: '/admin/templates', label: 'Paper formats', icon: Settings2, roles: ['ADMIN'] },
+  { to: '/admin/templates', label: 'Paper format', icon: Settings2, roles: ['ADMIN'] },
   { to: '/admin/audit', label: 'Audit log', icon: ScrollText, roles: ['ADMIN'] },
 ];
 

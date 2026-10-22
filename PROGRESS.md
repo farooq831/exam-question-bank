@@ -429,3 +429,21 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
   - Sample PDFs compared visually with the Audit paper. Tests: shared 11/11, server 40/40, including new tests for drafts, names, header page numbers and page 1 without a header.
   - Browser walkthrough on an isolated instance: write question → submit → approve → CAF 8 paper with names → draft PDFs; no horizontal overflow on 8 screens at 768 px.
   - `dev.db` was backed up to `server/backups/skans-20261022-092456/`, then upgraded with the non-destructive seed.
+
+## Follow-up: one SKANS format, Research Officer role, teacher-friendly screens (22 October 2026)
+
+- [x] **One paper format:** SKANS CAF Examination with the SKANS logo.
+  - The SKANS Internal Test format was removed; the seed deletes any other format, or only hides it if a saved paper uses it.
+  - Every subject points to the one format.
+  - The format choice is gone from Subjects and Papers.
+  - The Paper format page shows the single format (no duplicate, no logo or batch options).
+- [x] **Research Officer role:** exactly the rights of a teacher. Admins create Research Officers in Users (new filter chip). On a paper's "Prepared by", Research Officers are tappable chips, and Teacher and Admin are pick-lists of real users. Covered by a new server test.
+- [x] **Old subjects removed:** FAR1, FAR2, AUD, TAX, CMA, BL, CL and MFA are deleted by the seed (any that still holds questions or papers is only hidden). Only the 8 CAF papers remain.
+- [x] **Teacher-friendly screens:**
+  - Dashboard: a large "Write a new question" card, and coloured icon tiles (drafts, in review, returned, approved).
+  - Question list: labelled Submit, Edit and Review buttons.
+  - Editor: the question-type drop-down is replaced by six icon tiles (MCQ, MCQ set, True/False, Short, Long, Case study) with one-line hints.
+- Verification:
+  - Tests: shared 11/11, server 41/41.
+  - Browser walkthrough (isolated instance): created a teacher and two Research Officers; subjects show no format choice; one format listed; builder has no format choice and the officer chips fill "Sana Malik, Bilal Ahmed"; the teacher wrote a Long question via the tiles; Research Officer navigation is Dashboard and Questions only.
+  - `dev.db` was backed up to `server/backups/skans-20261022-095402/`; the seed then removed the 8 old subjects and the Internal Test format.

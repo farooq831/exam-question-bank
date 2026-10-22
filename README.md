@@ -9,7 +9,7 @@ papers that are printed to PDF together with a separate answer key.
 
 Contents: [Setup](#setup) · [Environment](#environment-variables) · [Database](#database) ·
 [First sign-in](#first-sign-in) · [Roles](#role-permissions) · [Commands](#development-commands) ·
-[Subjects](#caf-subjects) · [Formats](#paper-formats) · [Branding](#authorised-branding-assets) ·
+[Subjects](#caf-subjects) · [Format](#paper-format) · [Branding](#authorised-branding-assets) ·
 [PostgreSQL](#migrating-from-sqlite-to-postgresql) · [Deployment](#local-school-server-deployment) ·
 [Backups](#backups) · [Browsers](#tablet-and-browser-support) · [Limitations](#current-limitations)
 
@@ -83,7 +83,7 @@ The system ships **without demo data**. The seed creates one administrator:
 - the password must be changed at first sign-in.
 
 Then, as `admin`: create teacher accounts and assign their subjects (**Users**), check subjects and
-default formats (**Subjects**), and review the paper formats (**Paper formats**).
+default formats (**Subjects**), and review the paper format (**Paper format**).
 
 Emergency administrator recovery on the server console:
 `npm run reset-admin -- <username> <new-password>`.
@@ -93,24 +93,23 @@ Emergency administrator recovery on the server console:
 Every rule is enforced by the server (`server/src/lib/access.ts`, route guards). The interface only
 hides actions that would be refused.
 
-There are two roles.
+There are three roles. **Teacher** and **Research Officer** have exactly the same rights; the
+Research Officer role exists so these staff are listed correctly and can be picked as Research
+Officers on papers.
 
-| Capability | Administrator | Teacher |
+| Capability | Administrator | Teacher / Research Officer |
 |---|---|---|
 | Subjects visible | All | Assigned only |
 | Create questions (all types, tables, sub-questions) | Any subject | Assigned subjects |
-| Edit questions | Any | Own **draft/rejected** only |
+| Edit questions | Any | Own **draft/returned** only |
 | Submit for review | Own | Own |
-| Approve / reject (comment required to reject) | Yes (submitted questions) | No |
-| See other teachers' drafts | Yes | No |
+| Approve / return (comment required to return) | Yes (submitted questions) | No |
+| See other people's drafts | Yes | No |
 | See approved questions | All | Assigned subjects |
 | Move to recycle bin / restore | Any | Own non-approved |
 | Delete permanently (from recycle bin, only if not used in any paper) | Yes | No |
 | Build, preview, finalise papers; download paper and answer-key PDFs | Yes | No |
-| Users, subjects, paper formats (templates), audit log | Yes | No |
-
-Accounts created with the former "Head of Academics" role are converted to **Teacher** by the seed
-(and are treated as teachers until then). Promote them to Administrator in **Users** if needed.
+| Users, subjects, paper format, audit log | Yes | No |
 
 Only **approved**, non-deleted questions of the paper's subject can be added to a paper. A paper
 can only be finalised when its marks total equals the maximum marks. Final papers print from a
@@ -169,14 +168,13 @@ The system holds the eight CAF papers set by SKANS (official names as printed on
 | CAF 3 | DSR - Data, Systems and Risks | CAF 7 | BIA - Business Insights and Analysis |
 | CAF 4 | BLD - Business Law Dynamics | CAF 8 | AAE - Audit and Assurance Essentials |
 
-All eight use the **SKANS CAF Examination** format by default. Subjects from earlier versions
-(FAR1, FAR2, AUD, TAX, CMA, BL, CL, MFA) are deactivated by the seed, never deleted; reactivate
-them in **Subjects** if needed.
+All eight use the **SKANS CAF Examination** format. The seed removes subjects from earlier versions
+(FAR1, FAR2, AUD, TAX, CMA, BL, CL, MFA); one that still holds questions or papers is only hidden.
 
-## Paper formats
+## Paper format
 
-Paper formats are data (`PaperTemplate.config`), validated by `templateConfigSchema` in
-`shared/src/template.ts`. Two formats ship:
+SKANS uses **one paper format**, stored as data (`PaperTemplate.config`) and validated by
+`templateConfigSchema` in `shared/src/template.ts`:
 
 - **SKANS CAF Examination** (`SKANS_CAF`): the standard. Formatting follows the CAF-8 *Audit
   and Assurance Essentials* paper and the administration's formatting sheet
@@ -192,13 +190,11 @@ Paper formats are data (`PaperTemplate.config`), validated by `templateConfigSch
   | Spacing | single line spacing, justified body; 12 pt between paragraphs and sub-parts; 8 pt stem to options; 0 pt between options; 13 pt after QUESTION headings; 19 pt after SECTION bars |
   | Tables | dotted rules, header row repeats on following pages |
 
-- **SKANS Internal Test** (`SKANS_INTERNAL`): the school's class-test layout (logo top left,
-  batch / teacher / test and time / marks / date block).
 
-To change a format: **Paper formats → Edit**. The form covers fonts, all sizes, spacing, margins,
-title line, logo, instructions, question heading, marks format, sections, running header and end
-text; **Advanced (JSON)** exposes everything. To add a format, **Duplicate** one and assign it
-to subjects. Finalised papers keep the layout they were printed with.
+To change it: **Paper format → Edit**. The form covers fonts, all sizes, spacing, margins, title
+line, instructions, question heading, marks format, sections, running header and end text;
+**Advanced (JSON)** exposes everything. Every subject uses this format automatically. Finalised
+papers keep the layout they were printed with.
 
 ### Calisto MT font
 

@@ -221,16 +221,10 @@ describe('template rendering', () => {
     for (const t of withTable) expect(t).toContain('HDRCOLA');
   });
 
-  it('prints the SKANS internal-test header fields and the SKANS logo on both formats', async () => {
-    const skans = (await prisma.paperTemplate.findUniqueOrThrow({ where: { code: 'SKANS_INTERNAL' } })).id;
+  it('uses one SKANS format with the SKANS logo at the top right', async () => {
+    const formats = (await admin.get('/api/templates').expect(200)).body as { code: string }[];
+    expect(formats.map((f) => f.code)).toEqual(['SKANS_CAF']);
     const q = await approvedQuestion();
-    const html = (
-      await admin
-        .post('/api/papers/preview?format=html', { ...paperBody([{ questionId: q.id }], 5), templateId: skans, mode: 'paper' })
-        .expect(200)
-    ).text;
-    for (const text of ['Batch No:</span> 7', 'Teacher Name:</span> Ms Test', 'Test:</span> 3', 'Maximum Marks:</span> 5', '11/02/2026']) expect(html).toContain(text);
-    expect(html).toContain('<img src="data:image/png;base64,');
     const caf = (await admin.post('/api/papers/preview?format=html', { ...paperBody([{ questionId: q.id }], 5), mode: 'paper' }).expect(200)).text;
     // SKANS logo at the top right of the CAF header; no examining-body branding anywhere.
     expect(caf).toMatch(/<div class="caf-logo"><img src="data:image\/png;base64,[^"]+" alt="SKANS"><\/div>/);

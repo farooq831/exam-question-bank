@@ -6,7 +6,7 @@
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { CAF_TEMPLATE_CONFIG, SKANS_TEMPLATE_CONFIG, paperHeaderSchema, type TemplateConfig } from '@skans/shared';
+import { CAF_TEMPLATE_CONFIG, paperHeaderSchema, type TemplateConfig } from '@skans/shared';
 import { prisma } from '../src/db';
 import { parseTemplateConfig } from '../src/lib/papers';
 import { closeBrowser, htmlToPdf } from '../src/render/pdf';
@@ -48,7 +48,6 @@ async function formats(): Promise<{ code: string; config: TemplateConfig }[]> {
   if (rows.length) return rows.map((r) => ({ code: r.code, config: parseTemplateConfig(r.config) }));
   return [
     { code: 'SKANS_CAF', config: CAF_TEMPLATE_CONFIG },
-    { code: 'SKANS_INTERNAL', config: SKANS_TEMPLATE_CONFIG },
   ];
 }
 

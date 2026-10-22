@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { DashboardDTO } from '@skans/shared';
 import { Link } from 'react-router-dom';
-import { Activity, FilePlus2, FileText, Plus } from 'lucide-react';
+import { Activity, ArrowRight, CheckCircle2, ClipboardCheck, Clock3, FilePen, FilePlus2, FileText, PenLine, Plus, Undo2, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from './api';
 import { useAuth } from './auth';
@@ -14,11 +14,22 @@ function greeting() {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
-function Stat({ label, value, to, accent }: { label: string; value: number | undefined; to: string; accent?: string }) {
+const TILE: Record<string, string> = {
+  slate: 'bg-slate-100 text-slate-600',
+  amber: 'bg-amber-100 text-amber-700',
+  red: 'bg-red-100 text-red-700',
+  green: 'bg-emerald-100 text-emerald-700',
+  blue: 'bg-blue-100 text-blue-700',
+};
+
+function Stat({ label, value, to, icon: Icon, tone = 'slate' }: { label: string; value: number | undefined; to: string; icon: LucideIcon; tone?: keyof typeof TILE }) {
   return (
-    <Link to={to} className="card group block p-5 transition hover:border-slate-300">
-      <p className={`text-3xl font-semibold tracking-tight ${accent ?? 'text-ink'}`}>{value ?? '–'}</p>
-      <p className="mt-1 text-sm text-slate-500 group-hover:text-ink">{label}</p>
+    <Link to={to} className="card group flex items-center gap-4 p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm sm:p-5">
+      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${TILE[tone]}`}><Icon size={21} /></span>
+      <span className="min-w-0">
+        <span className="block text-2xl font-semibold tracking-tight text-ink">{value ?? '–'}</span>
+        <span className="block truncate text-sm text-slate-500 group-hover:text-ink">{label}</span>
+      </span>
     </Link>
   );
 }
@@ -44,25 +55,36 @@ export function Dashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">{greeting()}, {user.fullName.split(' ')[0]}</h1>
         <div className="flex flex-wrap gap-2">
-          <Link to="/questions?new=1" className="secondary"><Plus size={16} />New question</Link>
+          {admin && <Link to="/questions?new=1" className="secondary"><Plus size={16} />New question</Link>}
           {admin && <Link to="/papers?paper=new" className="primary"><FilePlus2 size={16} />New paper</Link>}
         </div>
       </div>
 
+      {!admin && (
+        <Link to="/questions?new=1" className="group flex items-center gap-4 rounded-2xl bg-gradient-to-r from-navy to-[#2c4372] p-5 text-white shadow-sm transition hover:shadow-md sm:p-6">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15"><PenLine size={26} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-semibold">Write a new question</span>
+            <span className="block text-sm text-blue-100/80">MCQ, short or long with sub-questions, tables and answers</span>
+          </span>
+          <ArrowRight className="shrink-0 transition group-hover:translate-x-1" size={22} />
+        </Link>
+      )}
+
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {admin ? (
           <>
-            <Stat label="Waiting for review" value={data?.pendingReview} to="/review" accent={data?.pendingReview ? 'text-amber-600' : undefined} />
-            <Stat label="Approved questions" value={t?.APPROVED} to="/questions?status=APPROVED" />
-            <Stat label="Drafts" value={t?.DRAFT} to="/questions?status=DRAFT" />
-            <Stat label="Papers" value={data?.stats.papers} to="/papers" />
+            <Stat label="Waiting for review" value={data?.pendingReview} to="/review" icon={ClipboardCheck} tone="amber" />
+            <Stat label="Approved questions" value={t?.APPROVED} to="/questions?status=APPROVED" icon={CheckCircle2} tone="green" />
+            <Stat label="Drafts" value={t?.DRAFT} to="/questions?status=DRAFT" icon={FilePen} />
+            <Stat label="Papers" value={data?.stats.papers} to="/papers" icon={FileText} tone="blue" />
           </>
         ) : (
           <>
-            <Stat label="My drafts" value={t?.DRAFT} to="/questions?status=DRAFT&mine=1" />
-            <Stat label="In review" value={t?.SUBMITTED} to="/questions?status=SUBMITTED&mine=1" />
-            <Stat label="Returned to me" value={data?.myRejected} to="/questions?status=REJECTED&mine=1" accent={data?.myRejected ? 'text-red-600' : undefined} />
-            <Stat label="Approved" value={t?.APPROVED} to="/questions?status=APPROVED" />
+            <Stat label="My drafts" value={t?.DRAFT} to="/questions?status=DRAFT&mine=1" icon={FilePen} />
+            <Stat label="In review" value={t?.SUBMITTED} to="/questions?status=SUBMITTED&mine=1" icon={Clock3} tone="amber" />
+            <Stat label="Returned to me" value={data?.myRejected} to="/questions?status=REJECTED&mine=1" icon={Undo2} tone="red" />
+            <Stat label="Approved" value={t?.APPROVED} to="/questions?status=APPROVED" icon={CheckCircle2} tone="green" />
           </>
         )}
       </section>

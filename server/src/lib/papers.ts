@@ -12,7 +12,6 @@ import {
   type QuestionType,
   type TemplateConfig,
 } from '@skans/shared';
-import { prisma } from '../db';
 import type { RenderInput, RenderItem } from '../render/paperHtml';
 import { badRequest } from './http';
 import { parseJson, questionInclude, toQuestionDTO } from './questions';

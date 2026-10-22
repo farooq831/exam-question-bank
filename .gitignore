@@ -13,3 +13,6 @@ server/backups/
 *.TTF
 *.otf
 *.OTF
+
+# Reference material from ICAP and the administration (copyrighted / internal): kept locally, never committed
+samples/

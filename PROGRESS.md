@@ -504,3 +504,24 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 - [x] **Renderer fixes found with the long paper:** long answer-key tables may now continue onto the next page (the first page of the key was empty), and item lists of 17 or more get a wider hanging indent so labels like (xxviii) no longer touch the text.
 - `dev.db` backed up to `server/backups/skans-20261022-153538/` before the paper was added (paper #29, 69 questions). Trial runs used a temporary copy, since removed.
 - Verification: server 45/45; PDFs reviewed page by page (17-page paper, 8-page answer key).
+
+## Full system test and clean-up (22 October 2026)
+
+**Automated:** typecheck clean in all three workspaces; shared 11/11, server 45/45 tests; production client build OK. (`npm run build` stops at `prisma generate` with EPERM only while the dev server is running, because Windows locks Prisma's engine file; stop `npm run dev` before building.)
+
+**End-to-end browser walkthrough** (isolated instance, fresh temporary database, 46 steps, all passing after fixing the test script):
+- sign-in (wrong password refused, forced password change, weak password refused with a clear reason), lockout after 5 wrong passwords;
+- admin: users (create teacher / Research Officer / second teacher, duplicate username refused, reset password, deactivate / activate, signed out afterwards), subjects (8 CAF papers), paper format (change, reset to standard, save), audit log;
+- teacher: menu limited, admin pages blocked by URL and API (403); every question type (MCQ, MCQ set, several True/False at once, short with amounts table and (I) list, long with parts, case study); empty question blocked; duplicate, bin, restore, delete permanently; search;
+- Research Officer has teacher rights; a teacher of another subject sees nothing from FAR; teachers do not see each other's drafts;
+- review: titles shown, return requires a comment, approve, teacher fixes and resubmits, approved questions locked;
+- papers: builder, preview, Finalise disabled until marks match, save, draft PDF named `_DRAFT`, finalise, clean paper + answer key, version history, question in a final paper cannot be purged, duplicate;
+- security: script/onerror stripped from question HTML, request without CSRF token refused, CSP present, no X-Powered-By, session cookie HttpOnly + SameSite=strict; phone width has no sideways scrolling; logout ends the session. No browser console errors.
+
+**Bug found and fixed:** validation errors showed only "Please correct the highlighted fields." with nothing highlighted (e.g. a weak password). The client now shows each reason, e.g. "New password: At least 10 characters. New password: Must contain a digit".
+
+**Clean-up:**
+- removed 6 unused client libraries (@dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities, @tanstack/react-query, clsx, pdfjs-dist) and 3 pieces of unused server code;
+- the three ICAP sample PDFs are no longer tracked in git (copyrighted reference material; kept on disk, `samples/` is now ignored);
+- removed the outdated `docs/PROTOTYPE-HISTORY.md` (17 October audit; history is in this file);
+- deleted obsolete generated PDFs for the removed "SKANS Internal" format from `output/`.

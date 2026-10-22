@@ -183,7 +183,8 @@ SKANS uses **one paper format**, stored as data (`PaperTemplate.config`) and val
 
 - **SKANS CAF Examination** (`SKANS_CAF`): the standard. Formatting follows the CAF-8 *Audit
   and Assurance Essentials* paper and the administration's formatting sheet
-  (`samples/Req_by _admin/Formatting Sheet.xlsx`), with the **SKANS logo at the top right**:
+  (`samples/Req_by _admin/Formatting Sheet.xlsx`; the `samples/` folder is kept locally and is
+  not in git, because it holds ICAP and internal reference material), with the **SKANS logo at the top right**:
 
   | Element | Value |
   |---|---|

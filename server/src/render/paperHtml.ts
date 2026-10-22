@@ -71,19 +71,6 @@ function inlineMd(text: string): string {
   return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
 
-/** CSS `content:` value for a margin box, turning {page}/{pages} into counters. */
-function cssContent(text: string): string {
-  if (!text.trim()) return 'none';
-  const parts = text.split(/(\{page\}|\{pages\})/g).filter((p) => p !== '');
-  return parts
-    .map((p) => {
-      if (p === '{page}') return 'counter(page)';
-      if (p === '{pages}') return 'counter(pages)';
-      return `"${p.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ')}"`;
-    })
-    .join(' ');
-}
-
 /**
  * Normalises stored rich text for print:
  *  - sanitises again (defence in depth)

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import type { Prisma } from '@prisma/client';
-import { resetPasswordSchema, userCreateSchema, userUpdateSchema, type Role, type UserDTO } from '@skans/shared';
+import { resetPasswordSchema, userCreateSchema, userUpdateSchema, type UserDTO } from '@skans/shared';
 import { prisma } from '../db';
 import { audit } from '../lib/audit';
 import { ah, badRequest, conflict, idParam, notFound, parse } from '../lib/http';

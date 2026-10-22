@@ -10,11 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
     "@skans/shared": "*",
-    "@tanstack/react-query": "^5.90.0",
     "@tiptap/extension-ordered-list": "^2.27.3",
     "@tiptap/extension-subscript": "^2.27.3",
     "@tiptap/extension-superscript": "^2.27.3",
@@ -27,9 +23,7 @@
     "@tiptap/pm": "^2.27.3",
     "@tiptap/react": "^2.27.3",
     "@tiptap/starter-kit": "^2.27.3",
-    "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
-    "pdfjs-dist": "4.10.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.1",

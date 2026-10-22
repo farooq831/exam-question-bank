@@ -454,3 +454,10 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 - [x] **Welcome message:** after signing in, a toast greets the user by full name with their username and role (for example "Welcome, System Administrator · Signed in as admin · Administrator").
 - [x] **Sidebar collapse button removed:** the sidebar is always full width on large screens; the saved collapse setting is no longer used.
 - Verification: typecheck and client build clean; browser check on an isolated instance (temporary database, since removed): desktop and phone sign-in, wrong-password error, forced password change, welcome toast, no collapse button.
+
+## Follow-up: recycle bin for everyone, several True / False at once (22 October 2026)
+
+- [x] **Delete permanently for teachers and Research Officers:** anyone who may move a question to the recycle bin may also delete it for good (admin: any question; author: own non-approved questions). Questions used in a paper are still refused. The bin rows now show labelled **Restore** and **Delete permanently** buttons. Server rule `canPurgeQuestion` and two new tests.
+- [x] **Several True / False statements at once:** a new True / False question has **Add another statement**; each statement has its own True / False choice and is saved as its own question (same subject, topic, difficulty and marks each), so each can be reviewed and picked for papers separately. Consecutive True / False questions already print together on the paper.
+- [x] **Icons on the True / False choice:** green tick for True, red cross for False.
+- Verification: shared 11/11, server 43/43; browser check on an isolated instance (temporary database, since removed): teacher saved three statements in one go, moved one to the bin and deleted it permanently.

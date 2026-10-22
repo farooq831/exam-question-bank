@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { QUESTION_TYPES, type Paged, type QuestionDTO, type SubjectDTO } from '@skans/shared';
 import { useSearchParams } from 'react-router-dom';
-import { ArchiveRestore, Check, Copy, Library, Pencil, Plus, Send, Trash2, Trash } from 'lucide-react';
+import { ArchiveRestore, ArrowLeft, Check, Copy, Library, Pencil, Plus, Send, Trash2, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from './api';
 import { useAuth } from './auth';
@@ -154,7 +154,7 @@ export function QuestionBank() {
         {inBin ? <p className="text-sm font-medium text-slate-500">Recycle bin</p> : <Chips options={STATUS_CHIPS} value={filters.status} onChange={(v) => setFilter('status', v)} />}
         <div className="flex gap-1.5">
           {!inBin && <button className="chip" aria-pressed={filters.mine === '1'} onClick={() => setFilter('mine', filters.mine === '1' ? '' : '1')}>Mine</button>}
-          <button className="chip" aria-pressed={inBin} onClick={() => setFilter('deleted', inBin ? '' : '1')} title="Recycle bin"><Trash size={14} />{inBin ? 'Back to questions' : 'Bin'}</button>
+          <button className="chip" aria-pressed={inBin} onClick={() => setFilter('deleted', inBin ? '' : '1')} title="Recycle bin">{inBin ? <><ArrowLeft size={14} />Back to questions</> : <><Trash size={14} />Recycle bin</>}</button>
         </div>
       </div>
 
@@ -180,8 +180,8 @@ export function QuestionBank() {
                 <div className="flex shrink-0 items-center">
                   {inBin ? (
                     <>
-                      {can.restore && <IconButton label="Restore" icon={ArchiveRestore} onClick={() => void post(q, '/restore', 'Restored')} />}
-                      {can.purge && <IconButton label={q.usedInPapers ? 'Used in a paper — cannot delete permanently' : 'Delete permanently'} icon={Trash2} tone="danger" disabled={!!q.usedInPapers} onClick={() => setConfirmPurge(q)} />}
+                      {can.restore && <button className="secondary mr-1 !min-h-9 !px-3" title="Restore" onClick={() => void post(q, '/restore', 'Restored')}><ArchiveRestore size={15} /><span className="hidden sm:inline">Restore</span></button>}
+                      {can.purge && <button className="danger !min-h-9 !px-3" title={q.usedInPapers ? 'Used in a paper — remove it from the paper first' : 'Delete permanently'} disabled={!!q.usedInPapers} onClick={() => setConfirmPurge(q)}><Trash2 size={15} /><span className="hidden sm:inline">Delete permanently</span></button>}
                     </>
                   ) : (
                     <>

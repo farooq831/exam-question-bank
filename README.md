@@ -107,7 +107,7 @@ Officers on papers.
 | See other people's drafts | Yes | No |
 | See approved questions | All | Assigned subjects |
 | Move to recycle bin / restore | Any | Own non-approved |
-| Delete permanently (from recycle bin, only if not used in any paper) | Yes | No |
+| Delete permanently (from recycle bin, only if not used in any paper) | Any | Own non-approved |
 | Build, preview, finalise papers; download paper and answer-key PDFs | Yes | No |
 | Users, subjects, paper format, audit log | Yes | No |
 

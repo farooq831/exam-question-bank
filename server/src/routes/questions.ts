@@ -257,7 +257,7 @@ router.delete(
   ah(async (req, res) => {
     const q = await loadVisible(req.user, idParam(req), true);
     if (!q.deletedAt) throw badRequest('Move the question to the recycle bin before deleting it permanently.');
-    if (!canPurgeQuestion(req.user!, q)) throw forbidden('Only an administrator can delete questions permanently.');
+    if (!canPurgeQuestion(req.user!, q)) throw forbidden('You can only delete your own questions permanently.');
     const used = await prisma.paperItem.count({ where: { questionId: q.id } });
     if (used > 0) throw conflict(`This question is used in ${used} paper(s) and cannot be deleted permanently. Remove it from those papers first.`);
     await prisma.question.delete({ where: { id: q.id } });

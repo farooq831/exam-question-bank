@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import { DIFFICULTIES, DIFFICULTY_LABELS, partLabel, type LabelStyle, type McqLayout, type QuestionDTO, type QuestionType, type SubjectDTO } from '@skans/shared';
-import { AlignLeft, BookOpen, ChevronDown, CircleDot, KeyRound, Layers, ListTree, Lock, Plus, Send, ToggleLeft, Trash2, type LucideIcon } from 'lucide-react';
+import { AlignLeft, BookOpen, CheckCircle2, ChevronDown, CircleDot, KeyRound, Layers, ListTree, Lock, Plus, Send, ToggleLeft, Trash2, XCircle, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api';
 import { Modal } from '../components/Modal';
 import { RichEditor } from '../components/RichEditor';
 import { IconButton } from '../components/ui';
-import { draftMarks, draftPayload, marksAreStructured, newGroupItem, newOption, newPart, newSubPart, validateDraft, type Option, type Part, type QuestionDraft, type SubPart } from './model';
+import { draftMarks, draftPayload, hasText, marksAreStructured, newGroupItem, newId, newOption, newPart, newSubPart, validateDraft, type Option, type Part, type QuestionDraft, type SubPart } from './model';
 
 const LAYOUTS: { value: McqLayout; label: string }[] = [
   { value: 'auto', label: 'Auto layout' },
@@ -19,7 +19,7 @@ const LAYOUTS: { value: McqLayout; label: string }[] = [
 const TYPE_TILES: { type: QuestionType; label: string; hint: string; icon: LucideIcon }[] = [
   { type: 'MCQ', label: 'MCQ', hint: 'One question, options (a)–(d)', icon: CircleDot },
   { type: 'MCQ_GROUP', label: 'MCQ set', hint: 'Several MCQs (i), (ii)…', icon: Layers },
-  { type: 'TRUE_FALSE', label: 'True / False', hint: 'One statement', icon: ToggleLeft },
+  { type: 'TRUE_FALSE', label: 'True / False', hint: 'One or more statements', icon: ToggleLeft },
   { type: 'SHORT', label: 'Short', hint: 'One written answer', icon: AlignLeft },
   { type: 'LONG', label: 'Long', hint: 'With sub-questions (a), (b)…', icon: ListTree },
   { type: 'CASE_STUDY', label: 'Case study', hint: 'Scenario with sub-questions', icon: BookOpen },
@@ -42,6 +42,27 @@ function TypePicker({ value, onChange }: { value: QuestionType; onChange(t: Ques
     </div>
   );
 }
+
+/** True / False choice with clear tick and cross icons. */
+function TfToggle({ value, onChange, label }: { value: boolean; onChange(v: boolean): void; label: string }) {
+  return (
+    <div className="inline-flex shrink-0 rounded-xl bg-slate-100 p-1" role="radiogroup" aria-label={label}>
+      {[true, false].map((v) => {
+        const on = value === v;
+        const Icon = v ? CheckCircle2 : XCircle;
+        return (
+          <button key={String(v)} type="button" role="radio" aria-checked={on} onClick={() => onChange(v)}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold transition ${on ? (v ? 'bg-emerald-600 text-white shadow-sm' : 'bg-red-600 text-white shadow-sm') : 'text-slate-500 hover:text-ink'}`}>
+            <Icon size={16} />{v ? 'True' : 'False'}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Extra statements typed in the same window; each is saved as its own True / False question. */
+interface TfStatement { id: string; html: string; correct: boolean }
 
 const Heading = ({ children, aside }: { children: ReactNode; aside?: ReactNode }) => (
   <div className="mb-2 flex items-center justify-between gap-3"><h3 className="text-sm font-semibold text-ink">{children}</h3>{aside}</div>
@@ -118,22 +139,42 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
   const [d, setD] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [moreTf, setMoreTf] = useState<TfStatement[]>([]);
   const set = <K extends keyof QuestionDraft>(key: K, value: QuestionDraft[K]) => setD((cur) => ({ ...cur, [key]: value }));
   const structured = marksAreStructured(d);
   // Same default as the SKANS paper formats: sub-questions (a), (b)…, parts inside them (i), (ii)…
   const style: LabelStyle = d.partLabelStyle ?? 'alpha';
   const subStyle: LabelStyle = style === 'roman' ? 'alpha' : 'roman';
   const isNew = !d.id;
+  // Only a new True / False question can carry extra statements.
+  const extraTf = isNew && d.type === 'TRUE_FALSE' ? moreTf : [];
+  const totalMarks = draftMarks(d) * (extraTf.length + 1);
+  const setTf = (i: number, patch: Partial<TfStatement>) => setMoreTf((cur) => cur.map((x, j) => (j === i ? { ...x, ...patch } : x)));
 
   async function save(submit: boolean) {
     const problems = validateDraft(d);
+    extraTf.forEach((s, i) => { if (!hasText(s.html)) problems.push(`Statement ${i + 2}: enter the text (or remove it).`); });
     setErrors(problems);
     if (problems.length) return;
     setBusy(true);
     try {
       const path = d.id ? `/questions/${d.id}` : '/questions';
-      const saved = await api<QuestionDTO>(`${path}${submit ? '?submit=1' : ''}`, { method: d.id ? 'PUT' : 'POST', body: JSON.stringify(draftPayload(d)) });
-      toast.success(submit ? 'Submitted for review' : 'Saved');
+      const query = submit ? '?submit=1' : '';
+      const payload = draftPayload(d);
+      const saved = await api<QuestionDTO>(`${path}${query}`, { method: d.id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
+      let count = 1;
+      try {
+        for (const s of extraTf) {
+          await api<QuestionDTO>(`/questions${query}`, { method: 'POST', body: JSON.stringify({ ...payload, body: s.html, content: { correct: s.correct } }) });
+          count += 1;
+        }
+      } catch (error) {
+        toast.error(`Saved ${count} of ${extraTf.length + 1} statements. ${error instanceof Error ? error.message : ''}`);
+        onSaved(saved);
+        return;
+      }
+      const what = count > 1 ? `${count} True / False questions` : '';
+      toast.success(submit ? `${what || 'Question'} submitted for review` : what ? `${what} saved` : 'Saved');
       onSaved(saved);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to save question');
@@ -153,7 +194,7 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
       onClose={onClose}
       footer={
         <>
-          <span className="mr-auto text-sm text-slate-500"><strong className="text-ink">{draftMarks(d)}</strong> marks</span>
+          <span className="mr-auto text-sm text-slate-500"><strong className="text-ink">{totalMarks}</strong> marks{extraTf.length > 0 && <> · {extraTf.length + 1} statements</>}</span>
           <button type="button" className="ghost" onClick={onClose}>Cancel</button>
           <button type="button" className={canSubmit ? 'secondary' : 'primary'} disabled={busy} onClick={() => void save(false)}>{busy ? 'Saving…' : canSubmit ? 'Save draft' : 'Save'}</button>
           {canSubmit && <button type="button" className="primary" disabled={busy} onClick={() => void save(true)}><Send size={15} />Submit</button>}
@@ -177,7 +218,7 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
           <label className="label">Difficulty
             <select className="field mt-1.5" value={d.difficulty} onChange={(e) => set('difficulty', e.target.value as QuestionDraft['difficulty'])}>{DIFFICULTIES.map((x) => <option key={x} value={x}>{DIFFICULTY_LABELS[x]}</option>)}</select>
           </label>
-          <label className="label lg:col-span-2">Marks
+          <label className="label lg:col-span-2">{extraTf.length ? 'Marks (each statement)' : 'Marks'}
             <input className="field mt-1.5" type="number" min={0} max={200} step={0.5} value={structured ? draftMarks(d) : d.marks} disabled={structured} title={structured ? 'Sum of the parts' : undefined} onChange={(e) => set('marks', Number(e.target.value))} />
           </label>
           <label className="label sm:col-span-2 lg:col-span-6">Topic
@@ -186,7 +227,7 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
         </div>
 
         <div>
-          <Heading>Question</Heading>
+          <Heading>{d.type === 'TRUE_FALSE' ? (extraTf.length ? 'Statement 1' : 'Statement') : 'Question'}</Heading>
           <RichEditor value={d.body} onChange={(v) => set('body', v)} label="Question text" />
         </div>
 
@@ -199,13 +240,26 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
         )}
 
         {d.type === 'TRUE_FALSE' && (
-          <div>
-            <Heading>Correct answer</Heading>
-            <div className="inline-flex rounded-xl bg-slate-100 p-1">
-              {[true, false].map((v) => (
-                <button key={String(v)} type="button" onClick={() => set('tfCorrect', v)} aria-pressed={d.tfCorrect === v} className={`min-h-9 rounded-lg px-5 text-sm font-semibold ${d.tfCorrect === v ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}>{v ? 'True' : 'False'}</button>
-              ))}
+          <div className="space-y-3">
+            <div>
+              <Heading>Correct answer</Heading>
+              <TfToggle value={d.tfCorrect} onChange={(v) => set('tfCorrect', v)} label={extraTf.length ? 'Statement 1 answer' : 'Correct answer'} />
             </div>
+            {extraTf.map((s, i) => (
+              <div key={s.id} className="rounded-xl border border-slate-200 p-3">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-ink">Statement {i + 2}</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    <TfToggle value={s.correct} onChange={(correct) => setTf(i, { correct })} label={`Statement ${i + 2} answer`} />
+                    <IconButton label={`Remove statement ${i + 2}`} icon={Trash2} tone="danger" onClick={() => setMoreTf((cur) => cur.filter((_, j) => j !== i))} />
+                  </div>
+                </div>
+                <RichEditor compact value={s.html} onChange={(html) => setTf(i, { html })} label={`Statement ${i + 2} text`} />
+              </div>
+            ))}
+            {isNew && (
+              <button type="button" className="ghost !px-2" disabled={moreTf.length >= 29} onClick={() => setMoreTf((cur) => [...cur, { id: newId(), html: '', correct: true }])}><Plus size={15} />Add another statement</button>
+            )}
           </div>
         )}
 

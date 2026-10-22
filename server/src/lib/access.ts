@@ -43,9 +43,13 @@ export function canReviewQuestion(user: SessionUser, q: Q): boolean {
   return (q.status === 'DRAFT' || q.status === 'REJECTED') && q.createdById === user.id;
 }
 
-/** Permanent deletion (from the recycle bin) is limited to ADMIN. */
+/**
+ * Permanent deletion (from the recycle bin): whoever may move a question to the bin may also
+ * delete it for good, i.e. ADMIN for any question, an author for their own non-approved ones.
+ * The route additionally refuses questions used in papers.
+ */
 export function canPurgeQuestion(user: SessionUser, q: Q): boolean {
-  return !!q.deletedAt && user.role === 'ADMIN';
+  return !!q.deletedAt && canDeleteQuestion(user, q);
 }
 
 export function canDeleteQuestion(user: SessionUser, q: Q): boolean {

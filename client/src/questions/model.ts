@@ -153,7 +153,7 @@ export function draftPayload(d: QuestionDraft) {
   };
 }
 
-const hasText = (html: string) => html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim().length > 0 || /<table/.test(html);
+export const hasText = (html: string) => html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim().length > 0 || /<table/.test(html);
 
 /** Friendly client-side checks; the server repeats all validation. */
 export function validateDraft(d: QuestionDraft): string[] {
@@ -192,8 +192,8 @@ export function questionActions(user: SessionUser, q: Pick<QuestionDTO, 'status'
     review: live && admin && (q.status === 'SUBMITTED' || (own && (q.status === 'DRAFT' || q.status === 'REJECTED'))),
     remove: live && canDelete,
     restore: !live && canDelete,
-    /** Permanent deletion is ADMIN only; the server also refuses questions used in papers. */
-    purge: !live && admin,
+    /** Same people as the recycle bin; the server also refuses questions used in papers. */
+    purge: !live && canDelete,
     duplicate: live && inScope,
   };
 }

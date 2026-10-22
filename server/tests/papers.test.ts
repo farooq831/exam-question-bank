@@ -64,12 +64,27 @@ describe('question review workflow', () => {
 });
 
 describe('permanent deletion from the recycle bin', () => {
-  it('requires the recycle bin first and is limited to ADMIN', async () => {
+  it('lets authors delete their own binned questions for good', async () => {
+    const q = (await teacher.post('/api/questions?submit=1', shortQuestion(FAR)).expect(201)).body;
+    await teacher.del(`/api/questions/${q.id}/permanent`).expect(400);
+    await teacher.del(`/api/questions/${q.id}`).expect(200);
+    expect((await teacher.get(`/api/questions/${q.id}`).expect(200)).body.permissions.purge).toBe(true);
+    await teacher.del(`/api/questions/${q.id}/permanent`).expect(200);
+    expect(await prisma.question.findUnique({ where: { id: q.id } })).toBeNull();
+    expect(await prisma.auditLog.count({ where: { action: 'QUESTION_PURGE', entityId: String(q.id), username: 'teacher_far' } })).toBe(1);
+  });
+
+  it('keeps approved questions and other people\'s questions out of an author\'s reach', async () => {
+    const approved = await approvedQuestion();
+    await admin.del(`/api/questions/${approved.id}`).expect(200);
+    await teacher.del(`/api/questions/${approved.id}/permanent`).expect(403);
+  });
+
+  it('requires the recycle bin first; ADMIN may delete any question', async () => {
     const q = (await teacher.post('/api/questions?submit=1', shortQuestion(FAR)).expect(201)).body;
     const live = await admin.del(`/api/questions/${q.id}/permanent`).expect(400);
     expect(live.body.error).toMatch(/recycle bin/);
     await teacher.del(`/api/questions/${q.id}`).expect(200);
-    await teacher.del(`/api/questions/${q.id}/permanent`).expect(403);
     const listed = (await admin.get(`/api/questions/${q.id}`).expect(200)).body;
     expect(listed.permissions.purge).toBe(true);
     await admin.del(`/api/questions/${q.id}/permanent`).expect(200);

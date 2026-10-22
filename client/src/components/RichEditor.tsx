@@ -12,7 +12,7 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
-import { AlignCenter, AlignLeft, AlignRight, Bold, HelpCircle, Italic, List, ListOrdered, Subscript as SubIcon, Superscript as SupIcon, Table as TableIcon, Underline as UnderlineIcon } from 'lucide-react';
+import { AlignCenter, AlignLeft, AlignRight, Banknote, Bold, HelpCircle, Italic, List, ListOrdered, Subscript as SubIcon, Superscript as SupIcon, Table as TableIcon, Underline as UnderlineIcon } from 'lucide-react';
 
 interface RichEditorProps {
   value: string;
@@ -76,16 +76,36 @@ const TrailingParagraph = Extension.create({
 /** Empty lines left at the very end are not saved. */
 const trimTrailing = (html: string) => html.replace(/(<p><\/p>)+$/, '');
 
+/** Cells can be drawn without borders (class "nb"), e.g. the empty corner above the labels. */
+const blankAttribute = {
+  blank: {
+    default: false,
+    parseHTML: (el: HTMLElement) => el.classList.contains('nb'),
+    renderHTML: (attrs: { blank?: boolean }) => (attrs.blank ? { class: 'nb' } : {}),
+  },
+};
+const Cell = TableCell.extend({ addAttributes() { return { ...this.parent?.(), ...blankAttribute }; } });
+const HeaderCell = TableHeader.extend({ addAttributes() { return { ...this.parent?.(), ...blankAttribute }; } });
+
+/** The usual ICAP layout: labels on the left, figures on the right under a "Rupees" heading. */
+const figureRow = '<tr><td><p></p></td><td><p style="text-align: right"></p></td></tr>';
+const AMOUNTS_TABLE = `<table><tbody><tr><th class="nb"><p></p></th><th><p>Rupees</p></th></tr>${figureRow.repeat(3)}</tbody></table><p></p>`;
+
 const Divider = () => <span className="mx-1 hidden self-stretch border-l border-slate-200 sm:block" />;
 
 function TableTools({ editor }: { editor: Editor }) {
   const inTable = editor.isActive('table');
+  const blankActive = editor.isActive('tableCell', { blank: true }) || editor.isActive('tableHeader', { blank: true });
   const run = (fn: (chain: ReturnType<Editor['chain']>) => ReturnType<Editor['chain']>) => fn(editor.chain().focus()).run();
   return (
     <>
       <ToolButton label="Insert a 3 × 3 table with a header row" onClick={() => run((c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }))} disabled={inTable}>
         <TableIcon size={15} />
         <span className="ml-1">Table</span>
+      </ToolButton>
+      <ToolButton label="Insert an amounts table: labels on the left, figures on the right under Rupees" onClick={() => run((c) => c.insertContent(AMOUNTS_TABLE))} disabled={inTable}>
+        <Banknote size={15} />
+        <span className="ml-1">Amounts table</span>
       </ToolButton>
       {inTable && (
         <>
@@ -95,6 +115,7 @@ function TableTools({ editor }: { editor: Editor }) {
           <ToolButton label="Delete current column" onClick={() => run((c) => c.deleteColumn())}>− Col</ToolButton>
           <ToolButton label="Merge the selected adjacent cells" onClick={() => run((c) => c.mergeCells())} disabled={!editor.can().mergeCells()}>Merge</ToolButton>
           <ToolButton label="Split the merged cell" onClick={() => run((c) => c.splitCell())} disabled={!editor.can().splitCell()}>Split</ToolButton>
+          <ToolButton label="Remove the borders of the selected cell(s), e.g. the empty corner above the labels (or put them back)" onClick={() => run((c) => c.setCellAttribute('blank', !blankActive))} active={blankActive}>No border</ToolButton>
           <ToolButton label="Turn the first row into a header row (or back)" onClick={() => run((c) => c.toggleHeaderRow())} active={editor.isActive('tableHeader')}>Header row</ToolButton>
           <ToolButton label="Start a new line of text below this table" onClick={() => run((c) => c.command(({ tr, state }) => {
             const { $from } = state.selection;
@@ -129,8 +150,8 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
       TextAlign.configure({ types: ['paragraph'] }),
       Table.configure({ resizable: !compact }),
       TableRow,
-      TableHeader,
-      TableCell,
+      HeaderCell,
+      Cell,
       TrailingParagraph,
     ],
     content: value,
@@ -172,6 +193,7 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
           <li><strong>Merge</strong>: first select two or more <em>adjacent</em> cells by dragging across them (or Shift + click), then press Merge. <strong>Split</strong> undoes a merge.</li>
           <li><strong>Header row</strong> applies to the table&apos;s first row. Header rows print in bold and <strong>repeat at the top of each printed page</strong> when a long table continues onto the next page.</li>
           <li>You can paste tables from Word or Excel. Formatting is cleaned automatically; check the result and set the header row if needed.</li>
+          <li><strong>Amounts table</strong> inserts the usual layout: labels on the left, figures on the right under <em>Rupees</em>, with the empty top-left corner left open. <strong>No border</strong> opens up any other cell the same way.</li>
           <li><strong>Column width</strong>: drag the right edge of a column to make it narrower or wider; the table is only as wide as its columns, like the ICAP papers.</li>
           <li><strong>Figures</strong>: click in a cell and use <strong>Align right</strong> so amounts line up.</li>
           <li><strong>Text below</strong> starts a new line after the table (or simply click just below the table).</li>

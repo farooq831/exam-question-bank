@@ -66,6 +66,9 @@ input.field:disabled { background: #f6f7f9; color: #667085; }
 .rich-editor th, .rich-editor td { border: 1px solid #d0d5dd; min-width: 5rem; padding: .4rem; vertical-align: top; }
 .rich-editor th { background: #f6f7f9; font-weight: 700; }
 .rich-editor td p, .rich-editor th p { margin: 0; }
+/* no-border cell: a faint outline while editing; nothing on paper */
+.rich-editor th.nb, .rich-editor td.nb { border-style: dashed; border-color: #e2e8f0; background: transparent; }
+.prose th.nb, .prose td.nb { border-style: none; }
 .prose p { margin: 0 0 .5rem; }
 .prose ul { list-style: disc; padding-left: 1.5rem; }
 .rich-editor ol, .prose ol { list-style: none; counter-reset: li; padding-left: 2.25rem; }

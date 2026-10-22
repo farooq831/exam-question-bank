@@ -177,7 +177,7 @@ describe('preview and PDF output', () => {
 
   it('keeps (I), (II) numbered lists in question text and prints them in brackets', async () => {
     const body = '<p>Consider the following statements:</p><ol data-list-style="upper-roman"><li><p>FIRST-STATEMENT</p></li></ol><ol data-list-style="evil" onclick="x()"><li><p>B</p></li></ol>';
-    const q = await approvedQuestion({ body });
+    const q = (await approvedQuestion({ body })) as unknown as { id: number; body: string };
     expect(q.body).toContain('<ol data-list-style="upper-roman">');
     expect(q.body).not.toContain('evil');
     expect(q.body).not.toContain('onclick');
@@ -187,6 +187,16 @@ describe('preview and PDF output', () => {
     const pdf = await admin.post('/api/papers/preview', { title: 'Numbering check', subjectId: FAR, templateId, header: {}, items: [{ questionId: q.id }], mode: 'paper' }).buffer(true).parse(binaryParser).expect(200);
     const text = (await pdfText(pdf.body as Buffer)).join(' ');
     expect(text).toMatch(/\(I\)\s*FIRST-STATEMENT|FIRST-STATEMENT\s*\(I\)/);
+  });
+
+  it('keeps no-border cells (the open corner of an amounts table) and prints them without lines', async () => {
+    const body = '<p>Emoluments:</p><table><tbody><tr><th class="nb"><p></p></th><th class="x nb evil"><p>Rupees</p></th></tr><tr><td><p>Basic salary</p></td><td><p style="text-align: right">495,000</p></td></tr></tbody></table>';
+    const q = (await approvedQuestion({ body })) as unknown as { id: number; body: string };
+    expect(q.body).toContain('<th class="nb">');
+    expect(q.body).not.toContain('evil');
+    const html = (await admin.post('/api/papers/preview?format=html', { title: 'Table check', subjectId: FAR, templateId, header: {}, items: [{ questionId: q.id }], mode: 'paper' }).expect(200)).text;
+    expect(html).toContain('<th class="nb">');
+    expect(html).toContain('.tbl th.nb,.tbl td.nb');
   });
 
   it('downloads a clean question-paper PDF and records the download', async () => {

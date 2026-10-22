@@ -472,3 +472,10 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 - [x] **Readable titles:** the "Topic" field is now **Title**. When it is left empty, lists (review queue, questions, paper builder) show the start of the question text instead of "Untitled question".
 - [x] **Window buttons** on the larger pop-up windows (question editor, paper preview, question preview in the paper builder): minimise to a bar at the bottom (work is kept), maximise / restore down, close. The question preview in the paper builder also has **Add to paper**.
 - Verification: shared 11/11, server 44/44; browser check on an isolated instance (temporary database, since removed).
+
+## Follow-up: ICAP amounts tables (22 October 2026)
+
+- [x] **Amounts table** button in the editor toolbar: inserts the usual ICAP layout, with labels on the left, figures on the right (aligned right) under a **Rupees** heading, and the empty top-left corner left open.
+- [x] **No border** button for any selected cell(s) (stored as `class="nb"`; the server keeps only this class). The editor shows such cells with a faint dashed outline; the paper prints no lines for them. The table's outer frame now comes from the cells, so an open corner really is open.
+- Line style unchanged: the sample PDFs (FAR, TPC, AAE) all draw table rules as very fine dotted lines, which the CAF format already uses.
+- Verification: shared 11/11, server 45/45 (new test for no-border cells); editor and printed layout checked on an isolated instance (temporary database, since removed).

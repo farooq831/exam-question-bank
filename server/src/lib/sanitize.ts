@@ -40,8 +40,8 @@ const options: sanitizeHtml.IOptions = {
     'td',
   ],
   allowedAttributes: {
-    th: ['colspan', 'rowspan', 'colwidth', 'style'],
-    td: ['colspan', 'rowspan', 'colwidth', 'style'],
+    th: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
+    td: ['colspan', 'rowspan', 'colwidth', 'style', 'class'],
     col: ['style', 'span'],
     p: ['style'],
     h3: ['style'],
@@ -51,6 +51,9 @@ const options: sanitizeHtml.IOptions = {
   },
   allowedClasses: {
     table: ['borderless'],
+    // nb = a cell drawn without borders, e.g. the empty corner above a column of labels
+    th: ['nb'],
+    td: ['nb'],
   },
   allowedStyles: {
     p: { 'text-align': align },

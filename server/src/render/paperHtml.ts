@@ -670,7 +670,8 @@ sub,sup{font-size:70%;line-height:0;}
 
 /* tables: never split short tables; CAF format uses dotted rules like the reference paper */
 .tbl{break-inside:avoid;page-break-inside:avoid;margin:2mm 0 3mm;display:flex;justify-content:center;}
-.tbl table{border-collapse:collapse;border:.8pt solid #000;font-size:inherit;line-height:1.1;max-width:100%;}
+/* the outer frame comes from the cells, so a no-border cell (nb) leaves its corner open */
+.tbl table{border-collapse:collapse;border:0;font-size:inherit;line-height:1.1;max-width:100%;}
 .tbl th,.tbl td{border:.6pt dashed #333;padding:.3mm 2mm;vertical-align:top;}
 .tbl th{font-weight:700;text-align:center;}
 .tbl td p,.tbl th p{margin:0;text-align:inherit;}
@@ -678,7 +679,8 @@ sub,sup{font-size:70%;line-height:0;}
 .tbl th p:not([style]){text-align:center;}
 .tbl thead{display:table-header-group;}
 .tbl tr{break-inside:avoid;page-break-inside:avoid;}
-.layout-caf .tbl table,.layout-caf .tbl th,.layout-caf .tbl td{border:.6pt dotted #555;}
+.layout-caf .tbl th,.layout-caf .tbl td{border:.6pt dotted #555;}
+.tbl th.nb,.tbl td.nb,.layout-caf .tbl th.nb,.layout-caf .tbl td.nb{border-style:none;}
 .layout-caf .tbl th{border-bottom:.6pt dotted #555;}
 /* borderless tables: used to lay out short lists in columns (e.g. "(i) ... (ii) ...") */
 .tbl:has(> table.borderless){justify-content:flex-start;margin:1mm 0 2mm;}

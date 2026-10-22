@@ -1,8 +1,17 @@
-import { partLabel, type QuestionDTO, type QuestionType } from '@skans/shared';
+import { partLabel, type LabelStyle, type QuestionDTO, type QuestionType } from '@skans/shared';
 import { KeyRound, Lock } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 
 /** Short type names for lists and headers. */
+/** Text of rich HTML without tags, for titles and search. */
+export const plainText = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+
+/** Title shown in lists: the author's title (topic), otherwise the start of the question text. */
+export function questionTitle(q: Pick<QuestionDTO, 'topic' | 'body' | 'type'>): string {
+  const text = plainText(q.body.replace(/<table[\s\S]*?<\/table>/g, ' '));
+  return q.topic || (text.length > 110 ? `${text.slice(0, 110)}…` : text) || `${TYPE_SHORT[q.type]} question`;
+}
+
 export const TYPE_SHORT: Record<QuestionType, string> = { MCQ: 'MCQ', MCQ_GROUP: 'MCQ group', TRUE_FALSE: 'True / False', SHORT: 'Short', LONG: 'Long', CASE_STUDY: 'Case study' };
 
 type Opt = { html: string; correct: boolean };
@@ -31,7 +40,7 @@ function Options({ options, showAnswers }: { options: Opt[]; showAnswers: boolea
 export function QuestionContent({ question, showAnswers = true, showPrivate = true }: { question: QuestionDTO; showAnswers?: boolean; showPrivate?: boolean }) {
   const c = question.content as Record<string, unknown>;
   const parts = (c.parts as Part[] | undefined) ?? [];
-  const style = (c.partLabelStyle as 'roman' | 'alpha' | 'number' | null) ?? 'alpha';
+  const style = (c.partLabelStyle as LabelStyle | null) ?? 'alpha';
   const subStyle = style === 'roman' ? 'alpha' : 'roman';
   return (
     <div className="space-y-4">

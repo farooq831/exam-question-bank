@@ -1,6 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { useEditor, EditorContent, type Editor } from '@tiptap/react';
+import { Extension, useEditor, EditorContent, type Editor } from '@tiptap/react';
+import { Plugin, TextSelection } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
+import OrderedList from '@tiptap/extension-ordered-list';
+import { LIST_STYLE_LABELS, LIST_STYLES, type ListStyle } from '@skans/shared';
 import Underline from '@tiptap/extension-underline';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
@@ -37,6 +40,42 @@ function ToolButton({ label, onClick, active = false, disabled = false, children
   );
 }
 
+/** Numbered lists remember their numbering style: (i), (I), (a), (A) or (1). */
+const StyledOrderedList = OrderedList.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      listStyle: {
+        default: null,
+        parseHTML: (el) => {
+          const v = el.getAttribute('data-list-style');
+          return (LIST_STYLES as readonly string[]).includes(v ?? '') ? v : null;
+        },
+        renderHTML: (attrs) => (attrs.listStyle ? { 'data-list-style': attrs.listStyle } : {}),
+      },
+    };
+  },
+});
+
+/** Keeps an empty line after a table at the end, so you can always click below it and type. */
+const TrailingParagraph = Extension.create({
+  name: 'trailingParagraph',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        appendTransaction: (_transactions, _old, state) => {
+          const last = state.doc.lastChild;
+          if (!last || last.type.name !== 'table') return null;
+          return state.tr.insert(state.doc.content.size, state.schema.nodes.paragraph.create());
+        },
+      }),
+    ];
+  },
+});
+
+/** Empty lines left at the very end are not saved. */
+const trimTrailing = (html: string) => html.replace(/(<p><\/p>)+$/, '');
+
 const Divider = () => <span className="mx-1 hidden self-stretch border-l border-slate-200 sm:block" />;
 
 function TableTools({ editor }: { editor: Editor }) {
@@ -57,6 +96,17 @@ function TableTools({ editor }: { editor: Editor }) {
           <ToolButton label="Merge the selected adjacent cells" onClick={() => run((c) => c.mergeCells())} disabled={!editor.can().mergeCells()}>Merge</ToolButton>
           <ToolButton label="Split the merged cell" onClick={() => run((c) => c.splitCell())} disabled={!editor.can().splitCell()}>Split</ToolButton>
           <ToolButton label="Turn the first row into a header row (or back)" onClick={() => run((c) => c.toggleHeaderRow())} active={editor.isActive('tableHeader')}>Header row</ToolButton>
+          <ToolButton label="Start a new line of text below this table" onClick={() => run((c) => c.command(({ tr, state }) => {
+            const { $from } = state.selection;
+            for (let depth = $from.depth; depth > 0; depth -= 1) {
+              if ($from.node(depth).type.name !== 'table') continue;
+              const pos = $from.after(depth);
+              tr.insert(pos, state.schema.nodes.paragraph.create());
+              tr.setSelection(TextSelection.create(tr.doc, pos + 1));
+              return true;
+            }
+            return false;
+          }))}>↵ Text below</ToolButton>
           <ToolButton label="Delete the whole table" onClick={() => run((c) => c.deleteTable())}>Delete table</ToolButton>
         </>
       )}
@@ -71,7 +121,8 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
   onChangeRef.current = onChange;
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: false, codeBlock: false, code: false, blockquote: compact ? false : undefined }),
+      StarterKit.configure({ heading: false, codeBlock: false, code: false, orderedList: false, blockquote: compact ? false : undefined }),
+      StyledOrderedList,
       Underline,
       Superscript,
       Subscript,
@@ -80,10 +131,11 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
       TableRow,
       TableHeader,
       TableCell,
+      TrailingParagraph,
     ],
     content: value,
     editorProps: { attributes: { 'aria-label': label ?? placeholder ?? 'Rich text', ...(placeholder ? { 'data-placeholder': placeholder } : {}) } },
-    onUpdate: ({ editor: instance }) => onChangeRef.current(instance.isEmpty ? '' : instance.getHTML()),
+    onUpdate: ({ editor: instance }) => onChangeRef.current(instance.isEmpty ? '' : trimTrailing(instance.getHTML())),
   });
   if (!editor) return <div className={`${compact ? 'h-12' : 'h-48'} animate-pulse rounded-xl bg-slate-100`} />;
   const run = (fn: (chain: ReturnType<Editor['chain']>) => ReturnType<Editor['chain']>) => fn(editor.chain().focus()).run();
@@ -99,7 +151,11 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
           <>
             <Divider />
             <ToolButton label="Bulleted list" onClick={() => run((c) => c.toggleBulletList())} active={editor.isActive('bulletList')}><List size={15} /></ToolButton>
-            <ToolButton label="Numbered list (prints as (i), (ii) …)" onClick={() => run((c) => c.toggleOrderedList())} active={editor.isActive('orderedList')}><ListOrdered size={15} /></ToolButton>
+            <ToolButton label="Numbered list: (i), (I), (a), (A) or (1)" onClick={() => run((c) => c.toggleOrderedList())} active={editor.isActive('orderedList')}><ListOrdered size={15} /></ToolButton>
+            {editor.isActive('orderedList') && LIST_STYLES.map((s: ListStyle) => {
+              const current = (editor.getAttributes('orderedList').listStyle as ListStyle | null) ?? 'lower-roman';
+              return <ToolButton key={s} label={`Number the list ${LIST_STYLE_LABELS[s]}`} onClick={() => run((c) => c.updateAttributes('orderedList', { listStyle: s }))} active={current === s}>{LIST_STYLE_LABELS[s]}</ToolButton>;
+            })}
             <Divider />
             <ToolButton label="Align left" onClick={() => run((c) => c.setTextAlign('left'))} active={editor.isActive({ textAlign: 'left' })}><AlignLeft size={15} /></ToolButton>
             <ToolButton label="Centre" onClick={() => run((c) => c.setTextAlign('center'))} active={editor.isActive({ textAlign: 'center' })}><AlignCenter size={15} /></ToolButton>
@@ -116,6 +172,9 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
           <li><strong>Merge</strong>: first select two or more <em>adjacent</em> cells by dragging across them (or Shift + click), then press Merge. <strong>Split</strong> undoes a merge.</li>
           <li><strong>Header row</strong> applies to the table&apos;s first row. Header rows print in bold and <strong>repeat at the top of each printed page</strong> when a long table continues onto the next page.</li>
           <li>You can paste tables from Word or Excel. Formatting is cleaned automatically; check the result and set the header row if needed.</li>
+          <li><strong>Column width</strong>: drag the right edge of a column to make it narrower or wider; the table is only as wide as its columns, like the ICAP papers.</li>
+          <li><strong>Figures</strong>: click in a cell and use <strong>Align right</strong> so amounts line up.</li>
+          <li><strong>Text below</strong> starts a new line after the table (or simply click just below the table).</li>
           <li>Short tables are never split across printed pages.</li>
         </ul>
       )}

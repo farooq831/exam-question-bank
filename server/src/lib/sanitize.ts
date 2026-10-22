@@ -1,4 +1,5 @@
 import sanitizeHtml from 'sanitize-html';
+import { LIST_STYLES } from '@skans/shared';
 
 const align = [/^(left|right|center|justify)$/];
 const width = [/^\d{1,4}(\.\d+)?(px|%|mm|pt)$/];
@@ -45,7 +46,7 @@ const options: sanitizeHtml.IOptions = {
     p: ['style'],
     h3: ['style'],
     h4: ['style'],
-    ol: ['start'],
+    ol: ['start', { name: 'data-list-style', multiple: false, values: [...LIST_STYLES] }],
     table: ['style', 'class'],
   },
   allowedClasses: {

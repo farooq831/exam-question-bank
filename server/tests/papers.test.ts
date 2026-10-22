@@ -175,6 +175,20 @@ describe('preview and PDF output', () => {
     for (const secret of [...Object.values(PRIVATE), 'Fine.']) expect(key).not.toContain(secret);
   });
 
+  it('keeps (I), (II) numbered lists in question text and prints them in brackets', async () => {
+    const body = '<p>Consider the following statements:</p><ol data-list-style="upper-roman"><li><p>FIRST-STATEMENT</p></li></ol><ol data-list-style="evil" onclick="x()"><li><p>B</p></li></ol>';
+    const q = await approvedQuestion({ body });
+    expect(q.body).toContain('<ol data-list-style="upper-roman">');
+    expect(q.body).not.toContain('evil');
+    expect(q.body).not.toContain('onclick');
+    const html = (await admin.post('/api/papers/preview?format=html', { title: 'Numbering check', subjectId: FAR, templateId, header: {}, items: [{ questionId: q.id }], mode: 'paper' }).expect(200)).text;
+    expect(html).toContain('data-list-style="upper-roman"');
+    expect(html).toContain('ol[data-list-style="upper-roman"] > li::before{content:"(" counter(li, upper-roman) ")";}');
+    const pdf = await admin.post('/api/papers/preview', { title: 'Numbering check', subjectId: FAR, templateId, header: {}, items: [{ questionId: q.id }], mode: 'paper' }).buffer(true).parse(binaryParser).expect(200);
+    const text = (await pdfText(pdf.body as Buffer)).join(' ');
+    expect(text).toMatch(/\(I\)\s*FIRST-STATEMENT|FIRST-STATEMENT\s*\(I\)/);
+  });
+
   it('downloads a clean question-paper PDF and records the download', async () => {
     const res = await admin.get(`/api/papers/${paperId}/pdf?watermark=1`).buffer(true).parse(binaryParser).expect(200);
     expect(res.headers['content-type']).toBe('application/pdf');

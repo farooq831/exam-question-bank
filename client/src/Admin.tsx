@@ -5,8 +5,11 @@ import {
   DATE_FORMATS,
   FONT_KEYS,
   FONT_LABELS,
+  LABEL_STYLE_LABELS,
+  LABEL_STYLES,
   ROLE_LABELS,
   ROLES,
+  type LabelStyle,
   type AuditLogDTO,
   type Paged,
   type Role,
@@ -378,6 +381,8 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
           </Group>
           <Group title="Questions, marks & page header">
             <Field label="Question heading"><input className="field mt-1.5" value={cfg.questions.headingPattern} onChange={(e) => set('questions', { headingPattern: e.target.value })} /></Field>
+            <Field label="Sub-question numbering"><select className="field mt-1.5" value={cfg.questions.partLabelStyle} onChange={(e) => set('questions', { partLabelStyle: e.target.value as LabelStyle })}>{LABEL_STYLES.map((s) => <option key={s} value={s}>{LABEL_STYLE_LABELS[s]}</option>)}</select></Field>
+            <Field label="Parts inside a sub-question"><select className="field mt-1.5" value={cfg.questions.subPartLabelStyle} onChange={(e) => set('questions', { subPartLabelStyle: e.target.value as LabelStyle })}>{LABEL_STYLES.map((s) => <option key={s} value={s}>{LABEL_STYLE_LABELS[s]}</option>)}</select></Field>
             <Field label="Marks format"><input className="field mt-1.5" value={cfg.marks.pattern} onChange={(e) => set('marks', { pattern: e.target.value })} /></Field>
             <Field label="Marks format (1 mark)"><input className="field mt-1.5" value={cfg.marks.singularPattern} onChange={(e) => set('marks', { singularPattern: e.target.value })} /></Field>
             <Field label="Sections (one per line)"><textarea className="field mt-1.5" rows={2} value={cfg.sections.names.join('\n')} onChange={(e) => set('sections', { names: e.target.value.split('\n').filter((x) => x.trim()).slice(0, 6), enabled: e.target.value.trim().length > 0 })} /></Field>

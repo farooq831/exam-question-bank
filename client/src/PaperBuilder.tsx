@@ -21,7 +21,7 @@ import { Confirm } from './components/Confirm';
 import { Modal } from './components/Modal';
 import { Chips, EmptyState, IconButton, PageHeader, Pill, SearchBox } from './components/ui';
 import { ago } from './Dashboard';
-import { QuestionContent, TYPE_SHORT } from './questions/QuestionPreview';
+import { QuestionContent, TYPE_SHORT, questionTitle } from './questions/QuestionPreview';
 
 interface BuilderItem { question: QuestionDTO; section: string; marksOverride: number | null; newPage: boolean }
 type Tab = 'details' | 'questions' | 'download';
@@ -402,7 +402,7 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
               {filtered.map((q) => (
                 <div key={q.id} className="list-row">
                   <button className="min-w-0 flex-1 text-left" onClick={() => setPeek(q)}>
-                    <p className="truncate text-sm font-medium text-ink">{q.topic || plain(q.body) || 'Untitled'}</p>
+                    <p className="truncate text-sm font-medium text-ink">{questionTitle(q)}</p>
                     <p className="truncate text-xs text-slate-400">{TYPE_SHORT[q.type]} · {q.marks} marks{q.usedInPapers ? ` · used ${q.usedInPapers}×` : ''}</p>
                   </button>
                   <IconButton label="Add to paper" icon={Plus} tone="success" onClick={() => add(q)} />
@@ -419,7 +419,7 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
                 <div key={it.question.id} className="list-row flex-wrap">
                   <span className="w-6 shrink-0 text-sm font-semibold text-slate-400">{index + 1}</span>
                   <button className="min-w-0 flex-1 text-left" onClick={() => setPeek(it.question)}>
-                    <p className="truncate text-sm font-medium text-ink">{it.question.topic || plain(it.question.body) || 'Untitled'}</p>
+                    <p className="truncate text-sm font-medium text-ink">{questionTitle(it.question)}</p>
                     <p className="truncate text-xs text-slate-400">{TYPE_SHORT[it.question.type]}{it.section ? ` · ${it.section}` : ''}{it.newPage ? ' · new page' : ''}</p>
                   </button>
                   <div className="flex w-full items-center gap-1.5 pl-8 sm:w-auto sm:pl-0">
@@ -473,11 +473,15 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
         <Modal size="xl" title={preview.mode === 'paper' ? 'Question paper' : 'Answer key'} eyebrow="Preview — headers and page numbers appear in the PDF" onClose={() => setPreview(null)} footer={
           <button className="secondary" onClick={() => void showPreview(preview.mode === 'paper' ? 'key' : 'paper')}>Show {preview.mode === 'paper' ? 'answer key' : 'question paper'}</button>
         }>
-          <iframe title="Paper preview" srcDoc={preview.html} sandbox="" className="h-[72vh] w-full rounded-lg border border-slate-200 bg-white" />
+          <iframe title="Paper preview" srcDoc={preview.html} sandbox="" className="h-[72vh] min-h-full w-full rounded-lg border border-slate-200 bg-white" />
         </Modal>
       )}
       {peek && (
-        <Modal title={peek.topic || 'Question'} eyebrow={`#${peek.id}`} onClose={() => setPeek(null)}>
+        <Modal title={questionTitle(peek)} eyebrow={`#${peek.id}`} onClose={() => setPeek(null)} footer={
+          items.some((i) => i.question.id === peek.id)
+            ? <span className="mr-auto text-sm text-emerald-700">In this paper</span>
+            : <button className="success" onClick={() => { add(peek); setPeek(null); toast.success('Added to paper'); }}><Plus size={16} />Add to paper</button>
+        }>
           <QuestionContent question={peek} showPrivate={false} />
         </Modal>
       )}

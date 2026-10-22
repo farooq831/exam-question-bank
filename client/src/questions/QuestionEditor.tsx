@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { DIFFICULTIES, DIFFICULTY_LABELS, partLabel, type LabelStyle, type McqLayout, type QuestionDTO, type QuestionType, type SubjectDTO } from '@skans/shared';
+import { DIFFICULTIES, DIFFICULTY_LABELS, LABEL_STYLE_LABELS, LABEL_STYLES, partLabel, type LabelStyle, type McqLayout, type QuestionDTO, type QuestionType, type SubjectDTO } from '@skans/shared';
 import { AlignLeft, BookOpen, CheckCircle2, ChevronDown, CircleDot, KeyRound, Layers, ListTree, Lock, Plus, Send, ToggleLeft, Trash2, XCircle, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../api';
@@ -221,8 +221,8 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
           <label className="label lg:col-span-2">{extraTf.length ? 'Marks (each statement)' : 'Marks'}
             <input className="field mt-1.5" type="number" min={0} max={200} step={0.5} value={structured ? draftMarks(d) : d.marks} disabled={structured} title={structured ? 'Sum of the parts' : undefined} onChange={(e) => set('marks', Number(e.target.value))} />
           </label>
-          <label className="label sm:col-span-2 lg:col-span-6">Topic
-            <input className="field mt-1.5" value={d.topic} maxLength={120} onChange={(e) => set('topic', e.target.value)} placeholder="e.g. Revenue recognition" />
+          <label className="label sm:col-span-2 lg:col-span-6">Title
+            <input className="field mt-1.5" value={d.topic} maxLength={120} onChange={(e) => set('topic', e.target.value)} placeholder="Short title the reviewer sees, e.g. Salary income – taxable amount" />
           </label>
         </div>
 
@@ -288,9 +288,7 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
             <Heading aside={
               <select className="field !w-auto !py-1.5 text-sm" value={d.partLabelStyle ?? ''} onChange={(e) => set('partLabelStyle', (e.target.value || null) as LabelStyle | null)} aria-label="Numbering">
                 <option value="">Default (a), (b), (c)</option>
-                <option value="roman">(i), (ii), (iii)</option>
-                <option value="alpha">(a), (b), (c)</option>
-                <option value="number">(1), (2), (3)</option>
+                {LABEL_STYLES.map((s) => <option key={s} value={s}>{LABEL_STYLE_LABELS[s]}</option>)}
               </select>
             }>Sub-questions</Heading>
             {d.parts.map((p, i) => (

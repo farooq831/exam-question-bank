@@ -58,16 +58,24 @@ input.field:disabled { background: #f6f7f9; color: #667085; }
 .rich-editor.compact .ProseMirror { min-height: 2rem; }
 .rich-editor p { margin: 0 0 .4rem; }
 .rich-editor ul { list-style: disc; padding-left: 1.5rem; }
-.rich-editor ol { list-style: decimal; padding-left: 1.5rem; }
 .rich-editor .selectedCell { background: rgba(192, 138, 46, .2); }
 .rich-editor .tableWrapper { overflow-x: auto; }
 .rich-editor .column-resize-handle { position: absolute; right: -2px; top: 0; bottom: 0; width: 4px; background: #c08a2e; pointer-events: none; }
 .rich-editor td, .rich-editor th { position: relative; }
-.rich-editor table { width: 100%; border-collapse: collapse; margin: .75rem 0; }
+.rich-editor table { width: auto !important; max-width: 100%; border-collapse: collapse; margin: .75rem 0; }
 .rich-editor th, .rich-editor td { border: 1px solid #d0d5dd; min-width: 5rem; padding: .4rem; vertical-align: top; }
 .rich-editor th { background: #f6f7f9; font-weight: 700; }
+.rich-editor td p, .rich-editor th p { margin: 0; }
 .prose p { margin: 0 0 .5rem; }
 .prose ul { list-style: disc; padding-left: 1.5rem; }
-.prose ol { list-style: decimal; padding-left: 1.5rem; }
-.prose table { width: 100%; border-collapse: collapse; }
+.rich-editor ol, .prose ol { list-style: none; counter-reset: li; padding-left: 2.25rem; }
+.rich-editor ol > li, .prose ol > li { counter-increment: li; position: relative; }
+.rich-editor ol > li::before, .prose ol > li::before { content: "(" counter(li, lower-roman) ")"; position: absolute; left: -2.25rem; }
+.rich-editor ol ol > li::before, .prose ol ol > li::before { content: "(" counter(li, lower-alpha) ")"; }
+.rich-editor ol[data-list-style="lower-roman"] > li::before, .prose ol[data-list-style="lower-roman"] > li::before { content: "(" counter(li, lower-roman) ")"; }
+.rich-editor ol[data-list-style="upper-roman"] > li::before, .prose ol[data-list-style="upper-roman"] > li::before { content: "(" counter(li, upper-roman) ")"; }
+.rich-editor ol[data-list-style="lower-alpha"] > li::before, .prose ol[data-list-style="lower-alpha"] > li::before { content: "(" counter(li, lower-alpha) ")"; }
+.rich-editor ol[data-list-style="upper-alpha"] > li::before, .prose ol[data-list-style="upper-alpha"] > li::before { content: "(" counter(li, upper-alpha) ")"; }
+.rich-editor ol[data-list-style="decimal"] > li::before, .prose ol[data-list-style="decimal"] > li::before { content: "(" counter(li, decimal) ")"; }
+.prose table { width: auto; max-width: 100%; border-collapse: collapse; }
 .prose th, .prose td { border: 1px solid #d0d5dd; padding: .4rem; }

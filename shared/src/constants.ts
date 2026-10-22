@@ -52,8 +52,25 @@ export type DateFormat = (typeof DATE_FORMATS)[number];
 export const MCQ_LAYOUTS = ['auto', '1', '2', '4'] as const;
 export type McqLayout = (typeof MCQ_LAYOUTS)[number];
 
-export const LABEL_STYLES = ['roman', 'alpha', 'number'] as const;
+export const LABEL_STYLES = ['roman', 'upperRoman', 'alpha', 'number'] as const;
 export type LabelStyle = (typeof LABEL_STYLES)[number];
+export const LABEL_STYLE_LABELS: Record<LabelStyle, string> = {
+  roman: '(i), (ii), (iii)',
+  upperRoman: '(I), (II), (III)',
+  alpha: '(a), (b), (c)',
+  number: '(1), (2), (3)',
+};
+
+/** Numbering of numbered lists typed inside question text (stored as data-list-style on <ol>). */
+export const LIST_STYLES = ['lower-roman', 'upper-roman', 'lower-alpha', 'upper-alpha', 'decimal'] as const;
+export type ListStyle = (typeof LIST_STYLES)[number];
+export const LIST_STYLE_LABELS: Record<ListStyle, string> = {
+  'lower-roman': '(i)',
+  'upper-roman': '(I)',
+  'lower-alpha': '(a)',
+  'upper-alpha': '(A)',
+  decimal: '(1)',
+};
 
 /** Actions written to the audit log. */
 export const AUDIT_ACTIONS = [

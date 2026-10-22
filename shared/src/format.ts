@@ -55,7 +55,8 @@ export function toAlpha(n: number): string {
 
 /** 1-based label for a part, e.g. style roman, 2 -> "(ii)". */
 export function partLabel(index1: number, style: LabelStyle): string {
-  const core = style === 'roman' ? toRoman(index1) : style === 'alpha' ? toAlpha(index1) : String(index1);
+  const core =
+    style === 'roman' ? toRoman(index1) : style === 'upperRoman' ? toRoman(index1).toUpperCase() : style === 'alpha' ? toAlpha(index1) : String(index1);
   return `(${core})`;
 }
 

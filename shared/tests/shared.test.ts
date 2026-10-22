@@ -74,6 +74,7 @@ describe('formatting helpers', () => {
   it('labels parts and fills tokens', () => {
     expect(partLabel(4, 'roman')).toBe('(iv)');
     expect(partLabel(2, 'alpha')).toBe('(b)');
+    expect(partLabel(3, 'upperRoman')).toBe('(III)');
     expect(fillTokens('{code}_{session}_Paper', { code: 'FAR', session: 'Spring 2026' })).toBe('FAR_Spring 2026_Paper');
     expect(safeFileName('FAR_Spring 2026_Paper')).toBe('FAR_Spring2026_Paper');
   });

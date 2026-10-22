@@ -461,3 +461,14 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 - [x] **Several True / False statements at once:** a new True / False question has **Add another statement**; each statement has its own True / False choice and is saved as its own question (same subject, topic, difficulty and marks each), so each can be reviewed and picked for papers separately. Consecutive True / False questions already print together on the paper.
 - [x] **Icons on the True / False choice:** green tick for True, red cross for False.
 - Verification: shared 11/11, server 43/43; browser check on an isolated instance (temporary database, since removed): teacher saved three statements in one go, moved one to the bin and deleted it permanently.
+
+## Follow-up: (I) numbering, ICAP-style tables, readable titles, window buttons (22 October 2026)
+
+- [x] **Capital Roman numbering (I), (II), (III)** as used in the CAF-4 sample paper:
+  - a new sub-question numbering choice in the question editor and in **Paper format** (sub-questions and parts inside them);
+  - numbered lists inside question text can be (i), (I), (a), (A) or (1): click the numbered-list button, then pick the style. The editor shows the list exactly as printed, in brackets. The server keeps only these five values (sanitiser) and the paper prints them; covered by a test that checks the PDF.
+- [x] **Tables like the ICAP papers:** tables are only as wide as their columns (drag a column edge to resize), figures can be aligned right, cell spacing is tighter.
+- [x] **Typing below a table:** an empty line is always kept after a table at the end, and the table toolbar has **↵ Text below**.
+- [x] **Readable titles:** the "Topic" field is now **Title**. When it is left empty, lists (review queue, questions, paper builder) show the start of the question text instead of "Untitled question".
+- [x] **Window buttons** on the larger pop-up windows (question editor, paper preview, question preview in the paper builder): minimise to a bar at the bottom (work is kept), maximise / restore down, close. The question preview in the paper builder also has **Add to paper**.
+- Verification: shared 11/11, server 44/44; browser check on an isolated instance (temporary database, since removed).

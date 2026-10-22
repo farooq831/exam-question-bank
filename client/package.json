@@ -15,6 +15,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@skans/shared": "*",
     "@tanstack/react-query": "^5.90.0",
+    "@tiptap/extension-ordered-list": "^2.27.3",
     "@tiptap/extension-subscript": "^2.27.3",
     "@tiptap/extension-superscript": "^2.27.3",
     "@tiptap/extension-table": "^2.27.3",

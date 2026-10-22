@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { api } from './api';
 import { EmptyState, IconButton, PageHeader } from './components/ui';
 import { ago } from './Dashboard';
-import { QuestionContent, TYPE_SHORT } from './questions/QuestionPreview';
+import { QuestionContent, TYPE_SHORT, questionTitle } from './questions/QuestionPreview';
 import { ReviewDialog } from './questions/ReviewDialog';
 
 /** Submitted questions waiting for the administrator's decision, oldest first. */
@@ -54,7 +54,7 @@ export function ReviewQueue() {
               <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(open === q.id ? null : q.id)} aria-expanded={open === q.id}>
                 <p className="flex items-center gap-1.5 truncate font-medium text-ink">
                   <ChevronDown size={16} className={`shrink-0 text-slate-400 transition ${open === q.id ? 'rotate-180' : ''}`} />
-                  <span className="truncate">{q.topic || 'Untitled question'}</span>
+                  <span className="truncate">{questionTitle(q)}</span>
                 </p>
                 <p className="mt-0.5 truncate pl-[22px] text-xs text-slate-400">{q.subjectCode} · {TYPE_SHORT[q.type]} · {q.marks} marks · {q.createdBy} · {ago(q.updatedAt)}</p>
               </button>

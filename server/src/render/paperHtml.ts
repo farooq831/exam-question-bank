@@ -655,6 +655,11 @@ h1,h2{margin:0;font-weight:700;}
 .q-content ol > li{counter-increment:li;position:relative;margin-bottom:2pt;}
 .q-content ol > li::before{content:"(" counter(li, lower-roman) ")";position:absolute;left:-9mm;}
 .q-content ol ol > li::before{content:"(" counter(li, lower-alpha) ")";}
+.q-content ol[data-list-style="lower-roman"] > li::before{content:"(" counter(li, lower-roman) ")";}
+.q-content ol[data-list-style="upper-roman"] > li::before{content:"(" counter(li, upper-roman) ")";}
+.q-content ol[data-list-style="lower-alpha"] > li::before{content:"(" counter(li, lower-alpha) ")";}
+.q-content ol[data-list-style="upper-alpha"] > li::before{content:"(" counter(li, upper-alpha) ")";}
+.q-content ol[data-list-style="decimal"] > li::before{content:"(" counter(li, decimal) ")";}
 .q-content ul{list-style:square;padding-left:9mm;margin:0 0 5pt;}
 .q-content ul > li{padding-left:2mm;margin-bottom:1pt;}
 .q-content li > p{margin:0 0 2pt;}

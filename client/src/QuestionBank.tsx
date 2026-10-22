@@ -9,13 +9,12 @@ import { Confirm } from './components/Confirm';
 import { Modal } from './components/Modal';
 import { Chips, EmptyState, IconButton, PageHeader, Pager, SearchBox } from './components/ui';
 import { draftFromQuestion, emptyDraft, questionActions, type QuestionDraft } from './questions/model';
-import { QuestionContent, QuestionMeta, TYPE_SHORT } from './questions/QuestionPreview';
+import { QuestionContent, QuestionMeta, TYPE_SHORT, questionTitle } from './questions/QuestionPreview';
 import { QuestionEditor } from './questions/QuestionEditor';
 import { ReviewDialog } from './questions/ReviewDialog';
 import { StatusBadge } from './questions/StatusBadge';
 
 const PAGE_SIZE = 15;
-const plain = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 const STATUS_CHIPS = [
   { value: '', label: 'All' },
   { value: 'DRAFT', label: 'Drafts' },
@@ -166,7 +165,7 @@ export function QuestionBank() {
         ) : (
           result.items.map((q) => {
             const can = questionActions(user, q);
-            const title = q.topic || plain(q.body) || 'Untitled question';
+            const title = questionTitle(q);
             return (
               <div key={q.id} className="list-row">
                 <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setPreview(q)}>
@@ -201,7 +200,7 @@ export function QuestionBank() {
       <Pager page={filters.page} pages={pages} onPage={(p) => setFilter('page', String(p))} />
 
       {preview && (
-        <Modal title={preview.topic || 'Question'} eyebrow={`#${preview.id} · ${preview.createdBy}${preview.reviewedBy ? ` · reviewed by ${preview.reviewedBy}` : ''}`} onClose={() => setPreview(null)}>
+        <Modal title={questionTitle(preview)} eyebrow={`#${preview.id} · ${preview.createdBy}${preview.reviewedBy ? ` · reviewed by ${preview.reviewedBy}` : ''}`} onClose={() => setPreview(null)}>
           <QuestionMeta question={preview} />
           <div className="mt-4"><QuestionContent question={preview} /></div>
         </Modal>

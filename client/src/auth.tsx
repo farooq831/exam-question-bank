@@ -5,7 +5,7 @@ import { api, refreshCsrf, setCsrfToken } from './api';
 interface AuthContextValue {
   user: SessionUser | null;
   loading: boolean;
-  login(username: string, password: string): Promise<void>;
+  login(username: string, password: string): Promise<SessionUser>;
   logout(): Promise<void>;
   changePassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<void>;
 }
@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setCsrfToken(result.csrfToken);
       setUser(result.user);
+      return result.user;
     },
     async logout() {
       await api('/auth/logout', { method: 'POST' });

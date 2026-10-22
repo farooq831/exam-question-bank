@@ -447,3 +447,10 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
   - Tests: shared 11/11, server 41/41.
   - Browser walkthrough (isolated instance): created a teacher and two Research Officers; subjects show no format choice; one format listed; builder has no format choice and the officer chips fill "Sana Malik, Bilal Ahmed"; the teacher wrote a Long question via the tiles; Research Officer navigation is Dashboard and Questions only.
   - `dev.db` was backed up to `server/backups/skans-20261022-095402/`; the seed then removed the 8 old subjects and the Internal Test format.
+
+## Follow-up: elegant sign-in, welcome message, fixed sidebar (22 October 2026)
+
+- [x] **Sign-in page redesigned:** split screen with a navy SKANS brand panel (logo, "Question Bank", one-line tagline) and a clean form ("Welcome back", icon fields, show/hide password, large Sign in button). Phones show a single column with the colour logo.
+- [x] **Welcome message:** after signing in, a toast greets the user by full name with their username and role (for example "Welcome, System Administrator · Signed in as admin · Administrator").
+- [x] **Sidebar collapse button removed:** the sidebar is always full width on large screens; the saved collapse setting is no longer used.
+- Verification: typecheck and client build clean; browser check on an isolated instance (temporary database, since removed): desktop and phone sign-in, wrong-password error, forced password change, welcome toast, no collapse button.

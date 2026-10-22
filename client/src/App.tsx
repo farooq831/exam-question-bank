@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, ClipboardCheck, FileText, KeyRound, LayoutGrid, Library, LogOut, Menu, PanelLeftClose, PanelLeftOpen, ScrollText, Settings2, Users, X, type LucideIcon } from 'lucide-react';
+import { ArrowRight, BookOpen, ClipboardCheck, FileText, KeyRound, LayoutGrid, Library, Loader2, LockKeyhole, LogOut, Menu, ScrollText, Settings2, UserRound, Users, X, type LucideIcon } from 'lucide-react';
 import { ROLE_LABELS, type Role } from '@skans/shared';
 import { toast } from 'sonner';
 import { useAuth } from './auth';
@@ -23,7 +23,8 @@ function Login() {
     event.preventDefault();
     setBusy(true);
     try {
-      await login(username, password);
+      const me = await login(username, password);
+      toast.success(`Welcome, ${me.fullName}`, { description: `Signed in as ${me.username} · ${ROLE_LABELS[me.role]}` });
       navigate('/');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to sign in');
@@ -32,18 +33,46 @@ function Login() {
     }
   }
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f6f7f9] px-4 py-10">
-      <form onSubmit={submit} className="card w-full max-w-sm p-8 shadow-sm">
-        <img src="/branding/skans-logo.png" alt="SKANS School of Accountancy" className="mx-auto w-56" />
-        <h1 className="mt-6 text-center text-lg font-semibold text-ink">Sign in to Question Bank</h1>
-        <label className="label mt-6">Username
-          <input className="field mt-1.5" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} autoFocus required />
-        </label>
-        <label className="label mt-4">Password
-          <PasswordInput wrapperClassName="mt-1.5" className="field" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
-        </label>
-        <button disabled={busy} className="primary mt-6 w-full !min-h-11">{busy ? 'Signing in…' : 'Sign in'}</button>
-      </form>
+    <main className="grid min-h-screen bg-white lg:grid-cols-[1.1fr_1fr]">
+      {/* Brand panel */}
+      <section className="relative hidden overflow-hidden bg-navy lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-40 -left-24 h-[28rem] w-[28rem] rounded-full bg-gold/10" />
+        <img src="/branding/skans-logo-dark.png" alt="SKANS School of Accountancy" className="relative w-64" />
+        <div className="relative max-w-md">
+          <div className="mb-6 h-1 w-14 rounded-full bg-gold" />
+          <h1 className="text-4xl font-semibold leading-tight text-white">Question Bank</h1>
+          <p className="mt-3 text-lg text-blue-100/80">Write, review and publish CAF examination papers.</p>
+        </div>
+        <p className="relative text-xs text-blue-200/50">© {new Date().getFullYear()} SKANS School of Accountancy</p>
+      </section>
+
+      {/* Sign-in form */}
+      <section className="flex items-center justify-center px-6 py-12 sm:px-12">
+        <form onSubmit={submit} className="w-full max-w-sm">
+          <img src="/branding/skans-logo.png" alt="SKANS School of Accountancy" className="mb-10 w-52 lg:hidden" />
+          <h2 className="text-3xl font-semibold tracking-tight text-ink">Welcome back</h2>
+          <p className="mt-2 text-slate-500">Sign in to your account to continue.</p>
+
+          <label className="label mt-9">Username
+            <span className="relative mt-2 block">
+              <UserRound size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input className="field !rounded-xl !py-3 !pl-11" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} autoFocus required placeholder="Your username" />
+            </span>
+          </label>
+          <label className="label mt-5">Password
+            <span className="relative mt-2 block">
+              <LockKeyhole size={18} className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" />
+              <PasswordInput className="field !rounded-xl !py-3 !pl-11" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required placeholder="Your password" />
+            </span>
+          </label>
+
+          <button disabled={busy} className="primary mt-8 w-full !min-h-12 !rounded-xl text-base shadow-sm">
+            {busy ? <><Loader2 size={18} className="animate-spin" />Signing in…</> : <>Sign in<ArrowRight size={18} /></>}
+          </button>
+          <p className="mt-6 text-center text-xs text-slate-400">Forgot your password? Ask the administrator to reset it.</p>
+        </form>
+      </section>
     </main>
   );
 }
@@ -111,28 +140,18 @@ const ADMIN_NAV: NavItem[] = [
   { to: '/admin/audit', label: 'Audit log', icon: ScrollText, roles: ['ADMIN'] },
 ];
 
-const COLLAPSE_KEY = 'skans.sidebarCollapsed';
-const readCollapsed = () => {
-  try { return localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
-};
-
 function Shell() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(readCollapsed);
   const navigate = useNavigate();
   const location = useLocation();
   useEffect(() => setOpen(false), [location.pathname]);
-  useEffect(() => {
-    try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch { /* storage unavailable */ }
-  }, [collapsed]);
   if (!user) return null;
   async function signOut() { await logout(); navigate('/login'); }
-  const narrow = collapsed && !open; // icon-only rail on large screens
 
   const link = ({ to, label, icon: Icon }: NavItem) => (
-    <NavLink key={to} to={to} end={to === '/'} title={narrow ? label : undefined} className={({ isActive }) => `flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm transition ${narrow ? 'lg:justify-center lg:px-0' : ''} ${isActive ? 'bg-white/15 font-semibold text-white' : 'text-blue-100/80 hover:bg-white/5 hover:text-white'}`}>
-      <Icon size={18} /><span className={narrow ? 'lg:sr-only' : ''}>{label}</span>
+    <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm transition ${isActive ? 'bg-white/15 font-semibold text-white' : 'text-blue-100/80 hover:bg-white/5 hover:text-white'}`}>
+      <Icon size={18} /><span>{label}</span>
     </NavLink>
   );
   const adminItems = ADMIN_NAV.filter((n) => n.roles.includes(user.role));
@@ -140,31 +159,26 @@ function Shell() {
   return (
     <div className="min-h-screen text-ink">
       {open && <button className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden" aria-label="Close menu" onClick={() => setOpen(false)} />}
-      <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-navy text-white transition-all duration-200 ${narrow ? 'lg:w-[4.5rem]' : 'lg:w-60'} ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} aria-label="Main navigation">
-        <div className={`flex h-16 items-center px-4 ${narrow ? 'lg:justify-center lg:px-0' : ''}`}>
-          {narrow
-            ? <span className="hidden h-9 w-9 place-items-center rounded-lg bg-white/10 text-sm font-bold lg:grid">S</span>
-            : <img src="/branding/skans-logo-dark.png" alt="SKANS School of Accountancy" className="w-40" />}
+      <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-navy text-white transition-all duration-200 lg:w-60 ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} aria-label="Main navigation">
+        <div className={`flex h-16 items-center px-4`}>
+          <img src="/branding/skans-logo-dark.png" alt="SKANS School of Accountancy" className="w-40" />
           <button className="icon-btn ml-auto !text-blue-100 hover:!bg-white/10 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu"><X size={18} /></button>
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pt-2">
           {MAIN_NAV.filter((n) => n.roles.includes(user.role)).map(link)}
-          {adminItems.length > 0 && <div className={`mx-3 my-3 border-t border-white/10 ${narrow ? 'lg:mx-2' : ''}`} />}
+          {adminItems.length > 0 && <div className="mx-3 my-3 border-t border-white/10" />}
           {adminItems.map(link)}
         </nav>
         <div className="border-t border-white/10 p-3">
-          <div className={`flex items-center gap-2.5 ${narrow ? 'lg:flex-col' : ''}`}>
+          <div className="flex items-center gap-2.5">
             <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-xs font-semibold" title={user.fullName}>{user.fullName.slice(0, 1).toUpperCase()}</div>
-            <div className={`min-w-0 flex-1 ${narrow ? 'lg:hidden' : ''}`}><p className="truncate text-sm font-medium">{user.fullName}</p><p className="text-xs text-blue-200/70">{ROLE_LABELS[user.role]}</p></div>
+            <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{user.fullName}</p><p className="text-xs text-blue-200/70">{ROLE_LABELS[user.role]}</p></div>
             <NavLink to="/change-password" title="Change password" aria-label="Change password" className="icon-btn !h-8 !w-8 !text-blue-200 hover:!bg-white/10 hover:!text-white"><KeyRound size={16} /></NavLink>
             <button onClick={() => void signOut()} title="Sign out" aria-label="Sign out" className="icon-btn !h-8 !w-8 !text-blue-200 hover:!bg-white/10 hover:!text-white"><LogOut size={16} /></button>
           </div>
-          <button onClick={() => setCollapsed(!collapsed)} className="mt-2 hidden w-full items-center justify-center rounded-lg p-1.5 text-blue-200/70 hover:bg-white/10 hover:text-white lg:flex" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-          </button>
         </div>
       </aside>
-      <div className={`transition-all duration-200 ${narrow ? 'lg:pl-[4.5rem]' : 'lg:pl-60'}`}>
+      <div className="lg:pl-60">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur lg:hidden">
           <button className="icon-btn" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={20} /></button>
           <img src="/branding/skans-logo.png" alt="SKANS School of Accountancy" className="h-8" />

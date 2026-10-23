@@ -290,7 +290,7 @@ ${out(`All migrations have been successfully applied.
          username: admin
          password: <span class="y">Xk3...(shown only once)</span>
 ✓ built in 20s`)}
-${warn('Write the admin password on the record sheet <b>now</b>. It is shown only once. (If lost: <code>npm run reset-admin -w server</code>.)')}
+${warn('Write the admin password on the record sheet <b>now</b>. It is shown only once. (If lost: <code>npm run reset-admin -w server -- admin NewPassword123</code>, see section 16.)')}
 <h3>8.6 Quick test</h3>
 ${cmd(`cd D:\\SKANS\\app\\server
 npm start
@@ -445,7 +445,7 @@ nssm start SKANS-QB
 <tr><td>Everyone is signed out after each click</td><td>.env: NODE_ENV=production and TRUST_PROXY=1; open via https only.</td></tr>
 <tr><td>PDFs fail, everything else works</td><td>PLAYWRIGHT_BROWSERS_PATH (8.2 and the service); <code>npm run browsers -w server</code>; enough RAM.</td></tr>
 <tr><td>Very slow</td><td>Task Manager: RAM/CPU; antivirus exclusions for D:\\SKANS and pgdata; more RAM.</td></tr>
-<tr><td>Admin password lost</td><td><code>cd D:\\SKANS\\app; npm run reset-admin -w server</code> (prints a new one-time password).</td></tr>
+<tr><td>Admin password lost</td><td>On the server: <code>cd D:\\SKANS\\app; npm run reset-admin -w server -- admin NewPassword123</code> (choose the new password: 10+ characters, a letter and a number). It also unlocks and re-activates the account.</td></tr>
 <tr><td>A user is locked out</td><td>Wait 15 minutes, or admin → Users → Unlock.</td></tr>
 <tr><td>Disk full</td><td>Old backups are cleaned automatically; check D:\\SKANS\\logs (rotated) and other files; ask IT for space.</td></tr>
 <tr><td>After Windows Update the site is down</td><td>Services set to Automatic / Delayed? <code>Set-Service SKANS-QB -StartupType Automatic</code>; start them.</td></tr>
@@ -493,7 +493,7 @@ Invoke-WebRequest http://localhost:4000/api/health -UseBasicParsing
 <span class="c"># app (run in D:\\SKANS\\app)</span>
 npm run db:backup          npm run db:verify-backup
 npm run db:restore -- D:\\SKANS\\backups\\skans-... --yes
-npm run reset-admin -w server
+npm run reset-admin -w server -- admin NewPassword123
 npm run db:setup -w server   npm run build                  <span class="c"># after installing a new version</span>
 
 <span class="c"># Windows</span>

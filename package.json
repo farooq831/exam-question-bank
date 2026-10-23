@@ -18,7 +18,7 @@
     "test:e2e": "npm run build -w client && npm run test:e2e:run -w server",
     "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client",
     "db:reset": "npm run db:reset -w server",
-    "reset-admin": "npm run reset-admin -w server",
+    "reset-admin": "npm run reset-admin -w server --",
     "db:backup": "npm run db:backup -w server --",
     "pdf:samples": "npm run pdf:samples -w server",
     "demo:paper": "npm run demo:paper -w server --",

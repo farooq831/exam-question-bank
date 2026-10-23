@@ -17,8 +17,8 @@ Contents: [Setup](#setup) · [Environment](#environment-variables) · [Database]
 
 | Part | Technology |
 |---|---|
-| `client/` | React 18, Vite, TypeScript, Tailwind CSS, React Router, TipTap editor |
-| `server/` | Node.js, Express 4, TypeScript (run with `tsx`), Prisma, Playwright/Chromium for PDFs |
+| `client/` | React 18, Vite 6, TypeScript, Tailwind CSS 4, React Router 7, TipTap 3 editor |
+| `server/` | Node.js, Express 4, TypeScript (run with `tsx`), Prisma 7 (node-postgres adapter), Playwright/Chromium for PDFs |
 | `shared/` | Zod schemas, types, marks rules and template configuration used by client and server |
 | Database | PostgreSQL 17 (Prisma migrations; daily `pg_dump` backups) |
 
@@ -139,6 +139,7 @@ Security controls:
 npm run dev            # API + client with live reload
 npm run typecheck      # shared, server and client
 npm test               # shared unit tests + server API/PDF tests
+npm run test:e2e       # builds the client and runs the 34-step browser walkthrough
 npm run build          # production client build (client/dist) + server typecheck
 npm start              # production server (serves client/dist and the API on PORT)
 npm run pdf:samples    # renders a built-in example through every paper format to output/
@@ -154,7 +155,16 @@ approved questions tagged "SKANS demo mock paper"; `npm run demo:paper -- --repl
 `npm test` runs:
 
 - **Shared unit tests:** marks rules, formatting, schemas.
-- **Server tests:** about 40 Supertest + Playwright tests in `server/tests/`.
+- **Server tests:** 45 Supertest + PDF tests in `server/tests/` (Vitest).
+
+`npm run test:e2e` builds the client and runs **34 browser tests** (`server/e2e/`, Playwright) that
+walk through the whole system as admin, teacher, Research Officer and a teacher of another
+subject: sign-in and lockout, accounts, every question type (amounts tables, (I) lists, several
+True/False at once), recycle bin, review, building and finalising a paper, draft and final PDFs,
+paper format reset, audit log, permissions, CSRF and HTML cleaning, phone layout. It starts the
+real server on port 4173 with its own temporary PostgreSQL database (`skans_e2e_…`, dropped
+afterwards). On failure, screenshots and a trace are in `server/e2e-results/` and a report in
+`server/e2e-report/`. Run both suites before every update.
 
 The server tests cover:
 

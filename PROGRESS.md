@@ -525,3 +525,21 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 - the three ICAP sample PDFs are no longer tracked in git (copyrighted reference material; kept on disk, `samples/` is now ignored);
 - removed the outdated `docs/PROTOTYPE-HISTORY.md` (17 October audit; history is in this file);
 - deleted obsolete generated PDFs for the removed "SKANS Internal" format from `output/`.
+
+## Move to PostgreSQL, daily backups, library upgrades, permanent browser tests (23 October 2026)
+
+**PostgreSQL 17** (installed on the development PC as a Windows service; application user `skans`, database `skans_qb`):
+- Prisma schema switched to PostgreSQL with versioned migrations (`server/prisma/migrations/`); `db:setup` and `db:reset` use `prisma migrate deploy`.
+- All data copied from SQLite with `npm run db:copy-from-sqlite` (read-only source, empty target, one transaction, original ids and password hashes, id counters moved on). Every table matched (3 users, 8 subjects, 80 questions, 6 papers, 86 paper items, 13 versions, 108 audit entries); values compared field by field. SQLite backup taken first (`server/backups/skans-20261023-095559`); `dev.db` kept.
+- Text filters made case-insensitive (PostgreSQL is case-sensitive by default).
+- Server tests and browser tests each create and drop their own temporary database.
+
+**Backups:** `npm run db:backup` now uses `pg_dump` (custom format) plus logos and a SHA-256 checksum; keeps 14 daily + 6 monthly backups and never deletes the old SQLite backups; optional second copy (`BACKUP_COPY_DIR`). New `db:verify-backup` (restore into a temporary database and compare every table) and `db:restore -- <folder> --yes` (checksum check, safety backup first, one transaction). `server/scripts/schedule-backup.ps1` registered two Windows tasks on this PC: nightly backup at 23:00 and a weekly restore check on Sundays (missed runs catch up; log in `server/logs/backup.log`). Tested: backup, verify, full restore into a throw-away database, scheduled task run (result 0).
+
+**Demo / test data:** `npm run data:cleanup -- --demo` (demo paper #29 + 69 questions) or `-- --all-content` (every paper and question); lists only, or deletes with `--yes` after an automatic backup; never touches users, subjects, format or audit log. Tested with `--yes` on a restored copy; **not yet run on the real database** (the teacher is reviewing the demo paper).
+
+**Library upgrades (npm audit: 48 findings, 2 critical, 8 high -> 0):** csv-parse 7, React Router 7, Vitest 5, Prisma 7 (prisma.config.ts + node-postgres driver adapter), TipTap 3 (editor redraws on every change for the toolbar; table extensions merged into one package), Tailwind CSS 4 (official upgrade tool; our classes moved into the components layer so utilities such as `lg:hidden` win as before; screens compared pixel by pixel with the Tailwind 3 build and matched).
+
+**Permanent browser tests:** `npm run test:e2e`, 34 Playwright tests (the earlier 46-step walkthrough, condensed) on a temporary PostgreSQL database.
+
+Verification: typecheck clean; shared 11/11, server 45/45, browser 34/34; npm audit 0 vulnerabilities; no test databases left behind.

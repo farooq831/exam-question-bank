@@ -19,3 +19,7 @@ samples/
 
 # Backup and other logs
 server/logs/
+
+# Browser test output
+server/e2e-report/
+server/e2e-results/

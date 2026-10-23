@@ -1,17 +1,13 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Extension, useEditor, EditorContent, type Editor } from '@tiptap/react';
 import { Plugin, TextSelection } from '@tiptap/pm/state';
-import StarterKit from '@tiptap/starter-kit';
-import OrderedList from '@tiptap/extension-ordered-list';
+import { StarterKit } from '@tiptap/starter-kit';
+import { OrderedList } from '@tiptap/extension-ordered-list';
 import { LIST_STYLE_LABELS, LIST_STYLES, type ListStyle } from '@skans/shared';
-import Underline from '@tiptap/extension-underline';
-import Superscript from '@tiptap/extension-superscript';
-import Subscript from '@tiptap/extension-subscript';
-import TextAlign from '@tiptap/extension-text-align';
-import Table from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
+import { Superscript } from '@tiptap/extension-superscript';
+import { Subscript } from '@tiptap/extension-subscript';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { AlignCenter, AlignLeft, AlignRight, Banknote, Bold, HelpCircle, Italic, List, ListOrdered, Subscript as SubIcon, Superscript as SupIcon, Table as TableIcon, Underline as UnderlineIcon } from 'lucide-react';
 
 interface RichEditorProps {
@@ -142,9 +138,9 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
   onChangeRef.current = onChange;
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: false, codeBlock: false, code: false, orderedList: false, blockquote: compact ? false : undefined }),
+      // StarterKit 3 includes underline; links and its own trailing line are not used here.
+      StarterKit.configure({ heading: false, codeBlock: false, code: false, orderedList: false, link: false, trailingNode: false, blockquote: compact ? false : undefined }),
       StyledOrderedList,
-      Underline,
       Superscript,
       Subscript,
       TextAlign.configure({ types: ['paragraph'] }),
@@ -155,6 +151,8 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
       TrailingParagraph,
     ],
     content: value,
+    // TipTap 3 no longer redraws on every keystroke by default; the toolbar's active states need it.
+    shouldRerenderOnTransaction: true,
     editorProps: { attributes: { 'aria-label': label ?? placeholder ?? 'Rich text', ...(placeholder ? { 'data-placeholder': placeholder } : {}) } },
     onUpdate: ({ editor: instance }) => onChangeRef.current(instance.isEmpty ? '' : trimTrailing(instance.getHTML())),
   });

@@ -11,5 +11,5 @@
     "isolatedModules": true,
     "types": ["node"]
   },
-  "include": ["src", "prisma", "scripts", "tests"]
+  "include": ["src", "prisma", "scripts", "tests", "e2e", "prisma.config.ts"]
 }

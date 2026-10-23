@@ -15,7 +15,7 @@ router.get(
     const f = parse(auditQuerySchema, req.query);
     const where: Prisma.AuditLogWhereInput = {
       ...(f.action ? { action: f.action } : {}),
-      ...(f.username ? { username: { contains: f.username } } : {}),
+      ...(f.username ? { username: { contains: f.username, mode: 'insensitive' } } : {}),
       ...(f.entityType ? { entityType: f.entityType } : {}),
       ...(f.from || f.to
         ? {

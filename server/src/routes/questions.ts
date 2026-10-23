@@ -35,12 +35,12 @@ router.get(
     if (f.difficulty) and.push({ difficulty: f.difficulty });
     if (f.marksMin !== undefined) and.push({ marks: { gte: f.marksMin } });
     if (f.marksMax !== undefined) and.push({ marks: { lte: f.marksMax } });
-    if (f.source) and.push({ source: { contains: f.source } });
-    if (f.topic) and.push({ topic: { contains: f.topic } });
+    if (f.source) and.push({ source: { contains: f.source, mode: 'insensitive' } });
+    if (f.topic) and.push({ topic: { contains: f.topic, mode: 'insensitive' } });
     if (f.mine === '1') and.push({ createdById: user.id });
     if (f.q) {
       for (const term of f.q.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8)) {
-        and.push({ searchText: { contains: term } });
+        and.push({ searchText: { contains: term } }); // searchText is stored in lower case
       }
     }
     const where: Prisma.QuestionWhereInput = { AND: and };

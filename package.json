@@ -19,7 +19,10 @@
     "reset-admin": "npm run reset-admin -w server",
     "db:backup": "npm run db:backup -w server --",
     "pdf:samples": "npm run pdf:samples -w server",
-    "demo:paper": "npm run demo:paper -w server --"
+    "demo:paper": "npm run demo:paper -w server --",
+    "data:cleanup": "npm run data:cleanup -w server --",
+    "db:verify-backup": "npm run db:verify-backup -w server --",
+    "db:restore": "npm run db:restore -w server --"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

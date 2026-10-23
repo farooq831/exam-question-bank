@@ -16,3 +16,6 @@ server/backups/
 
 # Reference material from ICAP and the administration (copyrighted / internal): kept locally, never committed
 samples/
+
+# Backup and other logs
+server/logs/

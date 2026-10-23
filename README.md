@@ -10,7 +10,7 @@ papers that are printed to PDF together with a separate answer key.
 Contents: [Setup](#setup) · [Environment](#environment-variables) · [Database](#database) ·
 [First sign-in](#first-sign-in) · [Roles](#role-permissions) · [Commands](#development-commands) ·
 [Subjects](#caf-subjects) · [Format](#paper-format) · [Branding](#authorised-branding-assets) ·
-[PostgreSQL](#migrating-from-sqlite-to-postgresql) · [Deployment](#local-school-server-deployment) ·
+[PostgreSQL](#postgresql) · [Deployment](#local-school-server-deployment) ·
 [Backups](#backups) · [Browsers](#tablet-and-browser-support) · [Limitations](#current-limitations)
 
 ## Architecture
@@ -20,19 +20,20 @@ Contents: [Setup](#setup) · [Environment](#environment-variables) · [Database]
 | `client/` | React 18, Vite, TypeScript, Tailwind CSS, React Router, TipTap editor |
 | `server/` | Node.js, Express 4, TypeScript (run with `tsx`), Prisma, Playwright/Chromium for PDFs |
 | `shared/` | Zod schemas, types, marks rules and template configuration used by client and server |
-| Database | SQLite for development and a single school server; schema kept portable to PostgreSQL |
+| Database | PostgreSQL 17 (Prisma migrations; daily `pg_dump` backups) |
 
 One HTML renderer (`server/src/render/paperHtml.ts`) produces both the live preview and the PDF,
 so the preview is what gets printed.
 
 ## Setup
 
-Requirements: **Node.js 20+** (tested on 24) and npm 10+. About 400 MB of disk space for
-dependencies and Chromium.
+Requirements: **Node.js 20+** (tested on 24), npm 10+ and **PostgreSQL 15+** (tested on 17). About
+400 MB of disk space for dependencies and Chromium. Create the database user and database once
+(see [PostgreSQL](#postgresql)) and put the connection in `server/.env` before `npm run setup`.
 
 ```bash
 npm run setup     # creates server/.env with a random secret, installs packages,
-                  # creates/updates the SQLite schema, bootstraps formats, subjects and
+                  # applies the database migrations, bootstraps formats, subjects and
                   # the first admin account (password printed once), installs Chromium
 npm run dev       # API on http://localhost:4000, web app on http://localhost:5173
 ```
@@ -48,7 +49,11 @@ Open http://localhost:5173 and sign in as described in [First sign-in](#first-si
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | `file:./dev.db` | Prisma connection. Relative SQLite paths are relative to `server/prisma/`. |
+| `DATABASE_URL` | *(required)* | PostgreSQL connection, e.g. `postgresql://skans:…@localhost:5432/skans_qb?schema=public`. |
+| `BACKUP_DIR` | `server/backups` | Where `npm run db:backup` writes backups. |
+| `BACKUP_KEEP_DAILY` / `BACKUP_KEEP_MONTHLY` | `14` / `6` | How many daily backups, and how many monthly ones, are kept. |
+| `BACKUP_COPY_DIR` | *(none)* | Second copy of every backup (another disk, USB drive or synced cloud folder). |
+| `PG_BIN` | *(auto)* | Folder with `pg_dump`/`pg_restore` if they are not on PATH. |
 | `SESSION_SECRET` | *(generated)* | Signs session cookies; at least 32 characters, unique per installation. |
 | `NODE_ENV` | `development` | `production` enables Secure cookies, HSTS and HTTPS upgrade. |
 | `PORT` | `4000` | API/web port of the Node process. |
@@ -61,15 +66,20 @@ Open http://localhost:5173 and sign in as described in [First sign-in](#first-si
 
 ## Database
 
-Prisma schema: `server/prisma/schema.prisma`. Enumerations and JSON payloads are stored as text so
-the same schema works on SQLite and PostgreSQL.
+Prisma schema: `server/prisma/schema.prisma`; database changes are versioned migrations in
+`server/prisma/migrations/`. Enumerations and JSON payloads are stored as text and validated with
+zod whenever they are read.
 
 | Command | What it does | Destructive? |
 |---|---|---|
-| `npm run db:setup -w server` | Generate the Prisma client, apply the schema (`prisma db push`), run the seed | No |
+| `npm run db:setup -w server` | Generate the Prisma client, apply migrations (`prisma migrate deploy`), run the seed | No |
+| `npm run db:migrate:new -w server -- <name>` | Create a new migration after changing the schema (development only) | No |
 | `npm run db:seed -w server` | Create **missing** SKANS paper formats and CAF subjects; create the first `admin` account if no administrator exists; upgrade data from older versions | No |
 | `npm run db:reset` | Delete **all** data and bootstrap an empty system (formats, subjects, a new `admin`) | **Yes**. Refused when `NODE_ENV=production` unless `--force` is added. |
-| `npm run db:backup` | Consistent online copy of the SQLite database and branding folder | No |
+| `npm run db:backup` | `pg_dump` backup + logos, with automatic clean-up of old backups (see [Backups](#backups)) | No |
+| `npm run db:verify-backup` | Restores the newest backup into a temporary database and compares it with the live data | No |
+| `npm run db:restore -- <folder> --yes` | Replaces **all** data with a backup (takes a safety backup first) | **Yes** |
+| `npm run data:cleanup -- --demo` / `--all-content` | Lists (or with `--yes` deletes, after a backup) the demo paper, or every paper and question | With `--yes` |
 
 The seed never changes existing rows. Passwords, edited templates and assigned subjects survive.
 Normal application start-up never modifies data.
@@ -158,9 +168,11 @@ The server tests cover:
   - repeated table header rows
   - page count
 
-The server tests create a **fresh temporary SQLite database** for each run, bootstrap it, load
-test-only fixtures (`server/tests/fixtures/`, never loaded into a real database) and delete it
-afterwards. They never touch `dev.db`. Chromium must be installed (`npm run browsers -w server`).
+The server tests create a **fresh temporary PostgreSQL database** (`skans_test_…`) for each run on
+the server in `DATABASE_URL` (or `TEST_DATABASE_URL`), apply the migrations, bootstrap it, load
+test-only fixtures (`server/tests/fixtures/`, never loaded into a real database) and drop it
+afterwards. They never touch `skans_qb`. The database user needs `CREATEDB` on development and CI
+machines only. Chromium must be installed (`npm run browsers -w server`).
 
 ## CAF subjects
 
@@ -253,23 +265,25 @@ instructions `{count}`, `{countWord}`, `**bold**`.
 To replace the artwork, overwrite these files (a `.png`/`.svg` named `skans-logo` is also accepted
 for printing). Changes are picked up immediately. See `client/public/branding/README.md`.
 
-## Migrating from SQLite to PostgreSQL
+## PostgreSQL
 
-1. Create a database and user, for example `skans_qb` owned by `skans_app`.
-2. In `server/prisma/schema.prisma` change `provider = "sqlite"` to `provider = "postgresql"`.
-3. Set `DATABASE_URL="postgresql://skans_app:…@127.0.0.1:5432/skans_qb?schema=public"`.
-4. Create the tables: `npx prisma migrate dev --name init` in `server/`. This also creates a
-   `prisma/migrations` folder; commit it, and use `npx prisma migrate deploy` on servers.
-5. Move existing data. No copy script is included. Use [pgloader](https://pgloader.io)
-   (`pgloader sqlite:///path/to/skans.db postgresql://…`) into the new schema, then reset the
-   sequences (`SELECT setval(...)` per table). Alternatively, start fresh with `npm run db:seed`.
-6. Run `npm test` against a copy, then sign in and download a paper to verify.
+**Create the user and database once** (as the `postgres` superuser, e.g. in `psql` or pgAdmin):
 
-Differences to check:
+```sql
+CREATE ROLE skans LOGIN PASSWORD 'a-long-random-password';          -- add CREATEDB on development PCs (for the tests)
+CREATE DATABASE skans_qb OWNER skans ENCODING 'UTF8' TEMPLATE template0;
+```
 
-- `contains` filters on titles and topics become case-sensitive on PostgreSQL. Question
-  full-text search is unaffected because it uses a lower-cased index column.
-- JSON columns remain text. They can be converted to `jsonb` later.
+Put the connection in `server/.env` as `DATABASE_URL`, then `npm run db:setup -w server` creates the
+tables from the migrations and bootstraps the system. The application user is not a superuser.
+
+**Moving from the earlier SQLite version** (done on 23 October 2026 for the development PC):
+`npm run db:copy-from-sqlite -w server -- prisma/dev.db` copies everything (users with their
+password hashes, subjects, formats, questions, papers, versions, audit log) into an **empty**
+PostgreSQL database in one transaction, moves the id counters on, and compares the row counts
+table by table. The SQLite file is opened read-only and kept as a backup.
+
+Text filters (titles, topics, audit user names) ignore upper and lower case, as before.
 
 ## Local school-server deployment
 
@@ -280,8 +294,10 @@ Differences to check:
    npm run db:setup -w server
    npm run build
    ```
-2. Create `server/.env` from `server/.env.production.example`. Set `NODE_ENV=production` and
-   `TRUST_PROXY=1`, a new `SESSION_SECRET`, an absolute `DATABASE_URL`, and `BRANDING_DIR`.
+2. Install PostgreSQL and create the user and database (see [PostgreSQL](#postgresql)). Create
+   `server/.env` from `server/.env.production.example`. Set `NODE_ENV=production` and
+   `TRUST_PROXY=1`, a new `SESSION_SECRET`, `DATABASE_URL`, `BACKUP_DIR` and `BRANDING_DIR`.
+   Schedule the backups (see [Backups](#backups)).
 3. Run `npm start` under a service manager, for example a systemd unit or NSSM on Windows, so it
    restarts automatically. It serves the built client and the API on `PORT`, bound behind Nginx.
 4. Sign in as `admin` with the one-time password printed by `db:setup`, change it, then create
@@ -315,22 +331,37 @@ persist; the server prints a warning at start-up.
 
 - Allow inbound **443** (and 80 for the redirect) **from the school network or VPN only**.
 - Block the Node port (4000) from other machines. Nginx connects through `127.0.0.1`.
-- If PostgreSQL is used, allow 5432 only from the application server.
+- PostgreSQL listens on 127.0.0.1 only (the default); keep port 5432 closed to the network.
 - Do not expose the server directly to the internet. Use the school VPN for remote staff.
 
 ## Backups
 
-- **SQLite:** `npm run db:backup` (or `npm run db:backup -- D:\Backups`) writes a consistent copy
-  of the database and the branding folder to `server/backups/skans-YYYYMMDD-HHMMSS/` while the
-  application keeps running. Schedule it daily (cron or Task Scheduler). Keep at least 14 days,
-  and copy backups to another machine.
-- **PostgreSQL:** `pg_dump -Fc skans_qb > skans-$(date +%F).dump` daily, plus a copy of the
-  branding folder.
-- **Restore (SQLite):** stop the service, copy `database.db` over the file in `DATABASE_URL`,
-  restore the branding folder, then start the service.
-- **Restore (PostgreSQL):** `pg_restore -c -d skans_qb file.dump`.
-- Test a restore every term on a spare machine. A backup that has never been restored is not a
-  backup.
+`npm run db:backup` writes `skans-YYYYMMDD-HHMMSS/` into `BACKUP_DIR` (default `server/backups`)
+while the system is in use:
+
+- `database.dump`: a complete `pg_dump` (custom format, compressed);
+- `branding/`: the logo files;
+- `backup.json`: date, database, size and a SHA-256 checksum used to detect a damaged file.
+
+Old backups are deleted automatically: the newest 14 are kept, plus the newest one of each of the
+last 6 months (`BACKUP_KEEP_DAILY`, `BACKUP_KEEP_MONTHLY`). Only backups made by this command are
+ever deleted; the SQLite backups from before the move to PostgreSQL are left alone. With
+`BACKUP_COPY_DIR` every backup is also copied to a second place, such as another disk, a USB drive
+or a OneDrive/Google Drive folder, with the same clean-up rules.
+
+**Schedule it** (Windows): `powershell -ExecutionPolicy Bypass -File server\scripts\schedule-backup.ps1`
+registers two Task Scheduler jobs: the backup every night at 23:00 and a restore check every
+Sunday. A missed run (PC switched off) runs as soon as the PC is on again. On the school server use
+`-System` (as Administrator) so it also runs when nobody is signed in; `-Remove` deletes the jobs.
+Output goes to `server/logs/backup.log`. On Linux, use cron:
+`0 23 * * * cd /srv/skans/app && npm run db:backup >> /var/log/skans-backup.log 2>&1`.
+
+**Check backups work:** `npm run db:verify-backup` restores the newest backup into a temporary
+database, compares every table with the live data and drops it again (runs weekly when scheduled).
+
+**Restore:** stop the application, then `npm run db:restore -- server/backups/skans-… --yes`. It
+checks the checksum, takes a safety backup of the current data, and replaces everything in one
+transaction. Copy `branding/` back if the logos were lost. Everyone signs in again afterwards.
 
 ## Tablet and browser support
 

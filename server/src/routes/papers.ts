@@ -98,7 +98,7 @@ router.get(
       deletedAt: null,
       subjectId: q.subjectId ? q.subjectId : req.user!.role === 'ADMIN' ? undefined : { in: req.user!.subjectIds },
       ...(q.status ? { status: q.status } : {}),
-      ...(q.q ? { title: { contains: q.q } } : {}),
+      ...(q.q ? { title: { contains: q.q, mode: 'insensitive' } } : {}),
     };
     if (q.subjectId) assertSubject(req.user!, q.subjectId);
     const rows = await prisma.paper.findMany({ where, include: paperInclude, orderBy: { updatedAt: 'desc' }, take: 200 });

@@ -1,23 +1,30 @@
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TEST_DB_FILE, TEST_ENV } from './test-env';
+import { PrismaClient } from '@prisma/client';
+import { TEST_ADMIN_URL, TEST_DB_NAME, TEST_ENV } from './test-env';
 
 /**
- * Creates the schema in a fresh, empty test database, runs the production bootstrap seed and then
- * loads the test-only demo fixtures. The file is new (nothing is destroyed) and removed afterwards.
+ * Creates a fresh, empty PostgreSQL database for this run, applies the migrations, runs the
+ * production bootstrap seed and loads the test-only demo fixtures. Only databases whose name
+ * starts with "skans_test_" are ever created or dropped here.
  */
-export default function setup() {
+export default async function setup() {
+  if (!/^skans_test_\d+_\d+$/.test(TEST_DB_NAME)) throw new Error(`Refusing to use test database name "${TEST_DB_NAME}".`);
   const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  if (existsSync(TEST_DB_FILE)) throw new Error(`Test database ${TEST_DB_FILE} already exists; refusing to reuse it.`);
-  mkdirSync(path.dirname(TEST_DB_FILE), { recursive: true });
+  const admin = new PrismaClient({ datasourceUrl: TEST_ADMIN_URL });
+  await admin.$executeRawUnsafe(`CREATE DATABASE "${TEST_DB_NAME}"`);
+  await admin.$disconnect();
+
   const env = { ...process.env, ...TEST_ENV };
   const run = (cmd: string) => execSync(cmd, { cwd, env, stdio: 'pipe' });
-  run('npx prisma db push --skip-generate');
+  run('npx prisma migrate deploy');
   run('npx tsx prisma/seed.ts');
   run('npx tsx tests/fixtures/demo-data.ts');
-  return () => {
-    for (const suffix of ['', '-journal']) rmSync(TEST_DB_FILE + suffix, { force: true });
+
+  return async () => {
+    const client = new PrismaClient({ datasourceUrl: TEST_ADMIN_URL });
+    await client.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${TEST_DB_NAME}" WITH (FORCE)`);
+    await client.$disconnect();
   };
 }

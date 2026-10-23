@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import { TEST_ENV } from './tests/test-env';
 
-// Server tests run against their own SQLite file (prisma/test.db), never the development database.
+// Server tests run against their own temporary PostgreSQL database (see tests/test-env.ts), never the development database.
 export default defineConfig({
   test: {
     env: TEST_ENV,

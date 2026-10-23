@@ -1,19 +1,18 @@
-// SKANS Question Bank - data model.
+// SKANS Question Bank - data model (PostgreSQL).
 //
-// Portability notes (SQLite -> PostgreSQL):
 //  * Enumerations (role, status, type ...) are stored as String and validated with zod in
-//    @skans/shared, so the schema works unchanged on both providers.
+//    @skans/shared, so values can be added without a database migration.
 //  * JSON payloads (question content, template config, paper header, snapshots) are stored as
-//    String columns containing JSON. On PostgreSQL they can be switched to `Json` (jsonb) later.
-//  * To migrate: change `provider` below to "postgresql", set DATABASE_URL, run
-//    `npx prisma migrate dev --name init` and re-seed or copy data with a script.
+//    text containing JSON, validated by zod whenever they are read.
+//  * Schema changes: edit this file, then `npm run db:migrate:new -w server -- <name>` creates a
+//    migration; `npm run db:setup` / `prisma migrate deploy` applies migrations on any server.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

@@ -9,6 +9,7 @@
     "client"
   ],
   "scripts": {
+    "release": "node scripts/make-release.mjs",
     "setup": "node scripts/setup-env.mjs && npm install && npm run db:setup -w server && npm run browsers -w server",
     "dev": "concurrently -k -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client && npm run build -w server",

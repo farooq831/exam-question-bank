@@ -28,7 +28,8 @@
     "@fontsource/arimo": "^5.2.8",
     "@fontsource/carlito": "^5.2.8",
     "@fontsource/tinos": "^5.2.8",
-    "@prisma/client": "6.19.3",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "@skans/shared": "*",
     "bcryptjs": "^3.0.2",
     "cross-env": "^10.0.0",
@@ -42,7 +43,7 @@
     "node-html-parser": "^7.1.0",
     "pdf-lib": "^1.17.1",
     "playwright": "^1.56.0",
-    "prisma": "6.19.3",
+    "prisma": "^7.10.1",
     "sanitize-html": "^2.17.0",
     "tsx": "^4.20.6",
     "zod": "^3.25.76"
@@ -58,8 +59,5 @@
     "supertest": "^7.1.4",
     "typescript": "^5.9.3",
     "vitest": "^5.0.5"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }

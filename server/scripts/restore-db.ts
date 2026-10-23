@@ -14,8 +14,8 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { PrismaClient } from '@prisma/client';
 import { env, paths } from '../src/config';
+import { createPrismaClient } from '../src/db';
 import { pgConnection, pgTool } from './lib/pg-tools';
 
 const TABLES = ['User', 'Subject', 'UserSubject', 'PaperTemplate', 'Question', 'Paper', 'PaperItem', 'PaperVersion', 'AuditLog'];
@@ -56,7 +56,7 @@ const urlFor = (base: string, db: string) => {
 };
 
 async function counts(url: string): Promise<Record<string, number>> {
-  const client = new PrismaClient({ datasourceUrl: url });
+  const client = createPrismaClient(url);
   try {
     const out: Record<string, number> = {};
     for (const t of TABLES) out[t] = Number(((await client.$queryRawUnsafe(`SELECT COUNT(*)::int AS c FROM "${t}"`)) as { c: number }[])[0].c);
@@ -69,7 +69,7 @@ async function counts(url: string): Promise<Record<string, number>> {
 async function verify(folder: string) {
   const dump = readDump(folder);
   const scratch = `skans_verify_${Date.now()}`;
-  const admin = new PrismaClient({ datasourceUrl: urlFor(env.DATABASE_URL, 'postgres') });
+  const admin = createPrismaClient(urlFor(env.DATABASE_URL, 'postgres'));
   await admin.$executeRawUnsafe(`CREATE DATABASE "${scratch}"`);
   try {
     pgRestore(dump, urlFor(env.DATABASE_URL, scratch), []);

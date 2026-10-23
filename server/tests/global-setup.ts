@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from '../src/db';
 import { TEST_ADMIN_URL, TEST_DB_NAME, TEST_ENV } from './test-env';
 
 /**
@@ -12,7 +12,7 @@ import { TEST_ADMIN_URL, TEST_DB_NAME, TEST_ENV } from './test-env';
 export default async function setup() {
   if (!/^skans_test_\d+_\d+$/.test(TEST_DB_NAME)) throw new Error(`Refusing to use test database name "${TEST_DB_NAME}".`);
   const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const admin = new PrismaClient({ datasourceUrl: TEST_ADMIN_URL });
+  const admin = createPrismaClient(TEST_ADMIN_URL);
   await admin.$executeRawUnsafe(`CREATE DATABASE "${TEST_DB_NAME}"`);
   await admin.$disconnect();
 
@@ -23,7 +23,7 @@ export default async function setup() {
   run('npx tsx tests/fixtures/demo-data.ts');
 
   return async () => {
-    const client = new PrismaClient({ datasourceUrl: TEST_ADMIN_URL });
+    const client = createPrismaClient(TEST_ADMIN_URL);
     await client.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${TEST_DB_NAME}" WITH (FORCE)`);
     await client.$disconnect();
   };

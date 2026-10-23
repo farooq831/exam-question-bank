@@ -303,7 +303,7 @@ testers through a free **Cloudflare quick tunnel** (`cloudflared`, installed wit
 
 - `server/.env.beta` (not in git): production mode, port 4300, `TRUST_PROXY=1`, its own database
   `skans_beta`, its own secret and backup folder `server/backups-beta/`.
-- `powershell -ExecutionPolicy Bypass -File server\scriptseta.ps1 -Start` starts the app and the
+- `powershell -ExecutionPolicy Bypass -File server\scripts\beta.ps1 -Start` starts the app and the
   tunnel and prints the public `https://…trycloudflare.com` link (also in `server/logs/beta-url.txt`).
   `-Status`, `-Stop`, `-Start -Rebuild` (after code changes), `-Install` (start at sign-in and back up
   the beta database nightly at 23:15), `-Uninstall`.

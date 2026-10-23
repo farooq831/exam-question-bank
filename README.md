@@ -295,6 +295,23 @@ table by table. The SQLite file is opened read-only and kept as a backup.
 
 Text filters (titles, topics, audit user names) ignore upper and lower case, as before.
 
+## Public beta (from a PC, free)
+
+For a beta test before the school server is ready, the system can run on a PC and be reached by
+testers through a free **Cloudflare quick tunnel** (`cloudflared`, installed with
+`winget install --id Cloudflare.cloudflared`). Everything works as on a server, including PDFs.
+
+- `server/.env.beta` (not in git): production mode, port 4300, `TRUST_PROXY=1`, its own database
+  `skans_beta`, its own secret and backup folder `server/backups-beta/`.
+- `powershell -ExecutionPolicy Bypass -File server\scriptseta.ps1 -Start` starts the app and the
+  tunnel and prints the public `https://…trycloudflare.com` link (also in `server/logs/beta-url.txt`).
+  `-Status`, `-Stop`, `-Start -Rebuild` (after code changes), `-Install` (start at sign-in and back up
+  the beta database nightly at 23:15), `-Uninstall`.
+- The quick-tunnel link **changes whenever the tunnel restarts** (for example after a reboot); send
+  testers the new link from `beta-url.txt`. The PC must stay on and online during the beta.
+- Testers get accounts from the beta admin (Users → Add user), with a temporary password they
+  change at first sign-in. Nothing from `skans_qb` is visible in the beta.
+
 ## Local school-server deployment
 
 1. Install Node.js 20+ LTS on the server (Linux or Windows). Copy the repository, then run:

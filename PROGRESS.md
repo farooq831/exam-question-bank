@@ -543,3 +543,11 @@ Source: the administration's email, `samples/Req_by _admin/Formatting Sheet.xlsx
 **Permanent browser tests:** `npm run test:e2e`, 34 Playwright tests (the earlier 46-step walkthrough, condensed) on a temporary PostgreSQL database.
 
 Verification: typecheck clean; shared 11/11, server 45/45, browser 34/34; npm audit 0 vulnerabilities; no test databases left behind.
+
+## Public beta through a Cloudflare quick tunnel (23 October 2026)
+
+- Separate database `skans_beta` (8 CAF subjects, paper format, AAE demo paper, a new `admin` with a one-time password); real data in `skans_qb` is not reachable from the beta.
+- `server/.env.beta` (git-ignored): production mode, HTTPS-aware (`TRUST_PROXY=1`), port 4300, own session secret and backup folder.
+- `cloudflared` installed; `server/scripts/beta.ps1` starts/stops the app and tunnel, records the public link, installs start-at-sign-in and a nightly beta backup (23:15).
+- Checked through the public link with a temporary account (then deleted with its log entries): HTTPS, HSTS, Secure + HttpOnly session cookie surviving reloads, paper list, question editor, question paper PDF (449 KB) and answer key PDF (543 KB), no browser errors. Beta backup task run once: OK.
+- Noted for after the beta: titles in the paper builder's "In this paper" list are squeezed by the row controls; a finalised paper still shows a "Finalise" button.

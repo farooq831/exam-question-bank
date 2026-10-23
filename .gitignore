@@ -23,3 +23,7 @@ server/logs/
 # Browser test output
 server/e2e-report/
 server/e2e-results/
+
+# Beta (public test) settings: contain secrets
+server/.env.beta
+server/backups-beta/

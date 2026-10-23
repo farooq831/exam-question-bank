@@ -19,6 +19,7 @@
     "pdf:samples": "tsx scripts/generate-samples.ts",
     "demo:paper": "tsx scripts/demo-paper.ts",
     "data:cleanup": "tsx scripts/cleanup-data.ts",
+    "docs:guide": "tsx scripts/guide/make-guide.ts",
     "reset-admin": "tsx scripts/reset-admin.ts",
     "db:backup": "tsx scripts/backup-db.ts",
     "db:verify-backup": "tsx scripts/restore-db.ts --verify",

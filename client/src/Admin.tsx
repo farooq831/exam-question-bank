@@ -268,7 +268,7 @@ export function AdminSubjects() {
         {active.length === 0 && <div className="card"><EmptyState icon={BookOpen} title="No subjects" /></div>}
         {inactive.length > 0 && (
           <div>
-            <button className="ghost !px-2 text-sm" onClick={() => setShowInactive(!showInactive)}><ChevronDown size={15} className={showInactive ? 'rotate-180' : ''} />{inactive.length} inactive</button>
+            <button className="ghost px-2! text-sm" onClick={() => setShowInactive(!showInactive)}><ChevronDown size={15} className={showInactive ? 'rotate-180' : ''} />{inactive.length} inactive</button>
             {showInactive && <section className="card mt-2 overflow-hidden opacity-70">{inactive.map(row)}</section>}
           </div>
         )}
@@ -317,7 +317,7 @@ function TemplateEditor({ initial, onClose, onSaved }: { initial: TemplateDraft;
           <span className="label">{label}</span>
           {changed && <button type="button" className="inline-flex items-center gap-1 text-xs font-medium text-gold hover:underline" onClick={() => onChange(standard)} title={`Back to the standard value (${standard})`}><RotateCcw size={12} />{standard}</button>}
         </div>
-        <input className={`field mt-1.5 ${changed ? '!border-gold/60 !bg-amber-50/40' : ''}`} type="number" step={step} min={0} value={value} onChange={(e) => onChange(num(e.target.value))} aria-label={label} />
+        <input className={`field mt-1.5 ${changed ? 'border-gold/60! bg-amber-50/40!' : ''}`} type="number" step={step} min={0} value={value} onChange={(e) => onChange(num(e.target.value))} aria-label={label} />
       </div>
     );
   };
@@ -474,15 +474,15 @@ export function AuditLog() {
       <PageHeader title="Audit log" count={result?.total} />
       <div className="mb-4 flex flex-wrap gap-2">
         <SearchBox className="min-w-[160px] flex-1" value={filters.username} onChange={(v) => update({ username: v })} placeholder="User" />
-        <select className="field !w-auto" value={filters.action} onChange={(e) => update({ action: e.target.value })} aria-label="Action"><option value="">All actions</option>{AUDIT_ACTIONS.map((a) => <option key={a} value={a}>{actionLabel(a)}</option>)}</select>
-        <select className="field !w-auto" value={filters.entityType} onChange={(e) => update({ entityType: e.target.value })} aria-label="Record"><option value="">All records</option>{ENTITY_TYPES.map((t) => <option key={t}>{t}</option>)}</select>
-        <input className="field !w-auto" type="date" value={filters.from} onChange={(e) => update({ from: e.target.value })} aria-label="From" title="From" />
-        <input className="field !w-auto" type="date" value={filters.to} onChange={(e) => update({ to: e.target.value })} aria-label="To" title="To" />
+        <select className="field w-auto!" value={filters.action} onChange={(e) => update({ action: e.target.value })} aria-label="Action"><option value="">All actions</option>{AUDIT_ACTIONS.map((a) => <option key={a} value={a}>{actionLabel(a)}</option>)}</select>
+        <select className="field w-auto!" value={filters.entityType} onChange={(e) => update({ entityType: e.target.value })} aria-label="Record"><option value="">All records</option>{ENTITY_TYPES.map((t) => <option key={t}>{t}</option>)}</select>
+        <input className="field w-auto!" type="date" value={filters.from} onChange={(e) => update({ from: e.target.value })} aria-label="From" title="From" />
+        <input className="field w-auto!" type="date" value={filters.to} onChange={(e) => update({ to: e.target.value })} aria-label="To" title="To" />
       </div>
       <div className="card overflow-hidden">
         {!result ? <p className="p-10 text-center text-sm text-slate-400">Loading…</p> : result.items.length === 0 ? <EmptyState icon={ScrollText} title="Nothing found" /> : result.items.map((a) => (
           <div key={a.id} className="border-b border-slate-100 last:border-0">
-            <button className="list-row w-full !border-0 text-left" onClick={() => setOpen(open === a.id ? null : a.id)} aria-expanded={open === a.id}>
+            <button className="list-row w-full border-0! text-left" onClick={() => setOpen(open === a.id ? null : a.id)} aria-expanded={open === a.id}>
               <Pill tone={/FAILED|LOCKED|DELETE|PURGE/.test(a.action) ? 'red' : /DOWNLOAD/.test(a.action) ? 'blue' : /APPROVE|FINALIZE/.test(a.action) ? 'green' : 'slate'}>{actionLabel(a.action)}</Pill>
               <span className="min-w-0 flex-1 truncate text-sm text-slate-600">{a.username || 'system'}{a.entityId && <span className="text-slate-400"> · {a.entityType} #{a.entityId}</span>}</span>
               <span className="shrink-0 text-xs text-slate-400" title={new Date(a.createdAt).toLocaleString()}>{ago(a.createdAt)}</span>

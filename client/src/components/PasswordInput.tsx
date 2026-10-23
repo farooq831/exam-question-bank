@@ -12,7 +12,7 @@ export function PasswordInput({ initiallyVisible = false, className = '', wrappe
   const [visible, setVisible] = useState(initiallyVisible);
   return (
     <div className={`relative ${wrapperClassName}`}>
-      <input {...props} type={visible ? 'text' : 'password'} className={`${className} !pr-12`} autoCapitalize="none" spellCheck={false} />
+      <input {...props} type={visible ? 'text' : 'password'} className={`${className} pr-12!`} autoCapitalize="none" spellCheck={false} />
       <button
         type="button"
         onClick={() => setVisible(!visible)}

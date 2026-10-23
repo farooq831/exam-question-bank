@@ -35,7 +35,7 @@ export function SearchBox({ value, onChange, placeholder = 'Search', className =
   return (
     <label className={`relative block ${className}`}>
       <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-      <input className="field !pl-9" placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} aria-label={placeholder} />
+      <input className="field pl-9!" placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} aria-label={placeholder} />
     </label>
   );
 }
@@ -67,9 +67,9 @@ export function Pager({ page, pages, onPage }: { page: number; pages: number; on
   if (pages <= 1) return null;
   return (
     <div className="mt-4 flex items-center justify-end gap-2 text-sm text-slate-500">
-      <button className="secondary !min-h-9" disabled={page <= 1} onClick={() => onPage(page - 1)}>Previous</button>
+      <button className="secondary min-h-9!" disabled={page <= 1} onClick={() => onPage(page - 1)}>Previous</button>
       <span className="px-1">{page} / {pages}</span>
-      <button className="secondary !min-h-9" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</button>
+      <button className="secondary min-h-9!" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</button>
     </div>
   );
 }

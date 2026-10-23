@@ -149,13 +149,13 @@ function VersionHistory({ paper, onClose, onRestored }: { paper: { id: number; t
       {!versions ? <p className="text-sm text-slate-400">Loading…</p> : (
         <ol className="-mx-1">
           {versions.map((v, i) => (
-            <li key={v.id} className="list-row !px-1">
+            <li key={v.id} className="list-row px-1!">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-ink">Version {v.version}{i === 0 && <span className="ml-2 text-xs font-normal text-slate-400">current</span>}</p>
                 <p className="truncate text-xs text-slate-400">{v.note || 'Saved'} · {v.totalMarks} marks · {v.createdBy} · {ago(v.createdAt)}</p>
               </div>
               <Pill tone={v.status === 'FINAL' ? 'green' : 'slate'}>{v.status === 'FINAL' ? 'Final' : 'Draft'}</Pill>
-              {i > 0 && <button className="ghost !min-h-8 !px-2 text-sm" onClick={() => setConfirm(v.version)}>Restore</button>}
+              {i > 0 && <button className="ghost min-h-8! px-2! text-sm" onClick={() => setConfirm(v.version)}>Restore</button>}
             </li>
           ))}
         </ol>
@@ -348,7 +348,7 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
 
           <section className="card p-5">
             <h2 className="text-sm font-semibold text-ink">Prepared by</h2>
-            <p className="field-hint !mt-0.5">Shown on the answer key{fmt?.header.showTeacher ? ' (the teacher also appears on this format’s paper header)' : ', never on the question paper'}.</p>
+            <p className="field-hint mt-0.5!">Shown on the answer key{fmt?.header.showTeacher ? ' (the teacher also appears on this format’s paper header)' : ', never on the question paper'}.</p>
             <div className="mt-3 grid gap-4 sm:grid-cols-3">
               <Field label="Teacher"><input className="field mt-1.5" list="pb-teachers" value={header.teacherName} maxLength={120} onChange={(e) => setH('teacherName', e.target.value)} placeholder="Pick or type a name" /></Field>
               <Field label="Research Officer(s)"><input className="field mt-1.5" value={header.researchOfficers} maxLength={200} onChange={(e) => setH('researchOfficers', e.target.value)} placeholder="Tap names below or type" /></Field>
@@ -424,12 +424,12 @@ function Builder({ paperId, initialTab, onBack, onSavedNew }: { paperId: number 
                   </button>
                   <div className="flex w-full items-center gap-1.5 pl-8 sm:w-auto sm:pl-0">
                     {sectionNames.length > 0 && (
-                      <select className="field !w-auto !py-1.5 text-sm" value={it.section} onChange={(e) => patchItem(index, { section: e.target.value })} aria-label="Section">
+                      <select className="field w-auto! py-1.5! text-sm" value={it.section} onChange={(e) => patchItem(index, { section: e.target.value })} aria-label="Section">
                         <option value="">No section</option>{sectionNames.map((n) => <option key={n} value={n}>{n.replace('SECTION ', 'Sec. ')}</option>)}
                       </select>
                     )}
-                    <input className="field !w-16 !py-1.5 text-center text-sm" type="number" min={0} max={200} step={0.5} value={itemMarks(it)} disabled={structured} aria-label="Marks" title={structured ? 'Marks come from the parts' : 'Marks for this paper'} onChange={(e) => patchItem(index, { marksOverride: e.target.value === '' ? null : Number(e.target.value) })} />
-                    <button className="chip !min-h-8 !px-2.5 text-xs" aria-pressed={it.newPage} title="Start this question on a new page" onClick={() => patchItem(index, { newPage: !it.newPage })}>New page</button>
+                    <input className="field w-16! py-1.5! text-center text-sm" type="number" min={0} max={200} step={0.5} value={itemMarks(it)} disabled={structured} aria-label="Marks" title={structured ? 'Marks come from the parts' : 'Marks for this paper'} onChange={(e) => patchItem(index, { marksOverride: e.target.value === '' ? null : Number(e.target.value) })} />
+                    <button className="chip min-h-8! px-2.5! text-xs" aria-pressed={it.newPage} title="Start this question on a new page" onClick={() => patchItem(index, { newPage: !it.newPage })}>New page</button>
                     <IconButton label="Move up" icon={ArrowUp} disabled={index === 0} onClick={() => move(index, index - 1)} />
                     <IconButton label="Move down" icon={ArrowDown} disabled={index === items.length - 1} onClick={() => move(index, index + 1)} />
                     <IconButton label="Remove" icon={X} tone="danger" onClick={() => setItemsDirty(items.filter((_, i) => i !== index))} />

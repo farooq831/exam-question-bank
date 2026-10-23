@@ -43,8 +43,8 @@ export function ReviewDialog({ question, initialDecision = 'APPROVE', onClose, o
       footer={
         <>
           <div className="mr-auto flex rounded-xl bg-slate-100 p-1" role="group" aria-label="Decision">
-            <button type="button" onClick={() => setDecision('APPROVE')} aria-pressed={!reject} className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${!reject ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}><Check size={15} />Approve</button>
-            <button type="button" onClick={() => setDecision('REJECT')} aria-pressed={reject} className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${reject ? 'bg-white text-red-700 shadow-sm' : 'text-slate-500'}`}><X size={15} />Return</button>
+            <button type="button" onClick={() => setDecision('APPROVE')} aria-pressed={!reject} className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${!reject ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500'}`}><Check size={15} />Approve</button>
+            <button type="button" onClick={() => setDecision('REJECT')} aria-pressed={reject} className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ${reject ? 'bg-white text-red-700 shadow-xs' : 'text-slate-500'}`}><X size={15} />Return</button>
           </div>
           <button type="button" className="secondary" onClick={onClose}>Cancel</button>
           <button type="button" className={reject ? 'danger' : 'success'} disabled={busy || needsComment} onClick={() => void submit()}>{reject ? 'Return to author' : 'Approve'}</button>

@@ -56,7 +56,7 @@ export function Modal({ title, eyebrow, onClose, children, footer, size = 'lg' }
                   </button>
                 </>
               )}
-              <button type="button" onClick={onClose} className={`${winBtn} hover:!bg-red-600 hover:!text-white`} aria-label="Close" title="Close"><X size={18} /></button>
+              <button type="button" onClick={onClose} className={`${winBtn} hover:bg-red-600! hover:text-white!`} aria-label="Close" title="Close"><X size={18} /></button>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-6">{children}</div>

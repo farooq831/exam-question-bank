@@ -1,7 +1,38 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
+@theme {
+  --color-ink: #172033;
+  --color-navy: #1b2a4b;
+  --color-gold: #c08a2e;
+  --color-mist: #f5f7fb;
+
+  --shadow-card: 0 12px 35px rgba(23, 32, 51, 0.08);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+/*
+  Our own classes (buttons, cards, fields, editor) live in the components layer, below Tailwind's
+  utilities, so a utility such as `lg:hidden` or `mt-2` on the same element still wins, as it did
+  with Tailwind 3.
+*/
+@layer components {
 :root { font-family: 'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif; color: #1f2937; -webkit-font-smoothing: antialiased; }
 body { margin: 0; background: #f6f7f9; }
 button, input, select, textarea { font: inherit; }
@@ -82,3 +113,4 @@ input.field:disabled { background: #f6f7f9; color: #667085; }
 .rich-editor ol[data-list-style="decimal"] > li::before, .prose ol[data-list-style="decimal"] > li::before { content: "(" counter(li, decimal) ")"; }
 .prose table { width: auto; max-width: 100%; border-collapse: collapse; }
 .prose th, .prose td { border: 1px solid #d0d5dd; padding: .4rem; }
+}

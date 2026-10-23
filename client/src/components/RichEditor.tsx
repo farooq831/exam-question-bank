@@ -198,7 +198,7 @@ export function RichEditor({ value, onChange, compact = false, placeholder, labe
           <li>Short tables are never split across printed pages.</li>
         </ul>
       )}
-      <EditorContent editor={editor} className={`rich-editor ${compact ? 'compact px-3 py-2' : 'min-h-48 p-4'} text-sm leading-6 outline-none`} />
+      <EditorContent editor={editor} className={`rich-editor ${compact ? 'compact px-3 py-2' : 'min-h-48 p-4'} text-sm leading-6 outline-hidden`} />
     </div>
   );
 }

@@ -24,7 +24,7 @@ const TILE: Record<string, string> = {
 
 function Stat({ label, value, to, icon: Icon, tone = 'slate' }: { label: string; value: number | undefined; to: string; icon: LucideIcon; tone?: keyof typeof TILE }) {
   return (
-    <Link to={to} className="card group flex items-center gap-4 p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-sm sm:p-5">
+    <Link to={to} className="card group flex items-center gap-4 p-4 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-xs sm:p-5">
       <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${TILE[tone]}`}><Icon size={21} /></span>
       <span className="min-w-0">
         <span className="block text-2xl font-semibold tracking-tight text-ink">{value ?? '–'}</span>
@@ -61,7 +61,7 @@ export function Dashboard() {
       </div>
 
       {!admin && (
-        <Link to="/questions?new=1" className="group flex items-center gap-4 rounded-2xl bg-gradient-to-r from-navy to-[#2c4372] p-5 text-white shadow-sm transition hover:shadow-md sm:p-6">
+        <Link to="/questions?new=1" className="group flex items-center gap-4 rounded-2xl bg-linear-to-r from-navy to-[#2c4372] p-5 text-white shadow-xs transition hover:shadow-md sm:p-6">
           <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15"><PenLine size={26} /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-lg font-semibold">Write a new question</span>

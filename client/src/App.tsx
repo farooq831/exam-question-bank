@@ -37,7 +37,7 @@ function Login() {
       {/* Brand panel */}
       <section className="relative hidden overflow-hidden bg-navy lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-white/5" />
-        <div className="pointer-events-none absolute -bottom-40 -left-24 h-[28rem] w-[28rem] rounded-full bg-gold/10" />
+        <div className="pointer-events-none absolute -bottom-40 -left-24 h-112 w-md rounded-full bg-gold/10" />
         <img src="/branding/skans-logo-dark.png" alt="SKANS School of Accountancy" className="relative w-64" />
         <div className="relative max-w-md">
           <div className="mb-6 h-1 w-14 rounded-full bg-gold" />
@@ -57,17 +57,17 @@ function Login() {
           <label className="label mt-9">Username
             <span className="relative mt-2 block">
               <UserRound size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input className="field !rounded-xl !py-3 !pl-11" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} autoFocus required placeholder="Your username" />
+              <input className="field rounded-xl! py-3! pl-11!" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} autoFocus required placeholder="Your username" />
             </span>
           </label>
           <label className="label mt-5">Password
             <span className="relative mt-2 block">
               <LockKeyhole size={18} className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-slate-400" />
-              <PasswordInput className="field !rounded-xl !py-3 !pl-11" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required placeholder="Your password" />
+              <PasswordInput className="field rounded-xl! py-3! pl-11!" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required placeholder="Your password" />
             </span>
           </label>
 
-          <button disabled={busy} className="primary mt-8 w-full !min-h-12 !rounded-xl text-base shadow-sm">
+          <button disabled={busy} className="primary mt-8 w-full min-h-12! rounded-xl! text-base shadow-xs">
             {busy ? <><Loader2 size={18} className="animate-spin" />Signing in…</> : <>Sign in<ArrowRight size={18} /></>}
           </button>
           <p className="mt-6 text-center text-xs text-slate-400">Forgot your password? Ask the administrator to reset it.</p>
@@ -162,24 +162,24 @@ function Shell() {
       <aside className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-navy text-white transition-all duration-200 lg:w-60 ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`} aria-label="Main navigation">
         <div className={`flex h-16 items-center px-4`}>
           <img src="/branding/skans-logo-dark.png" alt="SKANS School of Accountancy" className="w-40" />
-          <button className="icon-btn ml-auto !text-blue-100 hover:!bg-white/10 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu"><X size={18} /></button>
+          <button className="icon-btn ml-auto text-blue-100! hover:bg-white/10! lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu"><X size={18} /></button>
         </div>
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pt-2">
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pt-2">
           {MAIN_NAV.filter((n) => n.roles.includes(user.role)).map(link)}
-          {adminItems.length > 0 && <div className="mx-3 my-3 border-t border-white/10" />}
+          {adminItems.length > 0 && <div className="mx-3 border-t border-white/10" />}
           {adminItems.map(link)}
         </nav>
         <div className="border-t border-white/10 p-3">
           <div className="flex items-center gap-2.5">
             <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/15 text-xs font-semibold" title={user.fullName}>{user.fullName.slice(0, 1).toUpperCase()}</div>
             <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{user.fullName}</p><p className="text-xs text-blue-200/70">{ROLE_LABELS[user.role]}</p></div>
-            <NavLink to="/change-password" title="Change password" aria-label="Change password" className="icon-btn !h-8 !w-8 !text-blue-200 hover:!bg-white/10 hover:!text-white"><KeyRound size={16} /></NavLink>
-            <button onClick={() => void signOut()} title="Sign out" aria-label="Sign out" className="icon-btn !h-8 !w-8 !text-blue-200 hover:!bg-white/10 hover:!text-white"><LogOut size={16} /></button>
+            <NavLink to="/change-password" title="Change password" aria-label="Change password" className="icon-btn h-8! w-8! text-blue-200! hover:bg-white/10! hover:text-white!"><KeyRound size={16} /></NavLink>
+            <button onClick={() => void signOut()} title="Sign out" aria-label="Sign out" className="icon-btn h-8! w-8! text-blue-200! hover:bg-white/10! hover:text-white!"><LogOut size={16} /></button>
           </div>
         </div>
       </aside>
       <div className="lg:pl-60">
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-slate-200/70 bg-white/90 px-4 backdrop-blur-sm lg:hidden">
           <button className="icon-btn" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={20} /></button>
           <img src="/branding/skans-logo.png" alt="SKANS School of Accountancy" className="h-8" />
         </header>

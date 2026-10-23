@@ -32,7 +32,7 @@ function TypePicker({ value, onChange }: { value: QuestionType; onChange(t: Ques
         const on = value === type;
         return (
           <button key={type} type="button" role="radio" aria-checked={on} onClick={() => onChange(type)} title={hint}
-            className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center transition ${on ? 'border-navy bg-navy text-white shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}`}>
+            className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center transition ${on ? 'border-navy bg-navy text-white shadow-xs' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'}`}>
             <Icon size={20} className={on ? 'text-gold' : 'text-slate-400'} />
             <span className="text-sm font-semibold">{label}</span>
             <span className={`hidden text-[11px] leading-tight sm:block ${on ? 'text-blue-100/80' : 'text-slate-400'}`}>{hint}</span>
@@ -52,7 +52,7 @@ function TfToggle({ value, onChange, label }: { value: boolean; onChange(v: bool
         const Icon = v ? CheckCircle2 : XCircle;
         return (
           <button key={String(v)} type="button" role="radio" aria-checked={on} onClick={() => onChange(v)}
-            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold transition ${on ? (v ? 'bg-emerald-600 text-white shadow-sm' : 'bg-red-600 text-white shadow-sm') : 'text-slate-500 hover:text-ink'}`}>
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold transition ${on ? (v ? 'bg-emerald-600 text-white shadow-xs' : 'bg-red-600 text-white shadow-xs') : 'text-slate-500 hover:text-ink'}`}>
             <Icon size={16} />{v ? 'True' : 'False'}
           </button>
         );
@@ -81,7 +81,7 @@ function Fold({ title, icon, open, children, tone = 'slate' }: { title: string; 
 }
 
 function MarksInput({ value, onChange, disabled = false, label = 'Marks' }: { value: number; onChange(v: number): void; disabled?: boolean; label?: string }) {
-  return <input className="field !w-20 text-center" type="number" min={0} max={200} step={0.5} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} title={disabled ? 'Sum of the parts' : label} />;
+  return <input className="field w-20! text-center" type="number" min={0} max={200} step={0.5} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} title={disabled ? 'Sum of the parts' : label} />;
 }
 
 function OptionsEditor({ options, onChange, layout, onLayout }: { options: Option[]; onChange(o: Option[]): void; layout: McqLayout; onLayout(l: McqLayout): void }) {
@@ -99,8 +99,8 @@ function OptionsEditor({ options, onChange, layout, onLayout }: { options: Optio
         </div>
       ))}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <button type="button" className="ghost !px-2" disabled={options.length >= 6} onClick={() => onChange([...options, newOption(options.length)])}><Plus size={15} />Option</button>
-        <select className="field !w-auto !py-1.5 text-sm" value={layout} onChange={(e) => onLayout(e.target.value as McqLayout)} aria-label="Print layout">{LAYOUTS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}</select>
+        <button type="button" className="ghost px-2!" disabled={options.length >= 6} onClick={() => onChange([...options, newOption(options.length)])}><Plus size={15} />Option</button>
+        <select className="field w-auto! py-1.5! text-sm" value={layout} onChange={(e) => onLayout(e.target.value as McqLayout)} aria-label="Print layout">{LAYOUTS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}</select>
       </div>
     </div>
   );
@@ -232,7 +232,7 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
         </div>
 
         {d.type === 'SHORT' && (
-          <button type="button" className="ghost !px-2" onClick={() => setD((cur) => ({ ...cur, type: 'LONG', parts: [{ ...newPart(), marks: cur.marks || 2 }, newPart()] }))}><ListTree size={16} />Add sub-questions</button>
+          <button type="button" className="ghost px-2!" onClick={() => setD((cur) => ({ ...cur, type: 'LONG', parts: [{ ...newPart(), marks: cur.marks || 2 }, newPart()] }))}><ListTree size={16} />Add sub-questions</button>
         )}
 
         {d.type === 'MCQ' && (
@@ -258,7 +258,7 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
               </div>
             ))}
             {isNew && (
-              <button type="button" className="ghost !px-2" disabled={moreTf.length >= 29} onClick={() => setMoreTf((cur) => [...cur, { id: newId(), html: '', correct: true }])}><Plus size={15} />Add another statement</button>
+              <button type="button" className="ghost px-2!" disabled={moreTf.length >= 29} onClick={() => setMoreTf((cur) => [...cur, { id: newId(), html: '', correct: true }])}><Plus size={15} />Add another statement</button>
             )}
           </div>
         )}
@@ -279,14 +279,14 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
                 <div className="mt-3"><OptionsEditor options={it.options} onChange={(options) => groupSet(i, { options })} layout={it.layout} onLayout={(layout) => groupSet(i, { layout })} /></div>
               </div>
             ))}
-            <button type="button" className="ghost !px-2" disabled={d.groupItems.length >= 40} onClick={() => set('groupItems', [...d.groupItems, newGroupItem()])}><Plus size={15} />MCQ</button>
+            <button type="button" className="ghost px-2!" disabled={d.groupItems.length >= 40} onClick={() => set('groupItems', [...d.groupItems, newGroupItem()])}><Plus size={15} />MCQ</button>
           </div>
         )}
 
         {(d.type === 'LONG' || d.type === 'CASE_STUDY') && (
           <div className="space-y-3">
             <Heading aside={
-              <select className="field !w-auto !py-1.5 text-sm" value={d.partLabelStyle ?? ''} onChange={(e) => set('partLabelStyle', (e.target.value || null) as LabelStyle | null)} aria-label="Numbering">
+              <select className="field w-auto! py-1.5! text-sm" value={d.partLabelStyle ?? ''} onChange={(e) => set('partLabelStyle', (e.target.value || null) as LabelStyle | null)} aria-label="Numbering">
                 <option value="">Default (a), (b), (c)</option>
                 {LABEL_STYLES.map((s) => <option key={s} value={s}>{LABEL_STYLE_LABELS[s]}</option>)}
               </select>
@@ -297,11 +297,11 @@ export function QuestionEditor({ initial, subjects, canSubmit, onClose, onSaved 
                   {p.parts.map((s, j) => (
                     <PartEditor key={s.id} value={s} label={`${partLabel(i + 1, style)}${partLabel(j + 1, subStyle)}`} onChange={(v) => updatePart(i, { ...p, parts: p.parts.map((x, k) => (k === j ? v : x)) })} onRemove={() => updatePart(i, { ...p, parts: p.parts.filter((_, k) => k !== j) })} />
                   ))}
-                  <button type="button" className="ghost !min-h-8 !px-2 text-xs" disabled={p.parts.length >= 12} onClick={() => updatePart(i, { ...p, parts: [...p.parts, newSubPart()] })}><Plus size={14} />Part {partLabel(i + 1, style)}{partLabel(p.parts.length + 1, subStyle)}</button>
+                  <button type="button" className="ghost min-h-8! px-2! text-xs" disabled={p.parts.length >= 12} onClick={() => updatePart(i, { ...p, parts: [...p.parts, newSubPart()] })}><Plus size={14} />Part {partLabel(i + 1, style)}{partLabel(p.parts.length + 1, subStyle)}</button>
                 </div>
               </PartEditor>
             ))}
-            <button type="button" className="ghost !px-2" disabled={d.parts.length >= 12} onClick={() => set('parts', [...d.parts, newPart()])}><Plus size={15} />Sub-question</button>
+            <button type="button" className="ghost px-2!" disabled={d.parts.length >= 12} onClick={() => set('parts', [...d.parts, newPart()])}><Plus size={15} />Sub-question</button>
           </div>
         )}
 

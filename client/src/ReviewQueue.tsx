@@ -39,7 +39,7 @@ export function ReviewQueue() {
         title="Review"
         count={loading ? undefined : rows.length}
         actions={
-          <select className="field !w-auto min-w-[150px]" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} aria-label="Subject">
+          <select className="field w-auto! min-w-[150px]" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} aria-label="Subject">
             <option value="">All subjects</option>
             {subjects.map((s) => <option key={s.id} value={s.id}>{s.code}</option>)}
           </select>
@@ -50,7 +50,7 @@ export function ReviewQueue() {
         {loading && rows.length === 0 && <p className="p-10 text-center text-sm text-slate-400">Loading…</p>}
         {rows.map((q) => (
           <div key={q.id} className="border-b border-slate-100 last:border-0">
-            <div className="list-row !border-0">
+            <div className="list-row border-0!">
               <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(open === q.id ? null : q.id)} aria-expanded={open === q.id}>
                 <p className="flex items-center gap-1.5 truncate font-medium text-ink">
                   <ChevronDown size={16} className={`shrink-0 text-slate-400 transition ${open === q.id ? 'rotate-180' : ''}`} />

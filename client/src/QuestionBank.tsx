@@ -140,11 +140,11 @@ export function QuestionBank() {
 
       <div className="mb-3 flex flex-wrap gap-2">
         <SearchBox className="min-w-[200px] flex-1" value={search} onChange={setSearch} placeholder="Search questions" />
-        <select className="field !w-auto min-w-[140px]" value={filters.subjectId} onChange={(e) => setFilter('subjectId', e.target.value)} aria-label="Subject">
+        <select className="field w-auto! min-w-[140px]" value={filters.subjectId} onChange={(e) => setFilter('subjectId', e.target.value)} aria-label="Subject">
           <option value="">All subjects</option>
           {subjects.map((s) => <option key={s.id} value={s.id}>{s.code}</option>)}
         </select>
-        <select className="field !w-auto min-w-[130px]" value={filters.type} onChange={(e) => setFilter('type', e.target.value)} aria-label="Type">
+        <select className="field w-auto! min-w-[130px]" value={filters.type} onChange={(e) => setFilter('type', e.target.value)} aria-label="Type">
           <option value="">All types</option>
           {QUESTION_TYPES.map((t) => <option key={t} value={t}>{TYPE_SHORT[t]}</option>)}
         </select>
@@ -161,7 +161,7 @@ export function QuestionBank() {
         {loading && result.items.length === 0 ? (
           <p className="p-10 text-center text-sm text-slate-400">Loading…</p>
         ) : result.items.length === 0 ? (
-          <EmptyState icon={inBin ? Trash : Library} title={inBin ? 'The recycle bin is empty' : 'No questions here yet'} action={!inBin && ownSubjects.length ? <button className="primary !min-h-11 !px-5" onClick={() => void openEditor()}><Plus size={17} />Write a question</button> : undefined} />
+          <EmptyState icon={inBin ? Trash : Library} title={inBin ? 'The recycle bin is empty' : 'No questions here yet'} action={!inBin && ownSubjects.length ? <button className="primary min-h-11! px-5!" onClick={() => void openEditor()}><Plus size={17} />Write a question</button> : undefined} />
         ) : (
           result.items.map((q) => {
             const can = questionActions(user, q);
@@ -179,14 +179,14 @@ export function QuestionBank() {
                 <div className="flex shrink-0 items-center">
                   {inBin ? (
                     <>
-                      {can.restore && <button className="secondary mr-1 !min-h-9 !px-3" title="Restore" onClick={() => void post(q, '/restore', 'Restored')}><ArchiveRestore size={15} /><span className="hidden sm:inline">Restore</span></button>}
-                      {can.purge && <button className="danger !min-h-9 !px-3" title={q.usedInPapers ? 'Used in a paper — remove it from the paper first' : 'Delete permanently'} disabled={!!q.usedInPapers} onClick={() => setConfirmPurge(q)}><Trash2 size={15} /><span className="hidden sm:inline">Delete permanently</span></button>}
+                      {can.restore && <button className="secondary mr-1 min-h-9! px-3!" title="Restore" onClick={() => void post(q, '/restore', 'Restored')}><ArchiveRestore size={15} /><span className="hidden sm:inline">Restore</span></button>}
+                      {can.purge && <button className="danger min-h-9! px-3!" title={q.usedInPapers ? 'Used in a paper — remove it from the paper first' : 'Delete permanently'} disabled={!!q.usedInPapers} onClick={() => setConfirmPurge(q)}><Trash2 size={15} /><span className="hidden sm:inline">Delete permanently</span></button>}
                     </>
                   ) : (
                     <>
-                      {can.review && <button className="success mr-1 !min-h-9 !px-3" title="Review" onClick={() => setReview(q)}><Check size={16} /><span className="hidden sm:inline">Review</span></button>}
-                      {can.submit && <button className="primary mr-1 !min-h-9 !px-3" title="Submit for review" onClick={() => void post(q, '/submit', 'Submitted for review')}><Send size={15} /><span className="hidden sm:inline">Submit</span></button>}
-                      {can.edit && <button className="secondary mr-1 !min-h-9 !px-3" title="Edit" onClick={() => void openEditor(q)}><Pencil size={15} /><span className="hidden sm:inline">Edit</span></button>}
+                      {can.review && <button className="success mr-1 min-h-9! px-3!" title="Review" onClick={() => setReview(q)}><Check size={16} /><span className="hidden sm:inline">Review</span></button>}
+                      {can.submit && <button className="primary mr-1 min-h-9! px-3!" title="Submit for review" onClick={() => void post(q, '/submit', 'Submitted for review')}><Send size={15} /><span className="hidden sm:inline">Submit</span></button>}
+                      {can.edit && <button className="secondary mr-1 min-h-9! px-3!" title="Edit" onClick={() => void openEditor(q)}><Pencil size={15} /><span className="hidden sm:inline">Edit</span></button>}
                       {can.duplicate && <IconButton label="Duplicate" icon={Copy} onClick={() => void post(q, '/duplicate', 'Copied as a new draft')} />}
                       {can.remove && <IconButton label="Move to recycle bin" icon={Trash2} tone="danger" onClick={() => setConfirmDelete(q)} />}
                     </>

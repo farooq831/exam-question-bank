@@ -20,6 +20,7 @@
     "demo:paper": "tsx scripts/demo-paper.ts",
     "data:cleanup": "tsx scripts/cleanup-data.ts",
     "docs:guide": "tsx scripts/guide/make-guide.ts",
+    "docs:tunnel-guide": "tsx scripts/guide/make-tunnel-guide.ts",
     "reset-admin": "tsx scripts/reset-admin.ts",
     "db:backup": "tsx scripts/backup-db.ts",
     "db:verify-backup": "tsx scripts/restore-db.ts --verify",

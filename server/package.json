@@ -22,6 +22,7 @@
     "docs:guide": "tsx scripts/guide/make-guide.ts",
     "docs:tunnel-guide": "tsx scripts/guide/make-tunnel-guide.ts",
     "docs:server-guide": "tsx scripts/guide/make-server-guide.ts",
+    "docs:videos": "tsx scripts/video/make-videos.ts",
     "reset-admin": "tsx scripts/reset-admin.ts",
     "db:backup": "tsx scripts/backup-db.ts",
     "db:verify-backup": "tsx scripts/restore-db.ts --verify",

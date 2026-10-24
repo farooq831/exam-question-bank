@@ -28,3 +28,12 @@ server/e2e-results/
 server/.env.beta
 server/backups-beta/
 client/dist-test/
+
+# Kept on this PC only, not published
+PROGRESS.md
+docs/PROTOTYPE-HISTORY.md
+*.pdf
+*.zip
+*.log
+*.webm
+.claude/

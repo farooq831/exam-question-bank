@@ -1,0 +1,415 @@
+1
+00:00:00,175 --> 00:00:06,662
+Teacher Guide - Writing exam questions, step by step · for teachers and Research Officers
+
+2
+00:00:06,712 --> 00:00:12,933
+Welcome! In this video you will learn everything a teacher does in the SKANS Question Bank.
+
+3
+00:00:12,983 --> 00:00:19,771
+We will sign in, write every type of question, add tables and answers, and send questions for review.
+
+4
+00:00:19,821 --> 00:00:26,325
+Research Officers use exactly the same screens, so this video is for you too. Let us begin.
+
+5
+00:00:26,383 --> 00:00:29,950
+Chapter 1: Signing in for the first time
+
+6
+00:00:30,000 --> 00:00:36,506
+Open the link you received. Type the username the administrator gave you.
+
+7
+00:00:36,556 --> 00:00:42,080
+Now type the temporary password from the administrator.
+
+8
+00:00:42,130 --> 00:00:48,732
+Not sure what you typed? Click the eye icon to show the password.
+
+9
+00:00:48,782 --> 00:00:57,406
+Click the eye again to hide it. Then click Sign in.
+
+10
+00:00:57,456 --> 00:01:05,962
+The first time, the system asks you to choose your own password. Type the temporary password here.
+
+11
+00:01:06,012 --> 00:01:16,682
+Now choose a new password: at least 10 characters, with letters and a number. Type it twice.
+
+12
+00:01:16,732 --> 00:01:23,261
+Click Save password.
+
+13
+00:01:23,311 --> 00:01:29,535
+Done! From now on you sign in with your own password. Never share it with anyone.
+
+14
+00:01:29,604 --> 00:01:33,185
+Chapter 2: Your dashboard
+
+15
+00:01:33,235 --> 00:01:40,816
+This is your dashboard, your home page. The menu on the left has two pages: Dashboard and Questions.
+
+16
+00:01:40,866 --> 00:01:47,178
+The big blue card is the quickest way to write a new question.
+
+17
+00:01:47,228 --> 00:01:56,499
+These four tiles count your drafts, questions waiting for review, questions returned to you, and approved questions.
+
+18
+00:01:56,549 --> 00:02:02,168
+Click any tile to open that list. Below, Recent activity shows what happened last.
+
+19
+00:02:02,225 --> 00:02:07,138
+Chapter 3: Starting a new question
+
+20
+00:02:07,188 --> 00:02:14,846
+The question editor opens. At the top you choose the type of question. There are six types.
+
+21
+00:02:14,896 --> 00:02:20,423
+MCQ: one multiple-choice question with options (a) to (d).
+
+22
+00:02:20,473 --> 00:02:26,676
+MCQ set: several MCQs that belong together, numbered (i), (ii), (iii).
+
+23
+00:02:26,726 --> 00:02:32,931
+True / False: one or more statements, each true or false.
+
+24
+00:02:32,981 --> 00:02:38,184
+Short: a question with one written answer.
+
+25
+00:02:38,234 --> 00:02:45,203
+Long: a question with sub-questions (a), (b), (c) and parts inside them.
+
+26
+00:02:45,253 --> 00:02:48,849
+Case study: a scenario followed by sub-questions.
+
+27
+00:02:48,899 --> 00:03:00,129
+Below the tiles: choose the subject, the difficulty, and the marks the question is worth.
+
+28
+00:03:00,179 --> 00:03:08,739
+The Title is a short name for the question. The reviewer sees it in lists, so make it clear.
+
+29
+00:03:08,804 --> 00:03:12,373
+Chapter 4: Writing an MCQ
+
+30
+00:03:12,423 --> 00:03:29,253
+Click the MCQ tile, give the question a title and set the marks.
+
+31
+00:03:29,303 --> 00:03:38,097
+Type the question in the Question box.
+
+32
+00:03:38,147 --> 00:03:56,359
+Now type the four options, (a) to (d).
+
+33
+00:03:56,409 --> 00:04:04,493
+Mark the correct answer: click the round button next to it. The correct option turns green.
+
+34
+00:04:04,544 --> 00:04:15,588
+Need a fifth option? Click Option. Up to six options are allowed. The bin icon removes an option.
+
+35
+00:04:15,638 --> 00:04:24,876
+Print layout decides how the options are printed: one per line, in two columns or in four. Auto chooses for you.
+
+36
+00:04:24,926 --> 00:04:37,712
+Further down is the Answer key. Explain why the answer is correct. This prints only in the answer key, never on the question paper.
+
+37
+00:04:37,762 --> 00:04:45,314
+The question is ready. Click Submit to send it to the administrator for review.
+
+38
+00:04:45,364 --> 00:04:51,275
+A green message confirms it. While a question is in review, it cannot be changed.
+
+39
+00:04:51,337 --> 00:04:54,916
+Chapter 5: Writing an MCQ set
+
+40
+00:04:54,966 --> 00:05:07,735
+Use an MCQ set when several MCQs share one scenario. Click the MCQ set tile.
+
+41
+00:05:07,785 --> 00:05:19,107
+In the Question box, write the shared introduction for all the MCQs in the set.
+
+42
+00:05:19,157 --> 00:05:41,531
+Item (i): type its question and options, and mark the correct one.
+
+43
+00:05:41,581 --> 00:06:06,531
+Click MCQ to add item (ii). You can add up to forty items in one set.
+
+44
+00:06:06,581 --> 00:06:16,802
+Each item has its own marks box. The total marks are added up for you automatically. Look at the bottom left.
+
+45
+00:06:16,865 --> 00:06:22,372
+Chapter 6: True / False statements
+
+46
+00:06:22,422 --> 00:06:36,527
+For True or False, type the statement and choose True or False as the correct answer.
+
+47
+00:06:36,577 --> 00:06:50,201
+Have more statements? Click Add another statement. Each one gets its own True or False.
+
+48
+00:06:50,251 --> 00:06:58,956
+Each statement is saved as its own question, so it can be reviewed and used in papers separately.
+
+49
+00:06:59,025 --> 00:07:10,266
+Chapter 7: Text tools
+
+50
+00:07:10,316 --> 00:07:24,624
+Above every text box is a toolbar, like in Word. Click Bold, type, then click Bold again to stop.
+
+51
+00:07:24,674 --> 00:07:32,477
+Italic and Underline work the same way.
+
+52
+00:07:32,527 --> 00:07:41,933
+Numbered list: click it, then choose the style. (I), (II) is used for statements like "Consider the following".
+
+53
+00:07:41,983 --> 00:07:53,270
+The style buttons appear next to it: small roman (i), capital roman (I), letters (a), (A), or numbers (1).
+
+54
+00:07:53,320 --> 00:08:00,977
+Press Enter twice to end the list. The alignment buttons place text left, centre or right.
+
+55
+00:08:01,051 --> 00:08:04,622
+Chapter 8: Tables and amounts tables
+
+56
+00:08:04,672 --> 00:08:13,802
+Amounts table inserts the usual layout: labels on the left, figures on the right under Rupees.
+
+57
+00:08:13,852 --> 00:08:30,419
+Click a cell and type. The figures line up on the right automatically.
+
+58
+00:08:30,469 --> 00:08:43,434
+When you are inside a table, more buttons appear: add or delete rows and columns, merge cells, header row, No border.
+
+59
+00:08:43,484 --> 00:08:52,602
+The empty corner at the top left has no border, like the ICAP papers. No border can remove the lines of any cell.
+
+60
+00:08:52,652 --> 00:09:04,276
+To merge cells, drag across them and click Merge. Text below starts a new line under the table.
+
+61
+00:09:04,326 --> 00:09:12,387
+The normal Table button inserts a plain 3 by 3 table. The question mark button explains all table tools.
+
+62
+00:09:12,437 --> 00:09:20,090
+This question is not finished yet, so click Save draft. Drafts are only visible to you.
+
+63
+00:09:20,145 --> 00:09:27,886
+Chapter 9: Long questions with sub-questions
+
+64
+00:09:27,936 --> 00:09:40,019
+Type the scenario in the Question box. Then write each sub-question below it.
+
+65
+00:09:40,069 --> 00:09:46,719
+Each sub-question has its own marks box. Here, (a) is worth 4 marks.
+
+66
+00:09:46,769 --> 00:09:54,120
+Click Sub-question to add (b).
+
+67
+00:09:54,170 --> 00:10:06,087
+Inside a sub-question you can add parts: click Part (b)(i).
+
+68
+00:10:06,137 --> 00:10:14,503
+The total marks are added up from the parts automatically. Numbering lets you choose (a), (i) or (1) for sub-questions.
+
+69
+00:10:14,553 --> 00:10:28,265
+Under each part, click Answer to write its model answer. It prints only in the answer key.
+
+70
+00:10:28,325 --> 00:10:36,345
+Chapter 10: Case studies
+
+71
+00:10:36,395 --> 00:10:53,980
+A case study works like a long question: a scenario first, then sub-questions with marks.
+
+72
+00:10:54,067 --> 00:10:57,727
+Chapter 11: Answer key and private notes
+
+73
+00:10:57,777 --> 00:11:04,744
+Let us finish the draft from before. In Questions, choose Drafts and click Edit.
+
+74
+00:11:04,794 --> 00:11:18,798
+Scroll to the Answer key. Model answer and Examiner’s advice print only in the answer key.
+
+75
+00:11:18,848 --> 00:11:30,664
+Private notes are for you and the reviewer only. They never print. Use them for the source and comments.
+
+76
+00:11:30,714 --> 00:11:36,286
+Click Submit when the question is complete.
+
+77
+00:11:36,358 --> 00:11:45,735
+Chapter 12: The editor window
+
+78
+00:11:45,785 --> 00:11:54,051
+The buttons at the top right work like Windows. Maximise makes the editor full screen.
+
+79
+00:11:54,101 --> 00:12:00,073
+Restore down makes it normal size again.
+
+80
+00:12:00,123 --> 00:12:09,864
+Minimise hides the editor in a bar at the bottom, so you can look at something else. Your text is kept.
+
+81
+00:12:09,914 --> 00:12:15,110
+Click the bar to bring the editor back.
+
+82
+00:12:15,160 --> 00:12:21,346
+Cancel or the cross closes the editor without saving.
+
+83
+00:12:21,417 --> 00:12:25,185
+Chapter 13: Your questions list
+
+84
+00:12:25,235 --> 00:12:30,868
+The Questions page lists your questions. Each one shows its status on the right.
+
+85
+00:12:30,918 --> 00:12:43,368
+Draft: not sent yet. In review: waiting for the administrator. Returned: changes requested. Approved: ready for papers.
+
+86
+00:12:43,418 --> 00:12:53,114
+Type in the search box to find questions by words in the title or text.
+
+87
+00:12:53,164 --> 00:12:59,251
+You can also filter by subject and by question type.
+
+88
+00:12:59,301 --> 00:13:08,066
+Click a title to preview the question exactly as written.
+
+89
+00:13:08,147 --> 00:13:11,720
+Chapter 14: Duplicate and the recycle bin
+
+90
+00:13:11,770 --> 00:13:19,294
+Duplicate makes a copy as a new draft. It is handy for writing a similar question.
+
+91
+00:13:19,345 --> 00:13:29,643
+The bin icon moves a question to the Recycle bin. Approved questions cannot be deleted by teachers.
+
+92
+00:13:29,693 --> 00:13:34,917
+Open the Recycle bin to see deleted questions.
+
+93
+00:13:34,967 --> 00:13:43,096
+Restore brings a question back. Delete permanently removes it for ever. It cannot be undone.
+
+94
+00:13:43,146 --> 00:13:49,838
+You are always asked to confirm.
+
+95
+00:13:49,894 --> 00:13:53,560
+Chapter 15: When a question is returned
+
+96
+00:13:53,610 --> 00:14:00,606
+Sometimes the reviewer asks for changes. The tile Returned to me shows how many.
+
+97
+00:14:00,656 --> 00:14:09,404
+The reviewer’s comment is shown under the question in red. Read it, then click Edit.
+
+98
+00:14:09,454 --> 00:14:35,073
+The comment is also shown at the top of the editor. Make the change...
+
+99
+00:14:35,123 --> 00:14:42,272
+...and click Submit again. The question goes back to the reviewer.
+
+100
+00:14:42,343 --> 00:14:46,002
+Chapter 16: Your account
+
+101
+00:14:46,052 --> 00:14:53,847
+At the bottom left you see your name. The key icon changes your password at any time.
+
+102
+00:14:53,897 --> 00:15:03,780
+Type your current password and the new one twice, then Save password. Forgot your password? Ask the administrator.
+
+103
+00:15:03,830 --> 00:15:10,302
+When you finish, click the sign-out icon, especially on a shared computer.
+
+104
+00:15:10,352 --> 00:15:17,325
+You are ready to write questions - Questions? Ask your administrator. Thank you for helping build the SKANS Question Bank.

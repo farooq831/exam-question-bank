@@ -5,7 +5,7 @@ const shortText = (max = 200) => z.string().trim().max(max);
 
 /**
  * Paper template configuration. Stored as JSON in PaperTemplate.config and validated on every
- * save, so formats are data rather than code. See README "Adding a new paper template".
+ * save, so formats are data rather than code. See docs/SETUP.md "Paper format".
  *
  * Text placeholders available in headings, running header and file names:
  *   {n} question number · {session} e.g. "Spring 2026" · {subject} subject name · {code} subject code

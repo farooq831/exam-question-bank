@@ -36,13 +36,21 @@ function Test-Health([string]$base) {
   try { return (Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 -Uri "$base/api/health").StatusCode -eq 200 } catch { return $false }
 }
 
+# Stops a process and its children. Processes that no longer exist (e.g. after sleep or a restart)
+# are skipped: in Windows PowerShell 5 a taskkill error message would otherwise abort the script.
+function Stop-Tree([int]$id) {
+  if (Get-Process -Id $id -ErrorAction SilentlyContinue) {
+    Start-Process -FilePath 'taskkill.exe' -ArgumentList "/PID $id /T /F" -WindowStyle Hidden -Wait
+  }
+}
+
 function Stop-Beta {
   if (Test-Path $pidFile) {
-    foreach ($id in Get-Content $pidFile) { if ($id) { & taskkill.exe /PID $id /T /F 2>$null | Out-Null } }
+    foreach ($id in Get-Content $pidFile) { if ($id -match '^\d+$') { Stop-Tree ([int]$id) } }
     Remove-Item $pidFile -Force
   }
   $left = Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue
-  foreach ($c in $left) { & taskkill.exe /PID $c.OwningProcess /T /F 2>$null | Out-Null }
+  foreach ($c in $left) { Stop-Tree ([int]$c.OwningProcess) }
   Write-Host 'Beta stopped.'
 }
 
@@ -93,10 +101,11 @@ $tunnelLog = Join-Path $logs 'beta-tunnel.log'
 Remove-Item $tunnelLog -ErrorAction SilentlyContinue
 $app = Start-Process -FilePath 'cmd.exe' -ArgumentList "/d /c `"npx tsx --env-file=.env.beta src/index.ts > `"$serverLog`" 2>&1`"" -WorkingDirectory $server -WindowStyle Hidden -PassThru
 for ($i = 0; $i -lt 60 -and -not (Test-Health "http://localhost:$port"); $i++) { Start-Sleep -Seconds 1 }
-if (-not (Test-Health "http://localhost:$port")) { & taskkill.exe /PID $app.Id /T /F | Out-Null; throw "The app did not start. See $serverLog" }
+if (-not (Test-Health "http://localhost:$port")) { Stop-Tree $app.Id; throw "The app did not start. See $serverLog" }
 
 $tunnel = Start-Process -FilePath $cloudflared -ArgumentList "tunnel --no-autoupdate --url http://localhost:$port --logfile `"$tunnelLog`"" -WindowStyle Hidden -PassThru
-Set-Content -Path $pidFile -Value @($app.Id, $tunnel.Id)
+$awake = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSScriptRoot\keep-awake.ps1`"" -WindowStyle Hidden -PassThru
+Set-Content -Path $pidFile -Value @($app.Id, $tunnel.Id, $awake.Id)
 
 $url = $null
 for ($i = 0; $i -lt 60 -and -not $url; $i++) {

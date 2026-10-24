@@ -64,7 +64,11 @@ style of an instructor, a chapter title card for every topic, and chapter marker
 **15 min · 16 chapters**
 
 <!-- To make the video play right here on GitHub: edit this README on github.com, drag
-     docs/media/videos/teacher-guide.mp4 into the editor and replace this comment with the link GitHub creates. -->
+     docs/media/vid
+
+https://github.com/user-attachments/assets/a9251979-fb63-40b2-837b-1514bff6ddb3
+
+eos/teacher-guide.mp4 into the editor and replace this comment with the link GitHub creates. -->
 
 <a href="docs/media/videos/teacher-guide.mp4"><img src="docs/media/teacher-thumb.png" alt="Teacher guide video" width="100%"/></a>
 
@@ -76,7 +80,11 @@ style of an instructor, a chapter title card for every topic, and chapter marker
 ### 🛡️ Administrator Guide
 **12 min · 15 chapters**
 
-<!-- To make the video play right here on GitHub: edit this README on github.com, drag
+<!-- To make the video play 
+
+https://github.com/user-attachments/assets/1b4f0808-6103-4001-b94c-6a8872c14c08
+
+right here on GitHub: edit this README on github.com, drag
      docs/media/videos/admin-guide.mp4 into the editor and replace this comment with the link GitHub creates. -->
 
 <a href="docs/media/videos/admin-guide.mp4"><img src="docs/media/admin-thumb.png" alt="Administrator guide video" width="100%"/></a>

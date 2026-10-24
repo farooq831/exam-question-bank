@@ -30,12 +30,16 @@ if ($Remove) {
 $server = Split-Path -Parent $PSScriptRoot
 $logs = Join-Path $server 'logs'
 New-Item -ItemType Directory -Force -Path $logs | Out-Null
-$npm = (Get-Command npm.cmd -ErrorAction Stop).Source
+# Node.js runs the scripts directly (through tsx). npm is not used: on some PCs "npm run" is
+# terminated when Task Scheduler starts it, while the same script started directly works.
+$node = (Get-Command node.exe -ErrorAction Stop).Source
+$tsx = Join-Path (Split-Path -Parent $server) 'node_modules\tsx\dist\cli.mjs'
+if (-not (Test-Path $tsx)) { throw "tsx not found at $tsx. Run npm ci in the project folder first." }
 $log = Join-Path $logs 'backup.log'
 
-function New-Action([string]$script) {
-  # cmd.exe keeps the npm output and appends it to the log with a timestamp line.
-  $cmd = "/d /c `"echo ==== %date% %time% $script >> `"$log`" && `"$npm`" run $script --silent >> `"$log`" 2>&1`""
+function New-Action([string]$label, [string]$scriptArgs) {
+  # cmd.exe appends the output to the log, after a line with the date and time.
+  $cmd = "/d /c `"echo ==== %date% %time% $label >> `"$log`" && `"$node`" `"$tsx`" $scriptArgs >> `"$log`" 2>&1`""
   New-ScheduledTaskAction -Execute 'cmd.exe' -Argument $cmd -WorkingDirectory $server
 }
 
@@ -50,8 +54,8 @@ $time = [datetime]::ParseExact($At, 'HH:mm', $null)
 $daily = New-ScheduledTaskTrigger -Daily -At $time
 $weekly = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At $time.AddMinutes(30)
 
-Register-ScheduledTask -TaskName $names[0] -Description 'Backs up the SKANS Question Bank database and logos (keeps 14 daily + 6 monthly).' -Action (New-Action 'db:backup') -Trigger $daily -Settings $settings -Principal $principal -Force | Out-Null
-Register-ScheduledTask -TaskName $names[1] -Description 'Restores the newest SKANS backup into a temporary database to prove it works.' -Action (New-Action 'db:verify-backup') -Trigger $weekly -Settings $settings -Principal $principal -Force | Out-Null
+Register-ScheduledTask -TaskName $names[0] -Description 'Backs up the SKANS Question Bank database and logos (keeps 14 daily + 6 monthly).' -Action (New-Action 'db:backup' 'scripts/backup-db.ts') -Trigger $daily -Settings $settings -Principal $principal -Force | Out-Null
+Register-ScheduledTask -TaskName $names[1] -Description 'Restores the newest SKANS backup into a temporary database to prove it works.' -Action (New-Action 'db:verify-backup' 'scripts/restore-db.ts --verify') -Trigger $weekly -Settings $settings -Principal $principal -Force | Out-Null
 
 Write-Host "Scheduled: '$($names[0])' daily at $At and '$($names[1])' on Sundays."
 Write-Host "Log file: $log"

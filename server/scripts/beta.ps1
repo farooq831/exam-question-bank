@@ -76,8 +76,12 @@ if ($Install) {
   $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
   $startAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`" -Start" -WorkingDirectory $server
   Register-ScheduledTask -TaskName $taskStart -Description 'Starts the SKANS Question Bank beta and its Cloudflare tunnel at sign-in.' -Action $startAction -Trigger (New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME") -Settings $settings -Principal $principal -Force | Out-Null
-  $log = Join-Path $logs 'backup.log'
-  $backupCmd = "/d /c `"echo ==== %date% %time% beta:backup >> `"$log`" && npx tsx --env-file=.env.beta scripts/backup-db.ts >> `"$log`" 2>&1`""
+  # Own log file: the nightly backup of the real database writes backup.log, and both may start
+  # at the same moment after the PC wakes up (two writers on one file made one of them fail).
+  $log = Join-Path $logs 'beta-backup.log'
+  $node = (Get-Command node.exe -ErrorAction Stop).Source
+  $tsx = Join-Path $root 'node_modules\tsx\dist\cli.mjs'
+  $backupCmd = "/d /c `"echo ==== %date% %time% beta:backup >> `"$log`" && `"$node`" --env-file=.env.beta `"$tsx`" scripts/backup-db.ts >> `"$log`" 2>&1`""
   Register-ScheduledTask -TaskName $taskBackup -Description 'Backs up the beta database (skans_beta) every night.' -Action (New-ScheduledTaskAction -Execute 'cmd.exe' -Argument $backupCmd -WorkingDirectory $server) -Trigger (New-ScheduledTaskTrigger -Daily -At '23:15') -Settings $settings -Principal $principal -Force | Out-Null
   Write-Host "Installed: '$taskStart' (at sign-in) and '$taskBackup' (23:15 daily)."
   return

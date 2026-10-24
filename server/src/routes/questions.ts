@@ -6,7 +6,7 @@ import { prisma } from '../db';
 import { canDeleteQuestion, canEditQuestion, canPurgeQuestion, canReviewQuestion, questionVisibility } from '../lib/access';
 import { audit } from '../lib/audit';
 import { ah, badRequest, conflict, forbidden, idParam, notFound, parse } from '../lib/http';
-import { questionInclude, sanitizeQuestionInput, toQuestionDTO } from '../lib/questions';
+import { assertQuestionComplete, questionInclude, sanitizeQuestionInput, toQuestionDTO } from '../lib/questions';
 import { assertSubject, requireRole } from '../middleware/auth';
 
 const router = Router();
@@ -118,7 +118,7 @@ router.post(
     assertSubject(req.user!, input.subjectId);
     const submit = req.query.submit === '1';
     const data = sanitizeQuestionInput(input);
-    if (!data.body) throw badRequest('Question text is required.');
+    assertQuestionComplete(data);
     const q = await prisma.question.create({
       data: { ...data, status: submit ? 'SUBMITTED' : 'DRAFT', createdById: req.user!.id, updatedById: req.user!.id },
       include: questionInclude,
@@ -144,7 +144,7 @@ router.put(
     const input = parse(questionInputSchema, req.body);
     assertSubject(req.user!, input.subjectId);
     const data = sanitizeQuestionInput(input);
-    if (!data.body) throw badRequest('Question text is required.');
+    assertQuestionComplete(data);
     const submit = req.query.submit === '1';
     const q = await prisma.question.update({
       where: { id: existing.id },

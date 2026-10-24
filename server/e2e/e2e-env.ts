@@ -33,4 +33,6 @@ export const E2E_SERVER_ENV: Record<string, string> = {
   MAX_FAILED_LOGINS: '5',
   LOCKOUT_MINUTES: '15',
   SKANS_ADMIN_PASSWORD: E2E_ADMIN_PASSWORD,
+  // Built by npm run test:e2e into its own folder, so a running beta (client/dist) is never touched.
+  CLIENT_DIST: '../client/dist-test',
 };

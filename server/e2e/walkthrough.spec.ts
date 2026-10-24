@@ -363,7 +363,8 @@ test('drafts download as _DRAFT; finalised papers and answer keys download clean
   };
   expect(await download(/Question paper/)).toMatch(/_DRAFT\.pdf$/);
   await admin.getByRole('button', { name: 'Finalise' }).click();
-  await toast(admin, /finalised|saved/i);
+  // Wait for this exact message: the earlier "Draft saved" may still be on screen.
+  await toast(admin, 'Paper finalised');
   expect(await download(/Question paper/)).not.toMatch(/_DRAFT/);
   expect(await download(/Answer key/)).toMatch(/AnswerKey/i);
 });

@@ -27,3 +27,4 @@ server/e2e-results/
 # Beta (public test) settings: contain secrets
 server/.env.beta
 server/backups-beta/
+client/dist-test/

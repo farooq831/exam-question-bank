@@ -551,3 +551,17 @@ Verification: typecheck clean; shared 11/11, server 45/45, browser 34/34; npm au
 - `cloudflared` installed; `server/scripts/beta.ps1` starts/stops the app and tunnel, records the public link, installs start-at-sign-in and a nightly beta backup (23:15).
 - Checked through the public link with a temporary account (then deleted with its log entries): HTTPS, HSTS, Secure + HttpOnly session cookie surviving reloads, paper list, question editor, question paper PDF (449 KB) and answer key PDF (543 KB), no browser errors. Beta backup task run once: OK.
 - Noted for after the beta: titles in the paper builder's "In this paper" list are squeezed by the row controls; a finalised paper still shows a "Finalise" button.
+
+## Full test pass as a tester (24 October 2026)
+
+**Results:** typecheck and unused-code check clean; unit 11/11; integration 47/47 (2 new); end-to-end 34/34; exploratory 66 probes against an isolated server (authentication, permissions/IDOR, validation, injection, Urdu text in PDFs, business rules, concurrency, load, rate limit). Performance: 610 questions listed in 18 ms and searched in 20 ms; a 7-page PDF in 0.6 s; 4 PDFs at once in 1.4 s.
+
+**Defects found and fixed:**
+1. The beta did not come back after the laptop slept or restarted (`beta.ps1` stopped on a "process not found" message in Windows PowerShell 5). Fixed; the beta also keeps the PC awake while it runs. The beta was restarted (new link).
+2. Nightly backups failed last night: `npm run` is terminated when Task Scheduler starts it on this PC, and the beta and real backups shared one log file. Tasks now run Node directly with separate logs; tested together and the weekly check passes.
+3. The server accepted questions with empty HTML text (`<p></p>`, `&nbsp;`) or 0 marks through the API (the editor already blocked them). Fixed with tests.
+4. One end-to-end test was flaky (it accepted the earlier "Draft saved" message as the finalise confirmation). Fixed.
+5. `npm run test:e2e` rebuilt `client/dist`, the files the running beta serves. Browser tests now build into `client/dist-test` (the beta's files were checked unchanged by fingerprint).
+6. New security advisories since yesterday: body-parser and multer updated (safe updates).
+
+**Open (not fixed):** zod advisory (memory use on very large lists) needs zod 4, a major upgrade; risk is limited by the 3 MB request limit (a 300,000-item list was refused in 0.27 s). Two people saving the same paper at once: the last save wins without a warning. Not tested: Firefox/Safari, screen readers, idle session expiry (8 h).

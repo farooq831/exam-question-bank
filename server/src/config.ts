@@ -16,6 +16,8 @@ const envSchema = z.object({
   LOCKOUT_MINUTES: z.coerce.number().int().min(1).max(1440).default(15),
   SESSION_TTL_MINUTES: z.coerce.number().int().min(5).max(7 * 24 * 60).default(480),
   BRANDING_DIR: z.string().optional(),
+  /** Folder with the built website; the browser tests use their own (client/dist-test). */
+  CLIENT_DIST: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -32,5 +34,5 @@ export const paths = {
   branding: env.BRANDING_DIR
     ? path.resolve(serverRoot, env.BRANDING_DIR)
     : path.resolve(serverRoot, '..', 'client', 'public', 'branding'),
-  clientDist: path.resolve(serverRoot, '..', 'client', 'dist'),
+  clientDist: env.CLIENT_DIST ? path.resolve(serverRoot, env.CLIENT_DIST) : path.resolve(serverRoot, '..', 'client', 'dist'),
 };

@@ -9,6 +9,7 @@ import {
   type QuestionStatus,
   type QuestionType,
 } from '@skans/shared';
+import { badRequest } from './http';
 import { htmlToText, sanitizeRich } from './sanitize';
 
 /** Sanitizes every rich-text field, including those nested inside type-specific content. */
@@ -148,4 +149,13 @@ export function toQuestionDTO(q: QuestionRow, extra?: { usedInPapers?: number })
     deletedAt: q.deletedAt?.toISOString() ?? null,
     ...extra,
   };
+}
+
+/**
+ * The same checks the editor makes, enforced on the server so direct API calls cannot store an
+ * empty question (e.g. "<p></p>" or only spaces) or one worth zero marks.
+ */
+export function assertQuestionComplete(data: { body: string; marks: number }) {
+  if (!htmlToText(data.body) && !/<table/i.test(data.body)) throw badRequest('Question text is required.');
+  if (!(data.marks > 0)) throw badRequest('Marks must be greater than zero.');
 }

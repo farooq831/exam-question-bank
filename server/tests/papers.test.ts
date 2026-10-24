@@ -63,6 +63,25 @@ describe('question review workflow', () => {
   });
 });
 
+describe('question validation on the server (not only in the editor)', () => {
+  it('refuses empty question text in any form, and zero marks', async () => {
+    for (const body of ['', '   ', '<p></p>', '<p>&nbsp;</p>', '<p> </p><p></p>']) {
+      const res = await teacher.post('/api/questions', shortQuestion(FAR, { body })).expect(400);
+      expect(res.body.error).toMatch(/question text is required/i);
+    }
+    const zero = await teacher.post('/api/questions', shortQuestion(FAR, { marks: 0 })).expect(400);
+    expect(zero.body.error).toMatch(/greater than zero/i);
+    const q = (await teacher.post('/api/questions', shortQuestion(FAR)).expect(201)).body;
+    await teacher.put(`/api/questions/${q.id}`, shortQuestion(FAR, { body: '<p></p>' })).expect(400);
+    await teacher.put(`/api/questions/${q.id}`, shortQuestion(FAR, { marks: 0 })).expect(400);
+  });
+
+  it('accepts a question that is only a table', async () => {
+    const body = '<table><tbody><tr><td><p>Revenue</p></td><td><p>100</p></td></tr></tbody></table>';
+    await teacher.post('/api/questions', shortQuestion(FAR, { body })).expect(201);
+  });
+});
+
 describe('permanent deletion from the recycle bin', () => {
   it('lets authors delete their own binned questions for good', async () => {
     const q = (await teacher.post('/api/questions?submit=1', shortQuestion(FAR)).expect(201)).body;

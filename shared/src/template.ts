@@ -100,7 +100,7 @@ export const templateConfigSchema = z.object({
       sectionToQuestionPt: z.number().min(0).max(40).default(19),
       justify: z.boolean().default(true),
     })
-    .default({}),
+    .prefault({}),
   endText: shortText(60),
   filenames: z.object({
     paper: shortText(120).min(1),

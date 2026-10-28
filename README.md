@@ -21,7 +21,7 @@ print-ready question papers and answer keys in PDF, in the CAF (ICAP) examinatio
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL_17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 
-![Tests](https://img.shields.io/badge/tests-92_passing-brightgreen?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-127_passing_%2B_99_security_checks-brightgreen?style=flat-square)
 ![Roles](https://img.shields.io/badge/roles-Admin_·_Teacher_·_Research_Officer-1b2a4b?style=flat-square)
 ![Output](https://img.shields.io/badge/output-PDF_paper_+_answer_key-c08a2e?style=flat-square)
 
@@ -295,7 +295,7 @@ flowchart LR
 | **Validation** | Zod (shared by client and server) | One set of rules: the browser and the server validate the same way |
 | **PDF** | Playwright / Chromium | Pixel-accurate PDFs from the same HTML as the live preview |
 | **Security** | bcrypt, express-session, CSRF, Helmet, rate limiting, sanitize-html | Protection against common web attacks |
-| **Testing** | Vitest, Supertest, Playwright | **92 automated tests**: 11 unit, 47 integration and 34 end-to-end browser tests |
+| **Testing** | Vitest, Testing Library, Supertest, Playwright | **127 automated tests** (11 unit, 35 component, 47 integration, 34 end-to-end browser) plus **99 security checks** and a load test |
 
 ```
 ├── client/   React web app (pages, editor, paper builder)
@@ -329,8 +329,10 @@ You will be asked to choose your own password.
 
 | Useful command | What it does |
 |---|---|
-| `npm test` | Unit and integration tests |
+| `npm test` | Unit, component and integration tests |
 | `npm run test:e2e` | End-to-end browser tests |
+| `npm run test:security -w server` | 99 security checks (permissions, attacks, headers, lockout, rate limits) |
+| `npm run test:load -w server` | Load test: many users browsing, saving and downloading PDFs at once |
 | `npm run demo:paper` | Creates a complete 160-mark demo paper with answer key |
 | `npm run db:backup` / `npm run db:restore` | Back up or restore the database |
 | `npm run build && npm start` | Production build and server |

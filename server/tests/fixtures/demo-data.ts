@@ -3,7 +3,7 @@
  * global setup bootstraps a fresh temporary database with prisma/seed.ts and then runs this file.
  * Demo accounts all use the password below.
  */
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import type { Prisma } from '@prisma/client';
 import { computeQuestionMarks } from '@skans/shared';
 import { prisma } from '../../src/db';

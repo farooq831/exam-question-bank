@@ -158,8 +158,11 @@ approved questions tagged "SKANS demo mock paper"; `npm run demo:paper -- --repl
 
 `npm test` runs:
 
-- **Shared unit tests:** marks rules, formatting, schemas.
-- **Server tests:** 45 Supertest + PDF tests in `server/tests/` (Vitest).
+- **Shared unit tests:** marks rules, formatting, schemas (11).
+- **Component tests:** 35 tests in `client/tests/` (Vitest + Testing Library in a simulated browser):
+  question-editor rules and permissions, the question editor itself (types, validation, save/submit),
+  the window buttons, password field, confirm dialog, filters, and the API client (CSRF retry, error wording).
+- **Server tests:** 47 Supertest + PDF tests in `server/tests/` (Vitest).
 
 `npm run test:e2e` builds the client and runs **34 browser tests** (`server/e2e/`, Playwright) that
 walk through the whole system as admin, teacher, Research Officer and a teacher of another
@@ -169,6 +172,19 @@ paper format reset, audit log, permissions, CSRF and HTML cleaning, phone layout
 real server on port 4173 with its own temporary PostgreSQL database (`skans_e2e_…`, dropped
 afterwards). On failure, screenshots and a trace are in `server/e2e-results/` and a report in
 `server/e2e-report/`. Run both suites before every update.
+
+`npm run test:security -w server` runs **99 security checks** on its own temporary database and
+server (ports 4830-4832), in test, normal and production (HTTPS) mode: SQL and HTML injection,
+CSRF, session after logout, every permission rule, input limits, upload filter, security headers
+(CSP, framing, HSTS), cookie flags (HttpOnly, SameSite, Secure), no password hashes or code paths
+in responses, no access to server files, account lockout and unlock, sign-in and request rate limits.
+
+`npm run test:load -w server` measures speed under load on a temporary copy with the 160-mark demo
+paper (port 4820): a sign-in burst, 10/25/50 people browsing at once, 20 people saving questions,
+and 1/5/10 simultaneous PDF downloads. It prints a table of response times (p50/p95/p99) and errors.
+Reference results on the development laptop: no errors; 25 sign-ins at once about 1 s each; pages
+16-34 ms for one user and about 65 requests per second in total; the full paper PDF about 1 s alone
+and about 7 s each when 10 are made at once.
 
 The server tests cover:
 

@@ -4,7 +4,7 @@
  * Unlocks the account, re-activates it, ensures the ADMIN role and sets the new password.
  * This guarantees the administrator can never be permanently locked out of the system.
  */
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { passwordPolicy } from '@skans/shared';
 import { prisma } from '../src/db';
 

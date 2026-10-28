@@ -13,7 +13,7 @@
  * generated and printed once.
  */
 import { randomInt } from 'node:crypto';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import type { Prisma } from '@prisma/client';
 import { CA_PAPERS, CAF_TEMPLATE_CONFIG, LEGACY_SUBJECT_CODES, passwordPolicy, templateConfigSchema } from '@skans/shared';
 import { prisma } from '../src/db';

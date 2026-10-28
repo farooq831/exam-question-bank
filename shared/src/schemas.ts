@@ -9,6 +9,31 @@ import {
   ROLES,
 } from './constants';
 
+/** Plain-English messages for zod's built-in checks (shown to users next to the field name). */
+z.config({
+  customError: (iss) => {
+    const n = (v: unknown) => String(v);
+    switch (iss.code) {
+      case 'too_small':
+        if (iss.origin === 'string') return Number(iss.minimum) <= 1 ? 'This field is required' : `Use at least ${n(iss.minimum)} characters`;
+        if (iss.origin === 'array') return `Add at least ${n(iss.minimum)}`;
+        return `Must be at least ${n(iss.minimum)}`;
+      case 'too_big':
+        if (iss.origin === 'string') return `Use at most ${n(iss.maximum)} characters`;
+        if (iss.origin === 'array') return `No more than ${n(iss.maximum)} allowed`;
+        return `Must be at most ${n(iss.maximum)}`;
+      case 'invalid_type':
+        return iss.input === undefined ? 'This field is required' : iss.expected === 'number' ? 'Enter a number' : 'Invalid value';
+      case 'invalid_value':
+        return 'Choose one of the options';
+      case 'not_multiple_of':
+        return `Use steps of ${n(iss.divisor)}`;
+      default:
+        return undefined;
+    }
+  },
+});
+
 const html = (max = 200_000) => z.string().max(max);
 const id = z.coerce.number().int().positive();
 const marksValue = z.number().min(0).max(200).multipleOf(0.5);

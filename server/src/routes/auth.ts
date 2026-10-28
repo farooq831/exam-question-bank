@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { changePasswordSchema, loginSchema } from '@skans/shared';
 import { env } from '../config';
 import { prisma } from '../db';

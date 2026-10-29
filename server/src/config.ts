@@ -8,6 +8,8 @@ const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().default(4000),
+  /** Network address to listen on. 127.0.0.1 = only this computer (behind Nginx or Cloudflare Tunnel); unset = all. */
+  HOST: z.string().optional(),
   DATABASE_URL: z.string().min(1),
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters (run npm run setup)'),
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),

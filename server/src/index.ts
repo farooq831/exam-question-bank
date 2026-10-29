@@ -11,9 +11,10 @@ import { prisma } from './db';
 import { closeBrowser } from './render/pdf';
 
 const app = createApp();
-const server = app.listen(env.PORT, () => {
-  console.log(`[server] SKANS Question Bank API listening on http://localhost:${env.PORT} (${env.NODE_ENV})`);
-});
+const onListening = () => {
+  console.log(`[server] SKANS Question Bank API listening on http://${env.HOST ?? 'localhost'}:${env.PORT} (${env.NODE_ENV})`);
+};
+const server = env.HOST ? app.listen(env.PORT, env.HOST, onListening) : app.listen(env.PORT, onListening);
 
 async function shutdown(signal: string) {
   console.log(`[server] ${signal} received, shutting down...`);
